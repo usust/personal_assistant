@@ -1,0 +1,1152 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Personal Assistant 模型配置 API",
+    "version": "1.0.0",
+    "description": "统一响应 code/message/data；code 等于 HTTP 状态；失败和删除成功 data 为 null。现有 URL 保持不变。"
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {
+    "/api/setting/ai/providers": {
+      "get": {
+        "summary": "获取模型提供商目录",
+        "operationId": "aiconfig_get_providers",
+        "tags": [
+          "模型配置"
+        ],
+        "responses": {
+          "200": {
+            "description": "操作结果",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "message",
+                    "data"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "enum": [
+                        200
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Provider"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "操作结果",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "message",
+                    "data"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "enum": [
+                        401
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "nullable": true,
+                      "enum": [
+                        null
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "操作结果",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "message",
+                    "data"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "enum": [
+                        500
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "nullable": true,
+                      "enum": [
+                        null
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-apifox-folder": "模型配置/提供商目录"
+      }
+    },
+    "/api/setting/ai/provider_config": {
+      "get": {
+        "summary": "获取可用模型配置",
+        "operationId": "aiconfig_get_provider_config",
+        "tags": [
+          "模型配置"
+        ],
+        "responses": {
+          "200": {
+            "description": "操作结果",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "message",
+                    "data"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "enum": [
+                        200
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ConfigSummary"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "操作结果",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "message",
+                    "data"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "enum": [
+                        401
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "nullable": true,
+                      "enum": [
+                        null
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "操作结果",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "message",
+                    "data"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "enum": [
+                        500
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "nullable": true,
+                      "enum": [
+                        null
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-apifox-folder": "模型配置/配置管理"
+      }
+    },
+    "/api/setting/ai/provider_config/create": {
+      "post": {
+        "summary": "创建模型配置",
+        "operationId": "aiconfig_post_provider_config_create",
+        "tags": [
+          "模型配置"
+        ],
+        "responses": {
+          "201": {
+            "description": "操作结果",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "message",
+                    "data"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "enum": [
+                        201
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/ConfigSummary"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "操作结果",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "message",
+                    "data"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "enum": [
+                        400
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "nullable": true,
+                      "enum": [
+                        null
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "操作结果",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "message",
+                    "data"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "enum": [
+                        401
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "nullable": true,
+                      "enum": [
+                        null
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "操作结果",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "message",
+                    "data"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "enum": [
+                        500
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "nullable": true,
+                      "enum": [
+                        null
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateConfig"
+              }
+            }
+          },
+          "description": "严格单个 JSON 对象，最大 32 KiB；拒绝未知字段。"
+        },
+        "x-apifox-folder": "模型配置/配置管理"
+      }
+    },
+    "/api/setting/ai/provider_config/{id}": {
+      "patch": {
+        "summary": "部分更新模型配置",
+        "operationId": "aiconfig_patch_provider_config_id",
+        "tags": [
+          "模型配置"
+        ],
+        "responses": {
+          "200": {
+            "description": "操作结果",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "message",
+                    "data"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "enum": [
+                        200
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/ConfigSummary"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "操作结果",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "message",
+                    "data"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "enum": [
+                        400
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "nullable": true,
+                      "enum": [
+                        null
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "操作结果",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "message",
+                    "data"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "enum": [
+                        401
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "nullable": true,
+                      "enum": [
+                        null
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "操作结果",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "message",
+                    "data"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "enum": [
+                        403
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "nullable": true,
+                      "enum": [
+                        null
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "操作结果",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "message",
+                    "data"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "enum": [
+                        500
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "nullable": true,
+                      "enum": [
+                        null
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateConfig"
+              }
+            }
+          },
+          "description": "严格单个 JSON 对象，最大 32 KiB；拒绝未知字段。"
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 4294967295
+            }
+          }
+        ],
+        "x-apifox-folder": "模型配置/配置管理"
+      },
+      "delete": {
+        "summary": "删除模型配置",
+        "operationId": "aiconfig_delete_provider_config_id",
+        "tags": [
+          "模型配置"
+        ],
+        "responses": {
+          "200": {
+            "description": "操作结果",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "message",
+                    "data"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "enum": [
+                        200
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "nullable": true,
+                      "enum": [
+                        null
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "操作结果",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "message",
+                    "data"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "enum": [
+                        400
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "nullable": true,
+                      "enum": [
+                        null
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "操作结果",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "message",
+                    "data"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "enum": [
+                        401
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "nullable": true,
+                      "enum": [
+                        null
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "操作结果",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "message",
+                    "data"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "enum": [
+                        403
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "nullable": true,
+                      "enum": [
+                        null
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "操作结果",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "message",
+                    "data"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "enum": [
+                        500
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "nullable": true,
+                      "enum": [
+                        null
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 4294967295
+            }
+          }
+        ],
+        "x-apifox-folder": "模型配置/配置管理"
+      }
+    },
+    "/api/setting/ai/models": {
+      "post": {
+        "summary": "获取上游模型目录",
+        "operationId": "aiconfig_post_models",
+        "tags": [
+          "模型配置"
+        ],
+        "responses": {
+          "200": {
+            "description": "操作结果",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "message",
+                    "data"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "enum": [
+                        200
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "操作结果",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "message",
+                    "data"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "enum": [
+                        400
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "nullable": true,
+                      "enum": [
+                        null
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "操作结果",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "message",
+                    "data"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "enum": [
+                        401
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "nullable": true,
+                      "enum": [
+                        null
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "操作结果",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "message",
+                    "data"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "enum": [
+                        403
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "nullable": true,
+                      "enum": [
+                        null
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "操作结果",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "message",
+                    "data"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "enum": [
+                        500
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "nullable": true,
+                      "enum": [
+                        null
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ModelsInput"
+              }
+            }
+          },
+          "description": "严格单个 JSON 对象，最大 32 KiB；拒绝未知字段。"
+        },
+        "x-apifox-folder": "模型配置/模型目录"
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "schemas": {
+      "ConfigSummary": {
+        "type": "object",
+        "required": [
+          "id",
+          "owner_type",
+          "owner_id",
+          "visibility",
+          "is_selected",
+          "name",
+          "provider_name",
+          "base_url",
+          "model_name",
+          "created_by",
+          "updated_at"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "owner_type": {
+            "type": "string",
+            "enum": [
+              "system",
+              "user",
+              "group"
+            ]
+          },
+          "owner_id": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true
+          },
+          "visibility": {
+            "type": "string",
+            "enum": [
+              "private",
+              "shared"
+            ]
+          },
+          "is_selected": {
+            "type": "boolean"
+          },
+          "name": {
+            "type": "string"
+          },
+          "provider_name": {
+            "type": "string"
+          },
+          "base_url": {
+            "type": "string"
+          },
+          "model_name": {
+            "type": "string"
+          },
+          "created_by": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "CreateConfig": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "owner_type": {
+            "type": "string",
+            "enum": [
+              "system",
+              "user",
+              "group"
+            ]
+          },
+          "owner_id": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true
+          },
+          "visibility": {
+            "type": "string",
+            "enum": [
+              "private",
+              "shared"
+            ]
+          },
+          "is_selected": {
+            "type": "boolean"
+          },
+          "name": {
+            "type": "string"
+          },
+          "provider_name": {
+            "type": "string"
+          },
+          "base_url": {
+            "type": "string"
+          },
+          "model_name": {
+            "type": "string"
+          },
+          "api_key": {
+            "type": "string",
+            "writeOnly": true
+          }
+        },
+        "description": "创建者、主键与更新时间由服务端维护；归属字段沿用当前业务行为。"
+      },
+      "UpdateConfig": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "visibility": {
+            "type": "string",
+            "enum": [
+              "private",
+              "shared"
+            ]
+          },
+          "is_selected": {
+            "type": "boolean"
+          },
+          "name": {
+            "type": "string"
+          },
+          "provider_name": {
+            "type": "string"
+          },
+          "base_url": {
+            "type": "string"
+          },
+          "model_name": {
+            "type": "string"
+          },
+          "api_key": {
+            "type": "string",
+            "writeOnly": true
+          }
+        },
+        "description": "仅修改实际提交的白名单字段；false 正常更新；null 视为未提交；空对象不修改更新时间；连接字符串不得为空。"
+      },
+      "ModelsInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "config_id": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "base_url": {
+            "type": "string"
+          },
+          "api_key": {
+            "type": "string",
+            "writeOnly": true
+          },
+          "provider_name": {
+            "type": "string"
+          }
+        },
+        "description": "config_id 非零时须有管理权限；省略 api_key 仅可使用原地址和原提供商的保存密钥。"
+      },
+      "Provider": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "base_url"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "base_url": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

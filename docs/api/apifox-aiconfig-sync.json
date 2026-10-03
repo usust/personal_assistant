@@ -1,0 +1,111 @@
+{
+  "projectId": 8566884,
+  "branch": "ai/20261003-from-main-user-models",
+  "branchId": 8695469,
+  "mergedToMain": false,
+  "verified": true,
+  "resources": [
+    {
+      "kind": "schema",
+      "name": "AIConfigCreateRequest",
+      "id": 318173548,
+      "verified": true
+    },
+    {
+      "kind": "schema",
+      "name": "AIConfigModelsRequest",
+      "id": 318173549,
+      "verified": true
+    },
+    {
+      "kind": "schema",
+      "name": "AIConfigProvider",
+      "id": 318173550,
+      "verified": true
+    },
+    {
+      "kind": "schema",
+      "name": "AIConfigSummary",
+      "id": 318173551,
+      "verified": true
+    },
+    {
+      "kind": "schema",
+      "name": "AIConfigUpdateRequest",
+      "id": 318173552,
+      "verified": true
+    },
+    {
+      "kind": "schema",
+      "name": "AIConfigDeleteResponse",
+      "id": 318173631,
+      "verified": true
+    },
+    {
+      "kind": "schema",
+      "name": "AIConfigListResponse",
+      "id": 318173632,
+      "verified": true
+    },
+    {
+      "kind": "schema",
+      "name": "AIConfigModelsResponse",
+      "id": 318173633,
+      "verified": true
+    },
+    {
+      "kind": "schema",
+      "name": "AIConfigProviderListResponse",
+      "id": 318173634,
+      "verified": true
+    },
+    {
+      "kind": "schema",
+      "name": "AIConfigResponse",
+      "id": 318173635,
+      "verified": true
+    },
+    {
+      "kind": "endpoint",
+      "name": "获取模型提供商目录",
+      "id": 521354842,
+      "verified": true
+    },
+    {
+      "kind": "endpoint",
+      "name": "获取可用模型配置",
+      "id": 521354843,
+      "verified": true
+    },
+    {
+      "kind": "endpoint",
+      "name": "创建模型配置",
+      "id": 521354844,
+      "verified": true
+    },
+    {
+      "kind": "endpoint",
+      "name": "部分更新模型配置",
+      "id": 521354845,
+      "verified": true
+    },
+    {
+      "kind": "endpoint",
+      "name": "删除模型配置",
+      "id": 521354846,
+      "verified": true
+    },
+    {
+      "kind": "endpoint",
+      "name": "获取上游模型目录",
+      "id": 521354847,
+      "verified": true
+    }
+  ],
+  "functionalFolders": {
+    "模型配置/配置管理": 96942186,
+    "模型配置/提供商目录": 96942187,
+    "模型配置/模型目录": 96942188
+  },
+  "folderOrganizationVerifiedAt": "2026-10-03T09:15:28Z"
+}

@@ -1,0 +1,30 @@
+listen_addr: ":16101"
+run_mode: release
+database_driver: mysql
+mysql_connection:
+  host: 127.0.0.1
+  port: 3306
+  username: personal_assistant
+  password: replace-with-database-password
+  database: personal_assistant
+  charset: utf8mb4
+  parse_time: "true"
+  loc: Local
+auth:
+  jwt_secret: replace-with-a-long-random-secret
+  jwt_expireHours: 24
+  allowed_origins:
+    - http://localhost:10000
+  print_dev_token: false
+default_user:
+  account: admin
+  password: replace-with-admin-password
+  nickname: 管理员
+zap_log:
+  output: [console, file]
+  log_dir: log
+  log_level: info
+  max_size: 100
+  max_backups: 5
+  max_age: 30
+  is_compress: true

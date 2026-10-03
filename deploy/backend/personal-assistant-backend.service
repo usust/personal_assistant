@@ -1,0 +1,23 @@
+[Unit]
+Description=Personal Assistant backend service
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+User=dok
+Group=dok
+WorkingDirectory=/srv/personal-assistant-backend
+Environment=PA_CONFIG_FILE=/srv/personal-assistant-backend/shared/config.yaml
+ExecStart=/srv/personal-assistant-backend/current/personal-assistant-backend
+Restart=always
+RestartSec=3
+TimeoutStopSec=30
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/srv/personal-assistant-backend/data /srv/personal-assistant-backend/log
+
+[Install]
+WantedBy=multi-user.target

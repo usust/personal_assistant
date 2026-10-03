@@ -1,0 +1,19 @@
+[Unit]
+Description=Personal Assistant frontend web service
+After=network.target
+
+[Service]
+Type=simple
+User=web
+Group=web
+WorkingDirectory=/srv/www/personal-assistant
+ExecStart=/usr/bin/python3 -m http.server 10000 --bind 0.0.0.0 --directory /srv/www/personal-assistant/current
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target

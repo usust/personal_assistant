@@ -1,0 +1,2612 @@
+{
+  "asOf": "2025-12-31",
+  "providers": [
+    {
+      "aliases": [
+        "中国工商银行",
+        "INDUSTRIAL AND COMMERCIAL BANK OF CHINA LIMITED",
+        "工商银行",
+        "工行",
+        "icbc"
+      ],
+      "group": "national",
+      "icon": "brand-icbc",
+      "id": "nfra-B0001H111000001",
+      "institution": "中国工商银行股份有限公司",
+      "isCredit": false,
+      "name": "中国工商银行",
+      "region": "",
+      "regulatoryType": "国有大型商业银行",
+      "searchKey": "中国工商银行中国工商银行股份有限公司中国工商银行industrialandcommercialbankofchinalimited工商银行工行icbczhongguogongshangyinhangzggsyhzhongguogongshangyinhanggufenyouxiangongsizggsyhgfyxgszhongguogongshangyinhangzggsyhindustrialandcommercialbankofchinalimitediacboclgongshangyinhanggsyhgongxinggxicbci",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "中国农业银行",
+        "AGRICULTURAL BANK OF CHINA LIMITED",
+        "农业银行",
+        "农行",
+        "abc",
+        "abchina"
+      ],
+      "group": "national",
+      "icon": "brand-abchina",
+      "id": "nfra-B0002H111000001",
+      "institution": "中国农业银行股份有限公司",
+      "isCredit": false,
+      "name": "中国农业银行",
+      "region": "",
+      "regulatoryType": "国有大型商业银行",
+      "searchKey": "中国农业银行中国农业银行股份有限公司中国农业银行agriculturalbankofchinalimited农业银行农行abcabchinazhongguonongyeyinhangzgnyyhzhongguonongyeyinhanggufenyouxiangongsizgnyyhgfyxgszhongguonongyeyinhangzgnyyhagriculturalbankofchinalimitedaboclnongyeyinhangnyyhnongxingnxabcaabchinaa",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "中国银行",
+        "BANK OF CHINA LIMITED",
+        "中行",
+        "boc"
+      ],
+      "group": "national",
+      "icon": "brand-boc",
+      "id": "nfra-B0003H111000001",
+      "institution": "中国银行股份有限公司",
+      "isCredit": false,
+      "name": "中国银行",
+      "region": "",
+      "regulatoryType": "国有大型商业银行",
+      "searchKey": "中国银行中国银行股份有限公司中国银行bankofchinalimited中行boczhongguoyinhangzgyhzhongguoyinhanggufenyouxiangongsizgyhgfyxgszhongguoyinhangzgyhbankofchinalimitedboclzhongxingzxbocb",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "中国建设银行",
+        "CHINA CONSTRUCTION BANK CORPORATION",
+        "建设银行",
+        "建行",
+        "ccb"
+      ],
+      "group": "national",
+      "icon": "brand-ccb",
+      "id": "nfra-B0004H111000001",
+      "institution": "中国建设银行股份有限公司",
+      "isCredit": false,
+      "name": "中国建设银行",
+      "region": "",
+      "regulatoryType": "国有大型商业银行",
+      "searchKey": "中国建设银行中国建设银行股份有限公司中国建设银行chinaconstructionbankcorporation建设银行建行ccbzhongguojiansheyinhangzgjsyhzhongguojiansheyinhanggufenyouxiangongsizgjsyhgfyxgszhongguojiansheyinhangzgjsyhchinaconstructionbankcorporationccbcjiansheyinhangjsyhjianxingjxccbc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "交通银行",
+        "BANK OF COMMUNICATIONS CO., LTD.",
+        "交行",
+        "bocom",
+        "bankcomm"
+      ],
+      "group": "national",
+      "icon": "brand-bankcomm",
+      "id": "nfra-B0005H131000001",
+      "institution": "交通银行股份有限公司",
+      "isCredit": false,
+      "name": "交通银行",
+      "region": "",
+      "regulatoryType": "国有大型商业银行",
+      "searchKey": "交通银行交通银行股份有限公司交通银行bankofcommunicationsco.,ltd.交行bocombankcommjiaotongyinhangjtyhjiaotongyinhanggufenyouxiangongsijtyhgfyxgsjiaotongyinhangjtyhbankofcommunicationsco.,ltd.boccljiaoxingjxbocombbankcommb",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "中国邮政储蓄银行",
+        "POSTAL SAVINGS BANK OF CHINA Co., Ltd.",
+        "邮储银行",
+        "邮政储蓄",
+        "邮储",
+        "psbc"
+      ],
+      "group": "national",
+      "icon": "brand-psbc",
+      "id": "nfra-B0018H111000001",
+      "institution": "中国邮政储蓄银行股份有限公司",
+      "isCredit": false,
+      "name": "中国邮政储蓄银行",
+      "region": "",
+      "regulatoryType": "国有大型商业银行",
+      "searchKey": "中国邮政储蓄银行中国邮政储蓄银行股份有限公司中国邮政储蓄银行postalsavingsbankofchinaco.,ltd.邮储银行邮政储蓄邮储psbczhongguoyouzhengchuxuyinhangzgyzcxyhzhongguoyouzhengchuxuyinhanggufenyouxiangongsizgyzcxyhgfyxgszhongguoyouzhengchuxuyinhangzgyzcxyhpostalsavingsbankofchinaco.,ltd.psbocclyouchuyinhangycyhyouzhengchuxuyzcxyouchuycpsbcp",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "中信银行",
+        "CHINA CITIC BANK CORPORATION LIMITED",
+        "中信",
+        "citic"
+      ],
+      "group": "jointStock",
+      "icon": "brand-citicbank",
+      "id": "nfra-B0006H111000001",
+      "institution": "中信银行股份有限公司",
+      "isCredit": false,
+      "name": "中信银行",
+      "region": "",
+      "regulatoryType": "股份制商业银行",
+      "searchKey": "中信银行中信银行股份有限公司中信银行chinaciticbankcorporationlimited中信citiczhongxinyinhangzxyhzhongxinyinhanggufenyouxiangongsizxyhgfyxgszhongxinyinhangzxyhchinaciticbankcorporationlimitedccbclzhongxinzxciticc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "中国光大银行",
+        "China Everbright Bank Co., Ltd.",
+        "光大银行",
+        "光大",
+        "ceb",
+        "cebbank"
+      ],
+      "group": "jointStock",
+      "icon": "brand-cebbank",
+      "id": "nfra-B0007H111000001",
+      "institution": "中国光大银行股份有限公司",
+      "isCredit": false,
+      "name": "中国光大银行",
+      "region": "",
+      "regulatoryType": "股份制商业银行",
+      "searchKey": "中国光大银行中国光大银行股份有限公司中国光大银行chinaeverbrightbankco.,ltd.光大银行光大cebcebbankzhongguoguangdayinhangzggdyhzhongguoguangdayinhanggufenyouxiangongsizggdyhgfyxgszhongguoguangdayinhangzggdyhchinaeverbrightbankco.,ltd.cebclguangdayinhanggdyhguangdagdcebccebbankc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "招商银行",
+        "CHINA MERCHANTS BANK CO., LTD.",
+        "招商",
+        "cmb",
+        "cmbchina"
+      ],
+      "group": "jointStock",
+      "icon": "brand-cmbchina",
+      "id": "nfra-B0011H144030001",
+      "institution": "招商银行股份有限公司",
+      "isCredit": false,
+      "name": "招商银行",
+      "region": "",
+      "regulatoryType": "股份制商业银行",
+      "searchKey": "招商银行招商银行股份有限公司招商银行chinamerchantsbankco.,ltd.招商cmbcmbchinazhaoshangyinhangzsyhzhaoshangyinhanggufenyouxiangongsizsyhgfyxgszhaoshangyinhangzsyhchinamerchantsbankco.,ltd.cmbclzhaoshangzscmbccmbchinac",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "上海浦东发展银行",
+        "Shanghai PuDong Development Bank CO., LTD.",
+        "浦发",
+        "spdb"
+      ],
+      "group": "jointStock",
+      "icon": "brand-spdb",
+      "id": "nfra-B0015H131000001",
+      "institution": "上海浦东发展银行股份有限公司",
+      "isCredit": false,
+      "name": "浦发银行",
+      "region": "",
+      "regulatoryType": "股份制商业银行",
+      "searchKey": "浦发银行上海浦东发展银行股份有限公司上海浦东发展银行shanghaipudongdevelopmentbankco.,ltd.浦发spdbpufayinhangpfyhshanghaipudongfazhanyinhanggufenyouxiangongsishpdfzyhgfyxgsshanghaipudongfazhanyinhangshpdfzyhshanghaipudongdevelopmentbankco.,ltd.spdbclpufapfspdbs",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "中国民生银行",
+        "CHINA MINSHENG BANKING CORPORATION LIMITED",
+        "民生银行",
+        "民生",
+        "cmbc"
+      ],
+      "group": "jointStock",
+      "icon": "brand-cmbc",
+      "id": "nfra-B0009H111000001",
+      "institution": "中国民生银行股份有限公司",
+      "isCredit": false,
+      "name": "中国民生银行",
+      "region": "",
+      "regulatoryType": "股份制商业银行",
+      "searchKey": "中国民生银行中国民生银行股份有限公司中国民生银行chinaminshengbankingcorporationlimited民生银行民生cmbczhongguominshengyinhangzgmsyhzhongguominshengyinhanggufenyouxiangongsizgmsyhgfyxgszhongguominshengyinhangzgmsyhchinaminshengbankingcorporationlimitedcmbclminshengyinhangmsyhminshengmscmbcc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "华夏银行",
+        "HUA XIA BANK CO.,Limited"
+      ],
+      "group": "jointStock",
+      "icon": "brand-hxb",
+      "id": "nfra-B0008H111000001",
+      "institution": "华夏银行股份有限公司",
+      "isCredit": false,
+      "name": "华夏银行",
+      "region": "",
+      "regulatoryType": "股份制商业银行",
+      "searchKey": "华夏银行华夏银行股份有限公司华夏银行huaxiabankco.,limitedhuaxiayinhanghxyhhuaxiayinhanggufenyouxiangongsihxyhgfyxgshuaxiayinhanghxyhhuaxiabankco.,limitedhxbc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "平安银行",
+        "Ping An Bank Co.,Ltd.",
+        "平安",
+        "pingan"
+      ],
+      "group": "jointStock",
+      "icon": "brand-pingan",
+      "id": "nfra-B0014H144030001",
+      "institution": "平安银行股份有限公司",
+      "isCredit": false,
+      "name": "平安银行",
+      "region": "",
+      "regulatoryType": "股份制商业银行",
+      "searchKey": "平安银行平安银行股份有限公司平安银行pinganbankco.,ltd.平安pinganpinganyinhangpayhpinganyinhanggufenyouxiangongsipayhgfyxgspinganyinhangpayhpinganbankco.,ltd.pabcpinganpapinganp",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "兴业银行",
+        "Industrial Bank Co., Ltd.",
+        "兴业",
+        "cib"
+      ],
+      "group": "jointStock",
+      "icon": "brand-cib",
+      "id": "nfra-B0013H135010001",
+      "institution": "兴业银行股份有限公司",
+      "isCredit": false,
+      "name": "兴业银行",
+      "region": "",
+      "regulatoryType": "股份制商业银行",
+      "searchKey": "兴业银行兴业银行股份有限公司兴业银行industrialbankco.,ltd.兴业cibxingyeyinhangxyyhxingyeyinhanggufenyouxiangongsixyyhgfyxgsxingyeyinhangxyyhindustrialbankco.,ltd.ibclxingyexycibc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "广发银行",
+        "China Guangfa Bank Co.,Ltd.",
+        "广东发展银行",
+        "广发",
+        "cgb",
+        "cgbchina"
+      ],
+      "group": "jointStock",
+      "icon": "brand-cgbchina",
+      "id": "nfra-B0012H144010001",
+      "institution": "广发银行股份有限公司",
+      "isCredit": false,
+      "name": "广发银行",
+      "region": "",
+      "regulatoryType": "股份制商业银行",
+      "searchKey": "广发银行广发银行股份有限公司广发银行chinaguangfabankco.,ltd.广东发展银行广发cgbcgbchinaguangfayinhanggfyhguangfayinhanggufenyouxiangongsigfyhgfyxgsguangfayinhanggfyhchinaguangfabankco.,ltd.cgbcguangdongfazhanyinhanggdfzyhguangfagfcgbccgbchinac",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "渤海银行",
+        "CHINA BOHAI BANK CO.,LTD."
+      ],
+      "group": "jointStock",
+      "icon": "brand-cbhb",
+      "id": "nfra-B0017H112000001",
+      "institution": "渤海银行股份有限公司",
+      "isCredit": false,
+      "name": "渤海银行",
+      "region": "",
+      "regulatoryType": "股份制商业银行",
+      "searchKey": "渤海银行渤海银行股份有限公司渤海银行chinabohaibankco.,ltd.bohaiyinhangbhyhbohaiyinhanggufenyouxiangongsibhyhgfyxgsbohaiyinhangbhyhchinabohaibankco.,ltd.cbbc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "浙商银行",
+        "CHINA ZHESHANG BANK CO.,LTD."
+      ],
+      "group": "jointStock",
+      "icon": "brand-czbank",
+      "id": "nfra-B0010H133010001",
+      "institution": "浙商银行股份有限公司",
+      "isCredit": false,
+      "name": "浙商银行",
+      "region": "",
+      "regulatoryType": "股份制商业银行",
+      "searchKey": "浙商银行浙商银行股份有限公司浙商银行chinazheshangbankco.,ltd.zheshangyinhangzsyhzheshangyinhanggufenyouxiangongsizsyhgfyxgszheshangyinhangzsyhchinazheshangbankco.,ltd.czbc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "恒丰银行",
+        "EVERGROWING BANK CO., Limited"
+      ],
+      "group": "jointStock",
+      "icon": "brand-hfbank",
+      "id": "nfra-B0016H137010001",
+      "institution": "恒丰银行股份有限公司",
+      "isCredit": false,
+      "name": "恒丰银行",
+      "region": "",
+      "regulatoryType": "股份制商业银行",
+      "searchKey": "恒丰银行恒丰银行股份有限公司恒丰银行evergrowingbankco.,limitedhengfengyinhanghfyhhengfengyinhanggufenyouxiangongsihfyhgfyxgshengfengyinhanghfyhevergrowingbankco.,limitedebcl",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "北京银行",
+        "Bank of Beijing Co., Ltd."
+      ],
+      "group": "city",
+      "icon": "brand-bankofbeijing",
+      "id": "nfra-B0107H211000001",
+      "institution": "北京银行股份有限公司",
+      "isCredit": false,
+      "name": "北京银行",
+      "region": "北京",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "北京银行北京银行股份有限公司北京银行bankofbeijingco.,ltd.北京beijingyinhangbjyhbeijingyinhanggufenyouxiangongsibjyhgfyxgsbeijingyinhangbjyhbankofbeijingco.,ltd.bobcl",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "天津银行",
+        "BANK OF TIANJIN CO.,LTD."
+      ],
+      "group": "city",
+      "icon": "brand-nfra-b0108h212000001",
+      "id": "nfra-B0108H212000001",
+      "institution": "天津银行股份有限公司",
+      "isCredit": false,
+      "name": "天津银行",
+      "region": "天津",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "天津银行天津银行股份有限公司天津银行bankoftianjinco.,ltd.天津tianjinyinhangtjyhtianjinyinhanggufenyouxiangongsitjyhgfyxgstianjinyinhangtjyhbankoftianjinco.,ltd.botc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "河北银行",
+        "BANK OF HEBEI CO.,LTD."
+      ],
+      "group": "city",
+      "icon": "brand-hebbank",
+      "id": "nfra-B0282H213010001",
+      "institution": "河北银行股份有限公司",
+      "isCredit": false,
+      "name": "河北银行",
+      "region": "河北",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "河北银行河北银行股份有限公司河北银行bankofhebeico.,ltd.河北hebeiyinhanghbyhhebeiyinhanggufenyouxiangongsihbyhgfyxgshebeiyinhanghbyhbankofhebeico.,ltd.bohc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "保定银行",
+        "BANK OF BAODING CO.,LTD."
+      ],
+      "group": "city",
+      "icon": "brand-bd-bank",
+      "id": "nfra-B0340H313060001",
+      "institution": "保定银行股份有限公司",
+      "isCredit": false,
+      "name": "保定银行",
+      "region": "河北",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "保定银行保定银行股份有限公司保定银行bankofbaodingco.,ltd.河北baodingyinhangbdyhbaodingyinhanggufenyouxiangongsibdyhgfyxgsbaodingyinhangbdyhbankofbaodingco.,ltd.bobc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "沧州银行",
+        "BANK OF CANGZHOU CO.,LTD."
+      ],
+      "group": "city",
+      "icon": "brand-bankcz",
+      "id": "nfra-B1018H313090001",
+      "institution": "沧州银行股份有限公司",
+      "isCredit": false,
+      "name": "沧州银行",
+      "region": "沧州金融监管分局",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "沧州银行沧州银行股份有限公司沧州银行bankofcangzhouco.,ltd.沧州金融监管分局cangzhouyinhangczyhcangzhouyinhanggufenyouxiangongsiczyhgfyxgscangzhouyinhangczyhbankofcangzhouco.,ltd.bocc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "承德银行",
+        "BANK OF CHENGDE CO.,LTD."
+      ],
+      "group": "city",
+      "icon": "brand-chengdebank",
+      "id": "nfra-B1021H313080001",
+      "institution": "承德银行股份有限公司",
+      "isCredit": false,
+      "name": "承德银行",
+      "region": "承德金融监管分局",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "承德银行承德银行股份有限公司承德银行bankofchengdeco.,ltd.承德金融监管分局chengdeyinhangcdyhchengdeyinhanggufenyouxiangongsicdyhgfyxgschengdeyinhangcdyhbankofchengdeco.,ltd.bocc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "邯郸银行",
+        "BANK OF HANDAN CO.,LTD."
+      ],
+      "group": "city",
+      "icon": "brand-hdcb",
+      "id": "nfra-B0331H313040001",
+      "institution": "邯郸银行股份有限公司",
+      "isCredit": false,
+      "name": "邯郸银行",
+      "region": "河北",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "邯郸银行邯郸银行股份有限公司邯郸银行bankofhandanco.,ltd.河北handanyinhanghdyhhandanyinhanggufenyouxiangongsihdyhgfyxgshandanyinhanghdyhbankofhandanco.,ltd.bohc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "衡水银行",
+        "BANK OF HENGSHUI CO.,LTD."
+      ],
+      "group": "city",
+      "icon": "brand-nfra-b1016h313110001",
+      "id": "nfra-B1016H313110001",
+      "institution": "衡水银行股份有限公司",
+      "isCredit": false,
+      "name": "衡水银行",
+      "region": "河北",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "衡水银行衡水银行股份有限公司衡水银行bankofhengshuico.,ltd.河北hengshuiyinhanghsyhhengshuiyinhanggufenyouxiangongsihsyhgfyxgshengshuiyinhanghsyhbankofhengshuico.,ltd.bohc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "廊坊银行",
+        "BANK OF LANGFANG CO.,LTD."
+      ],
+      "group": "city",
+      "icon": "brand-lccb",
+      "id": "nfra-B0277H313100001",
+      "institution": "廊坊银行股份有限公司",
+      "isCredit": false,
+      "name": "廊坊银行",
+      "region": "河北",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "廊坊银行廊坊银行股份有限公司廊坊银行bankoflangfangco.,ltd.河北langfangyinhanglfyhlangfangyinhanggufenyouxiangongsilfyhgfyxgslangfangyinhanglfyhbankoflangfangco.,ltd.bolc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "秦皇岛银行",
+        "BANK OF QINHUANGDAO CO.,LTD."
+      ],
+      "group": "city",
+      "icon": "brand-qhdbank",
+      "id": "nfra-B0111H313030002",
+      "institution": "秦皇岛银行股份有限公司",
+      "isCredit": false,
+      "name": "秦皇岛银行",
+      "region": "秦皇岛金融监管分局",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "秦皇岛银行秦皇岛银行股份有限公司秦皇岛银行bankofqinhuangdaoco.,ltd.秦皇岛金融监管分局qinhuangdaoyinhangqhdyhqinhuangdaoyinhanggufenyouxiangongsiqhdyhgfyxgsqinhuangdaoyinhangqhdyhbankofqinhuangdaoco.,ltd.boqc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "唐山银行",
+        "BANK OF TANGSHAN CO.,LTD."
+      ],
+      "group": "city",
+      "icon": "brand-ts-bank",
+      "id": "nfra-B1013H313020001",
+      "institution": "唐山银行股份有限公司",
+      "isCredit": false,
+      "name": "唐山银行",
+      "region": "唐山金融监管分局",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "唐山银行唐山银行股份有限公司唐山银行bankoftangshanco.,ltd.唐山金融监管分局tangshanyinhangtsyhtangshanyinhanggufenyouxiangongsitsyhgfyxgstangshanyinhangtsyhbankoftangshanco.,ltd.botc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "邢台银行",
+        "BANK OF XINGTAI CO.,LTD."
+      ],
+      "group": "city",
+      "icon": "brand-nfra-b0301h313050001",
+      "id": "nfra-B0301H313050001",
+      "institution": "邢台银行股份有限公司",
+      "isCredit": false,
+      "name": "邢台银行",
+      "region": "邢台金融监管分局",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "邢台银行邢台银行股份有限公司邢台银行bankofxingtaico.,ltd.邢台金融监管分局xingtaiyinhangxtyhxingtaiyinhanggufenyouxiangongsixtyhgfyxgsxingtaiyinhangxtyhbankofxingtaico.,ltd.boxc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "张家口银行",
+        "BANK OF ZHANGJIAKOU CO.,LTD."
+      ],
+      "group": "city",
+      "icon": "brand-nfra-b0772h313070001",
+      "id": "nfra-B0772H313070001",
+      "institution": "张家口银行股份有限公司",
+      "isCredit": false,
+      "name": "张家口银行",
+      "region": "河北",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "张家口银行张家口银行股份有限公司张家口银行bankofzhangjiakouco.,ltd.河北zhangjiakouyinhangzjkyhzhangjiakouyinhanggufenyouxiangongsizjkyhgfyxgszhangjiakouyinhangzjkyhbankofzhangjiakouco.,ltd.bozc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "晋商银行",
+        "JINSHANG BANK CO., LTD."
+      ],
+      "group": "city",
+      "icon": "brand-jshbank",
+      "id": "nfra-B0116H214010001",
+      "institution": "晋商银行股份有限公司",
+      "isCredit": false,
+      "name": "晋商银行",
+      "region": "山西",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "晋商银行晋商银行股份有限公司晋商银行jinshangbankco.,ltd.山西jinshangyinhangjsyhjinshangyinhanggufenyouxiangongsijsyhgfyxgsjinshangyinhangjsyhjinshangbankco.,ltd.jbcl",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "内蒙古银行",
+        "Bank Of Inner Mongolia Co.,Ltd."
+      ],
+      "group": "city",
+      "icon": "brand-nfra-b1033h215010001",
+      "id": "nfra-B1033H215010001",
+      "institution": "内蒙古银行股份有限公司",
+      "isCredit": false,
+      "name": "内蒙古银行",
+      "region": "内蒙古",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "内蒙古银行内蒙古银行股份有限公司内蒙古银行bankofinnermongoliaco.,ltd.内蒙古neimengguyinhangnmgyhneimengguyinhanggufenyouxiangongsinmgyhgfyxgsneimengguyinhangnmgyhbankofinnermongoliaco.,ltd.boimc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "鄂尔多斯银行",
+        "Ordos Bank Co.,Ltd."
+      ],
+      "group": "city",
+      "icon": "brand-ordosbank",
+      "id": "nfra-B1067H315060001",
+      "institution": "鄂尔多斯银行股份有限公司",
+      "isCredit": false,
+      "name": "鄂尔多斯银行",
+      "region": "内蒙古",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "鄂尔多斯银行鄂尔多斯银行股份有限公司鄂尔多斯银行ordosbankco.,ltd.内蒙古eerduosiyinhangeedsyheerduosiyinhanggufenyouxiangongsieedsyhgfyxgseerduosiyinhangeedsyhordosbankco.,ltd.obc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "乌海银行",
+        "BANK OF WUHAI CO.,LTD"
+      ],
+      "group": "city",
+      "icon": "brand-wuhaicb",
+      "id": "nfra-B1068H315030001",
+      "institution": "乌海银行股份有限公司",
+      "isCredit": false,
+      "name": "乌海银行",
+      "region": "内蒙古",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "乌海银行乌海银行股份有限公司乌海银行bankofwuhaico.,ltd内蒙古wuhaiyinhangwhyhwuhaiyinhanggufenyouxiangongsiwhyhgfyxgswuhaiyinhangwhyhbankofwuhaico.,ltdbowc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "盛京银行",
+        "SHENGJING BANK CO.,LTD."
+      ],
+      "group": "city",
+      "icon": "brand-shengjingbank",
+      "id": "nfra-B0264H221010001",
+      "institution": "盛京银行股份有限公司",
+      "isCredit": false,
+      "name": "盛京银行",
+      "region": "辽宁",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "盛京银行盛京银行股份有限公司盛京银行shengjingbankco.,ltd.辽宁shengjingyinhangsjyhshengjingyinhanggufenyouxiangongsisjyhgfyxgsshengjingyinhangsjyhshengjingbankco.,ltd.sbc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "锦州银行",
+        "BANK OF JINZHOU CO.,LTD"
+      ],
+      "group": "city",
+      "icon": "brand-jinzhoubank",
+      "id": "nfra-B0127H321070001",
+      "institution": "锦州银行股份有限公司",
+      "isCredit": false,
+      "name": "锦州银行",
+      "region": "辽宁",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "锦州银行锦州银行股份有限公司锦州银行bankofjinzhouco.,ltd辽宁jinzhouyinhangjzyhjinzhouyinhanggufenyouxiangongsijzyhgfyxgsjinzhouyinhangjzyhbankofjinzhouco.,ltdbojc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "鞍山银行",
+        "BANK OF ANSHAN CO.,LTD"
+      ],
+      "group": "city",
+      "icon": "brand-bankofas",
+      "id": "nfra-B0124H321030001",
+      "institution": "鞍山银行股份有限公司",
+      "isCredit": false,
+      "name": "鞍山银行",
+      "region": "辽宁",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "鞍山银行鞍山银行股份有限公司鞍山银行bankofanshanco.,ltd辽宁anshanyinhangasyhanshanyinhanggufenyouxiangongsiasyhgfyxgsanshanyinhangasyhbankofanshanco.,ltdboac",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "本溪银行",
+        "BANK OF BENXI CO.,LTD."
+      ],
+      "group": "city",
+      "icon": "brand-nfra-b1071h321050001",
+      "id": "nfra-B1071H321050001",
+      "institution": "本溪银行股份有限公司",
+      "isCredit": false,
+      "name": "本溪银行",
+      "region": "辽宁",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "本溪银行本溪银行股份有限公司本溪银行bankofbenxico.,ltd.辽宁benxiyinhangbxyhbenxiyinhanggufenyouxiangongsibxyhgfyxgsbenxiyinhangbxyhbankofbenxico.,ltd.bobc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "朝阳银行"
+      ],
+      "group": "city",
+      "icon": "brand-cycb",
+      "id": "nfra-B0330H321130001",
+      "institution": "朝阳银行股份有限公司",
+      "isCredit": false,
+      "name": "朝阳银行",
+      "region": "辽宁",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "朝阳银行朝阳银行股份有限公司朝阳银行辽宁chaoyangyinhangcyyhchaoyangyinhanggufenyouxiangongsicyyhgfyxgschaoyangyinhangcyyh",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "丹东银行",
+        "BANK OF DANDONG CO.,LTD."
+      ],
+      "group": "city",
+      "icon": "brand-dandongbank",
+      "id": "nfra-B0126H321060001",
+      "institution": "丹东银行股份有限公司",
+      "isCredit": false,
+      "name": "丹东银行",
+      "region": "辽宁",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "丹东银行丹东银行股份有限公司丹东银行bankofdandongco.,ltd.辽宁dandongyinhangddyhdandongyinhanggufenyouxiangongsiddyhgfyxgsdandongyinhangddyhbankofdandongco.,ltd.bodc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "抚顺银行",
+        "BANK OF FUSHUN CO.,LTD."
+      ],
+      "group": "city",
+      "icon": "brand-bankoffs",
+      "id": "nfra-B0125H321040001",
+      "institution": "抚顺银行股份有限公司",
+      "isCredit": false,
+      "name": "抚顺银行",
+      "region": "辽宁",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "抚顺银行抚顺银行股份有限公司抚顺银行bankoffushunco.,ltd.辽宁fushunyinhangfsyhfushunyinhanggufenyouxiangongsifsyhgfyxgsfushunyinhangfsyhbankoffushunco.,ltd.bofc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "阜新银行",
+        "BANK OF FUXIN CO.,LTD."
+      ],
+      "group": "city",
+      "icon": "brand-fuxinbank",
+      "id": "nfra-B0129H321090001",
+      "institution": "阜新银行股份有限公司",
+      "isCredit": false,
+      "name": "阜新银行",
+      "region": "辽宁",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "阜新银行阜新银行股份有限公司阜新银行bankoffuxinco.,ltd.辽宁fuxinyinhangfxyhfuxinyinhanggufenyouxiangongsifxyhgfyxgsfuxinyinhangfxyhbankoffuxinco.,ltd.bofc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "葫芦岛银行",
+        "BANK OF HULUDAO CO.,LTD"
+      ],
+      "group": "city",
+      "icon": "brand-bankofhld",
+      "id": "nfra-B0132H321140001",
+      "institution": "葫芦岛银行股份有限公司",
+      "isCredit": false,
+      "name": "葫芦岛银行",
+      "region": "辽宁",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "葫芦岛银行葫芦岛银行股份有限公司葫芦岛银行bankofhuludaoco.,ltd辽宁huludaoyinhanghldyhhuludaoyinhanggufenyouxiangongsihldyhgfyxgshuludaoyinhanghldyhbankofhuludaoco.,ltdbohc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "盘锦银行",
+        "BANK OF PANJIN CO.,LTD."
+      ],
+      "group": "city",
+      "icon": "brand-bankofpj",
+      "id": "nfra-B0131H321110001",
+      "institution": "盘锦银行股份有限公司",
+      "isCredit": false,
+      "name": "盘锦银行",
+      "region": "辽宁",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "盘锦银行盘锦银行股份有限公司盘锦银行bankofpanjinco.,ltd.辽宁panjinyinhangpjyhpanjinyinhanggufenyouxiangongsipjyhgfyxgspanjinyinhangpjyhbankofpanjinco.,ltd.bopc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "铁岭银行",
+        "BANK OF TIELING CO.,LTD."
+      ],
+      "group": "city",
+      "icon": "brand-bankoftieling",
+      "id": "nfra-B0267H321120001",
+      "institution": "铁岭银行股份有限公司",
+      "isCredit": false,
+      "name": "铁岭银行",
+      "region": "辽宁",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "铁岭银行铁岭银行股份有限公司铁岭银行bankoftielingco.,ltd.辽宁tielingyinhangtlyhtielingyinhanggufenyouxiangongsitlyhgfyxgstielingyinhangtlyhbankoftielingco.,ltd.botc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "营口银行"
+      ],
+      "group": "city",
+      "icon": "brand-bankofyk",
+      "id": "nfra-B0128H321080001",
+      "institution": "营口银行股份有限公司",
+      "isCredit": false,
+      "name": "营口银行",
+      "region": "辽宁",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "营口银行营口银行股份有限公司营口银行辽宁yingkouyinhangykyhyingkouyinhanggufenyouxiangongsiykyhgfyxgsyingkouyinhangykyh",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "吉林银行",
+        "BANK OF JILIN CO.,LTD."
+      ],
+      "group": "city",
+      "icon": "brand-jlbank",
+      "id": "nfra-B0302H222010001",
+      "institution": "吉林银行股份有限公司",
+      "isCredit": false,
+      "name": "吉林银行",
+      "region": "吉林",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "吉林银行吉林银行股份有限公司吉林银行bankofjilinco.,ltd.吉林jilinyinhangjlyhjilinyinhanggufenyouxiangongsijlyhgfyxgsjilinyinhangjlyhbankofjilinco.,ltd.bojc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "哈尔滨银行"
+      ],
+      "group": "city",
+      "icon": "brand-hrbb",
+      "id": "nfra-B0306H223010001",
+      "institution": "哈尔滨银行股份有限公司",
+      "isCredit": false,
+      "name": "哈尔滨银行",
+      "region": "黑龙江",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "哈尔滨银行哈尔滨银行股份有限公司哈尔滨银行黑龙江haerbinyinhanghebyhhaerbinyinhanggufenyouxiangongsihebyhgfyxgshaerbinyinhanghebyh",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "龙江银行"
+      ],
+      "group": "city",
+      "icon": "brand-lj-bank",
+      "id": "nfra-B1056H223010001",
+      "institution": "龙江银行股份有限公司",
+      "isCredit": false,
+      "name": "龙江银行",
+      "region": "黑龙江",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "龙江银行龙江银行股份有限公司龙江银行黑龙江longjiangyinhangljyhlongjiangyinhanggufenyouxiangongsiljyhgfyxgslongjiangyinhangljyh",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "上海银行"
+      ],
+      "group": "city",
+      "icon": "brand-bosc",
+      "id": "nfra-B0139H231000001",
+      "institution": "上海银行股份有限公司",
+      "isCredit": false,
+      "name": "上海银行",
+      "region": "上海",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "上海银行上海银行股份有限公司上海银行上海shanghaiyinhangshyhshanghaiyinhanggufenyouxiangongsishyhgfyxgsshanghaiyinhangshyh",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "江苏银行",
+        "BANK OF JIANGSU CO.,LTD"
+      ],
+      "group": "city",
+      "icon": "brand-jsbchina",
+      "id": "nfra-B0243H232010001",
+      "institution": "江苏银行股份有限公司",
+      "isCredit": false,
+      "name": "江苏银行",
+      "region": "江苏",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "江苏银行江苏银行股份有限公司江苏银行bankofjiangsuco.,ltd江苏jiangsuyinhangjsyhjiangsuyinhanggufenyouxiangongsijsyhgfyxgsjiangsuyinhangjsyhbankofjiangsuco.,ltdbojc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "南京银行",
+        "BANK OF NANJING CO.,LTD.",
+        "南京",
+        "njcb"
+      ],
+      "group": "city",
+      "icon": "brand-njcb",
+      "id": "nfra-B0140H232010001",
+      "institution": "南京银行股份有限公司",
+      "isCredit": false,
+      "name": "南京银行",
+      "region": "江苏",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "南京银行南京银行股份有限公司南京银行bankofnanjingco.,ltd.南京njcb江苏nanjingyinhangnjyhnanjingyinhanggufenyouxiangongsinjyhgfyxgsnanjingyinhangnjyhbankofnanjingco.,ltd.boncnanjingnjnjcbn",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "苏州银行",
+        "BANK OF SUZHOU CO.,LTD"
+      ],
+      "group": "city",
+      "icon": "brand-suzhoubank",
+      "id": "nfra-B0236H332050001",
+      "institution": "苏州银行股份有限公司",
+      "isCredit": false,
+      "name": "苏州银行",
+      "region": "苏州金融监管分局",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "苏州银行苏州银行股份有限公司苏州银行bankofsuzhouco.,ltd苏州金融监管分局suzhouyinhangszyhsuzhouyinhanggufenyouxiangongsiszyhgfyxgssuzhouyinhangszyhbankofsuzhouco.,ltdbosc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "江苏长江商业银行",
+        "JIANGSU CHANGJIANG COMMERCIAL BANK CO.,LTD."
+      ],
+      "group": "city",
+      "icon": "brand-cjccb",
+      "id": "nfra-B0347H332120001",
+      "institution": "江苏长江商业银行股份有限公司",
+      "isCredit": false,
+      "name": "江苏长江商业银行",
+      "region": "泰州金融监管分局",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "江苏长江商业银行江苏长江商业银行股份有限公司江苏长江商业银行jiangsuchangjiangcommercialbankco.,ltd.泰州金融监管分局jiangsuchangjiangshangyeyinhangjscjsyyhjiangsuchangjiangshangyeyinhanggufenyouxiangongsijscjsyyhgfyxgsjiangsuchangjiangshangyeyinhangjscjsyyhjiangsuchangjiangcommercialbankco.,ltd.jccbc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "杭州银行",
+        "BANK OF HANGZHOU CO.,LTD."
+      ],
+      "group": "city",
+      "icon": "brand-hzbank",
+      "id": "nfra-B0151H233010001",
+      "institution": "杭州银行股份有限公司",
+      "isCredit": false,
+      "name": "杭州银行",
+      "region": "浙江",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "杭州银行杭州银行股份有限公司杭州银行bankofhangzhouco.,ltd.浙江hangzhouyinhanghzyhhangzhouyinhanggufenyouxiangongsihzyhgfyxgshangzhouyinhanghzyhbankofhangzhouco.,ltd.bohc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "湖州银行",
+        "BANK OF HUZHOU CO.,LTD."
+      ],
+      "group": "city",
+      "icon": "brand-hzccb",
+      "id": "nfra-B0155H233050001",
+      "institution": "湖州银行股份有限公司",
+      "isCredit": false,
+      "name": "湖州银行",
+      "region": "湖州金融监管分局",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "湖州银行湖州银行股份有限公司湖州银行bankofhuzhouco.,ltd.湖州金融监管分局huzhouyinhanghzyhhuzhouyinhanggufenyouxiangongsihzyhgfyxgshuzhouyinhanghzyhbankofhuzhouco.,ltd.bohc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "嘉兴银行",
+        "BANK OF JIAXING CO.,LTD"
+      ],
+      "group": "city",
+      "icon": "brand-nfra-b0154h233040001",
+      "id": "nfra-B0154H233040001",
+      "institution": "嘉兴银行股份有限公司",
+      "isCredit": false,
+      "name": "嘉兴银行",
+      "region": "嘉兴金融监管分局",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "嘉兴银行嘉兴银行股份有限公司嘉兴银行bankofjiaxingco.,ltd嘉兴金融监管分局jiaxingyinhangjxyhjiaxingyinhanggufenyouxiangongsijxyhgfyxgsjiaxingyinhangjxyhbankofjiaxingco.,ltdbojc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "金华银行",
+        "BANK OF JINHUA CO.,LTD"
+      ],
+      "group": "city",
+      "icon": "brand-jhccb",
+      "id": "nfra-B0157H233070001",
+      "institution": "金华银行股份有限公司",
+      "isCredit": false,
+      "name": "金华银行",
+      "region": "金华金融监管分局",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "金华银行金华银行股份有限公司金华银行bankofjinhuaco.,ltd金华金融监管分局jinhuayinhangjhyhjinhuayinhanggufenyouxiangongsijhyhgfyxgsjinhuayinhangjhyhbankofjinhuaco.,ltdbojc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "绍兴银行",
+        "BANK OF SHAOXING CO.,LTD"
+      ],
+      "group": "city",
+      "icon": "brand-sxccb",
+      "id": "nfra-B0156H233060001",
+      "institution": "绍兴银行股份有限公司",
+      "isCredit": false,
+      "name": "绍兴银行",
+      "region": "绍兴金融监管分局",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "绍兴银行绍兴银行股份有限公司绍兴银行bankofshaoxingco.,ltd绍兴金融监管分局shaoxingyinhangsxyhshaoxingyinhanggufenyouxiangongsisxyhgfyxgsshaoxingyinhangsxyhbankofshaoxingco.,ltdbosc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "台州银行",
+        "BANK OF TAIZHOU CO.,LTD."
+      ],
+      "group": "city",
+      "icon": "brand-nfra-b0159h233100001",
+      "id": "nfra-B0159H233100001",
+      "institution": "台州银行股份有限公司",
+      "isCredit": false,
+      "name": "台州银行",
+      "region": "台州金融监管分局",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "台州银行台州银行股份有限公司台州银行bankoftaizhouco.,ltd.台州金融监管分局taizhouyinhangtzyhtaizhouyinhanggufenyouxiangongsitzyhgfyxgstaizhouyinhangtzyhbankoftaizhouco.,ltd.botc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "温州银行",
+        "BANK OF WENZHOU CO.LTD."
+      ],
+      "group": "city",
+      "icon": "brand-wzcb",
+      "id": "nfra-B0153H233030001",
+      "institution": "温州银行股份有限公司",
+      "isCredit": false,
+      "name": "温州银行",
+      "region": "温州金融监管分局",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "温州银行温州银行股份有限公司温州银行bankofwenzhouco.ltd.温州金融监管分局wenzhouyinhangwzyhwenzhouyinhanggufenyouxiangongsiwzyhgfyxgswenzhouyinhangwzyhbankofwenzhouco.ltd.bowc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "浙江稠州商业银行",
+        "ZHEJIANG CHOUZHOU COMMERCIAL BANK CO.,LTD."
+      ],
+      "group": "city",
+      "icon": "brand-czcb",
+      "id": "nfra-B0158H233070001",
+      "institution": "浙江稠州商业银行股份有限公司",
+      "isCredit": false,
+      "name": "浙江稠州商业银行",
+      "region": "浙江",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "浙江稠州商业银行浙江稠州商业银行股份有限公司浙江稠州商业银行zhejiangchouzhoucommercialbankco.,ltd.浙江zhejiangchouzhoushangyeyinhangzjczsyyhzhejiangchouzhoushangyeyinhanggufenyouxiangongsizjczsyyhgfyxgszhejiangchouzhoushangyeyinhangzjczsyyhzhejiangchouzhoucommercialbankco.,ltd.zccbc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "浙江民泰商业银行",
+        "ZHEJIANG MINTAI COMMERCIAL BANK CO.,LTD"
+      ],
+      "group": "city",
+      "icon": "brand-nfra-b0161h233100001",
+      "id": "nfra-B0161H233100001",
+      "institution": "浙江民泰商业银行股份有限公司",
+      "isCredit": false,
+      "name": "浙江民泰商业银行",
+      "region": "浙江",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "浙江民泰商业银行浙江民泰商业银行股份有限公司浙江民泰商业银行zhejiangmintaicommercialbankco.,ltd浙江zhejiangmintaishangyeyinhangzjmtsyyhzhejiangmintaishangyeyinhanggufenyouxiangongsizjmtsyyhgfyxgszhejiangmintaishangyeyinhangzjmtsyyhzhejiangmintaicommercialbankco.,ltdzmcbc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "浙江泰隆商业银行",
+        "ZHEJIANG TAILONG COMMERCIAL BANK CO.,LTD."
+      ],
+      "group": "city",
+      "icon": "brand-nfra-b0160h233100001",
+      "id": "nfra-B0160H233100001",
+      "institution": "浙江泰隆商业银行股份有限公司",
+      "isCredit": false,
+      "name": "浙江泰隆商业银行",
+      "region": "台州金融监管分局",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "浙江泰隆商业银行浙江泰隆商业银行股份有限公司浙江泰隆商业银行zhejiangtailongcommercialbankco.,ltd.台州金融监管分局zhejiangtailongshangyeyinhangzjtlsyyhzhejiangtailongshangyeyinhanggufenyouxiangongsizjtlsyyhgfyxgszhejiangtailongshangyeyinhangzjtlsyyhzhejiangtailongcommercialbankco.,ltd.ztcbc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "徽商银行",
+        "Huishang Bank Corporation Limited"
+      ],
+      "group": "city",
+      "icon": "brand-hsbank",
+      "id": "nfra-B0162H234010001",
+      "institution": "徽商银行股份有限公司",
+      "isCredit": false,
+      "name": "徽商银行",
+      "region": "安徽",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "徽商银行徽商银行股份有限公司徽商银行huishangbankcorporationlimited安徽huishangyinhanghsyhhuishangyinhanggufenyouxiangongsihsyhgfyxgshuishangyinhanghsyhhuishangbankcorporationlimitedhbcl",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "福建海峡银行",
+        "FUJIAN HAIXIA BANK CO.,LTD"
+      ],
+      "group": "city",
+      "icon": "brand-fjhxbank",
+      "id": "nfra-B0163H235010001",
+      "institution": "福建海峡银行股份有限公司",
+      "isCredit": false,
+      "name": "福建海峡银行",
+      "region": "福建",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "福建海峡银行福建海峡银行股份有限公司福建海峡银行fujianhaixiabankco.,ltd福建fujianhaixiayinhangfjhxyhfujianhaixiayinhanggufenyouxiangongsifjhxyhgfyxgsfujianhaixiayinhangfjhxyhfujianhaixiabankco.,ltdfhbc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "泉州银行",
+        "Bank of Quanzhou CO.,LTD."
+      ],
+      "group": "city",
+      "icon": "brand-qzccbank",
+      "id": "nfra-B0271H335050001",
+      "institution": "泉州银行股份有限公司",
+      "isCredit": false,
+      "name": "泉州银行",
+      "region": "福建",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "泉州银行泉州银行股份有限公司泉州银行bankofquanzhouco.,ltd.福建quanzhouyinhangqzyhquanzhouyinhanggufenyouxiangongsiqzyhgfyxgsquanzhouyinhangqzyhbankofquanzhouco.,ltd.boqc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "江西银行",
+        "JIANGXI BANK CO.,LTD."
+      ],
+      "group": "city",
+      "icon": "brand-jx-bank",
+      "id": "nfra-B0792H236010001",
+      "institution": "江西银行股份有限公司",
+      "isCredit": false,
+      "name": "江西银行",
+      "region": "江西",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "江西银行江西银行股份有限公司江西银行jiangxibankco.,ltd.江西jiangxiyinhangjxyhjiangxiyinhanggufenyouxiangongsijxyhgfyxgsjiangxiyinhangjxyhjiangxibankco.,ltd.jbc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "赣州银行",
+        "BANK OF GANZHOU CO.,LTD."
+      ],
+      "group": "city",
+      "icon": "brand-gzccb",
+      "id": "nfra-B0353H336070001",
+      "institution": "赣州银行股份有限公司",
+      "isCredit": false,
+      "name": "赣州银行",
+      "region": "赣州金融监管分局",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "赣州银行赣州银行股份有限公司赣州银行bankofganzhouco.,ltd.赣州金融监管分局ganzhouyinhanggzyhganzhouyinhanggufenyouxiangongsigzyhgfyxgsganzhouyinhanggzyhbankofganzhouco.,ltd.bogc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "九江银行",
+        "BANK OF JIUJIANG CO.,LTD."
+      ],
+      "group": "city",
+      "icon": "brand-jjccb",
+      "id": "nfra-B0348H336040001",
+      "institution": "九江银行股份有限公司",
+      "isCredit": false,
+      "name": "九江银行",
+      "region": "江西",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "九江银行九江银行股份有限公司九江银行bankofjiujiangco.,ltd.江西jiujiangyinhangjjyhjiujiangyinhanggufenyouxiangongsijjyhgfyxgsjiujiangyinhangjjyhbankofjiujiangco.,ltd.bojc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "上饶银行",
+        "BANK OF SHANGRAO CO.,LTD"
+      ],
+      "group": "city",
+      "icon": "brand-srbank",
+      "id": "nfra-B1030H336110001",
+      "institution": "上饶银行股份有限公司",
+      "isCredit": false,
+      "name": "上饶银行",
+      "region": "上饶金融监管分局",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "上饶银行上饶银行股份有限公司上饶银行bankofshangraoco.,ltd上饶金融监管分局shangraoyinhangsryhshangraoyinhanggufenyouxiangongsisryhgfyxgsshangraoyinhangsryhbankofshangraoco.,ltdbosc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "齐鲁银行",
+        "QILU BANK CO.,LTD."
+      ],
+      "group": "city",
+      "icon": "brand-qlbchina",
+      "id": "nfra-B0169H237010001",
+      "institution": "齐鲁银行股份有限公司",
+      "isCredit": false,
+      "name": "齐鲁银行",
+      "region": "山东",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "齐鲁银行齐鲁银行股份有限公司齐鲁银行qilubankco.,ltd.山东qiluyinhangqlyhqiluyinhanggufenyouxiangongsiqlyhgfyxgsqiluyinhangqlyhqilubankco.,ltd.qbc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "德州银行",
+        "DEZHOU BANK CO.,LTD."
+      ],
+      "group": "city",
+      "icon": "brand-dzbchina",
+      "id": "nfra-B0180H337140001",
+      "institution": "德州银行股份有限公司",
+      "isCredit": false,
+      "name": "德州银行",
+      "region": "德州金融监管分局",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "德州银行德州银行股份有限公司德州银行dezhoubankco.,ltd.德州金融监管分局dezhouyinhangdzyhdezhouyinhanggufenyouxiangongsidzyhgfyxgsdezhouyinhangdzyhdezhoubankco.,ltd.dbc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "东营银行"
+      ],
+      "group": "city",
+      "icon": "brand-dyccb",
+      "id": "nfra-B0172H337050001",
+      "institution": "东营银行股份有限公司",
+      "isCredit": false,
+      "name": "东营银行",
+      "region": "山东",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "东营银行东营银行股份有限公司东营银行山东dongyingyinhangdyyhdongyingyinhanggufenyouxiangongsidyyhgfyxgsdongyingyinhangdyyh",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "济宁银行",
+        "BANK OF JINING CO.,LTD."
+      ],
+      "group": "city",
+      "icon": "brand-jn-bank",
+      "id": "nfra-B0175H337080001",
+      "institution": "济宁银行股份有限公司",
+      "isCredit": false,
+      "name": "济宁银行",
+      "region": "济宁金融监管分局",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "济宁银行济宁银行股份有限公司济宁银行bankofjiningco.,ltd.济宁金融监管分局jiningyinhangjnyhjiningyinhanggufenyouxiangongsijnyhgfyxgsjiningyinhangjnyhbankofjiningco.,ltd.bojc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "莱商银行",
+        "LAISHANG BANK CO.,LTD."
+      ],
+      "group": "city",
+      "icon": "brand-lsbankchina",
+      "id": "nfra-B0325H337120001",
+      "institution": "莱商银行股份有限公司",
+      "isCredit": false,
+      "name": "莱商银行",
+      "region": "山东",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "莱商银行莱商银行股份有限公司莱商银行laishangbankco.,ltd.山东laishangyinhanglsyhlaishangyinhanggufenyouxiangongsilsyhgfyxgslaishangyinhanglsyhlaishangbankco.,ltd.lbc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "临商银行",
+        "LINSHANG BANK CO.,LTD."
+      ],
+      "group": "city",
+      "icon": "brand-lsbchina",
+      "id": "nfra-B0179H337130001",
+      "institution": "临商银行股份有限公司",
+      "isCredit": false,
+      "name": "临商银行",
+      "region": "山东",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "临商银行临商银行股份有限公司临商银行linshangbankco.,ltd.山东linshangyinhanglsyhlinshangyinhanggufenyouxiangongsilsyhgfyxgslinshangyinhanglsyhlinshangbankco.,ltd.lbc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "齐商银行",
+        "QI SHANG BANK CO.,LTD."
+      ],
+      "group": "city",
+      "icon": "brand-qsbank",
+      "id": "nfra-B0171H337030001",
+      "institution": "齐商银行股份有限公司",
+      "isCredit": false,
+      "name": "齐商银行",
+      "region": "山东",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "齐商银行齐商银行股份有限公司齐商银行qishangbankco.,ltd.山东qishangyinhangqsyhqishangyinhanggufenyouxiangongsiqsyhgfyxgsqishangyinhangqsyhqishangbankco.,ltd.qsbc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "日照银行",
+        "BANK OF RIZHAO CO.,LTD."
+      ],
+      "group": "city",
+      "icon": "brand-bankofrizhao",
+      "id": "nfra-B0177H337110001",
+      "institution": "日照银行股份有限公司",
+      "isCredit": false,
+      "name": "日照银行",
+      "region": "山东",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "日照银行日照银行股份有限公司日照银行bankofrizhaoco.,ltd.山东rizhaoyinhangrzyhrizhaoyinhanggufenyouxiangongsirzyhgfyxgsrizhaoyinhangrzyhbankofrizhaoco.,ltd.borc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "泰安银行",
+        "BANK OF TAIAN CO.,LTD."
+      ],
+      "group": "city",
+      "icon": "brand-taccb",
+      "id": "nfra-B0297H337090001",
+      "institution": "泰安银行股份有限公司",
+      "isCredit": false,
+      "name": "泰安银行",
+      "region": "山东",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "泰安银行泰安银行股份有限公司泰安银行bankoftaianco.,ltd.山东taianyinhangtayhtaianyinhanggufenyouxiangongsitayhgfyxgstaianyinhangtayhbankoftaianco.,ltd.botc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "威海市商业银行"
+      ],
+      "group": "city",
+      "icon": "brand-nfra-b0176h337100001",
+      "id": "nfra-B0176H337100001",
+      "institution": "威海市商业银行股份有限公司",
+      "isCredit": false,
+      "name": "威海市商业银行",
+      "region": "威海金融监管分局",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "威海市商业银行威海市商业银行股份有限公司威海市商业银行威海金融监管分局weihaishishangyeyinhangwhssyyhweihaishishangyeyinhanggufenyouxiangongsiwhssyyhgfyxgsweihaishishangyeyinhangwhssyyh",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "潍坊银行"
+      ],
+      "group": "city",
+      "icon": "brand-bankwf",
+      "id": "nfra-B0174H337070001",
+      "institution": "潍坊银行股份有限公司",
+      "isCredit": false,
+      "name": "潍坊银行",
+      "region": "山东",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "潍坊银行潍坊银行股份有限公司潍坊银行山东weifangyinhangwfyhweifangyinhanggufenyouxiangongsiwfyhgfyxgsweifangyinhangwfyh",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "烟台银行",
+        "YANTAI BANK CO.,LTD."
+      ],
+      "group": "city",
+      "icon": "brand-yantaibank",
+      "id": "nfra-B0173H337060001",
+      "institution": "烟台银行股份有限公司",
+      "isCredit": false,
+      "name": "烟台银行",
+      "region": "烟台金融监管分局",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "烟台银行烟台银行股份有限公司烟台银行yantaibankco.,ltd.烟台金融监管分局yantaiyinhangytyhyantaiyinhanggufenyouxiangongsiytyhgfyxgsyantaiyinhangytyhyantaibankco.,ltd.ybc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "枣庄银行",
+        "ZAOZHUANG BANK CO.,LTD."
+      ],
+      "group": "city",
+      "icon": "brand-sc",
+      "id": "nfra-B0290H337040001",
+      "institution": "枣庄银行股份有限公司",
+      "isCredit": false,
+      "name": "枣庄银行",
+      "region": "山东",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "枣庄银行枣庄银行股份有限公司枣庄银行zaozhuangbankco.,ltd.山东zaozhuangyinhangzzyhzaozhuangyinhanggufenyouxiangongsizzyhgfyxgszaozhuangyinhangzzyhzaozhuangbankco.,ltd.zbc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "中原银行",
+        "ZHONGYUAN BANK CO.，LTD"
+      ],
+      "group": "city",
+      "icon": "brand-zybank",
+      "id": "nfra-B0615H241010001",
+      "institution": "中原银行股份有限公司",
+      "isCredit": false,
+      "name": "中原银行",
+      "region": "河南",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "中原银行中原银行股份有限公司中原银行zhongyuanbankco.，ltd河南zhongyuanyinhangzyyhzhongyuanyinhanggufenyouxiangongsizyyhgfyxgszhongyuanyinhangzyyhzhongyuanbankco.，ltdzbc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "郑州银行",
+        "BANK OF ZHENGZHOU CO.，LTD"
+      ],
+      "group": "city",
+      "icon": "brand-zzbank",
+      "id": "nfra-B1036H241010001",
+      "institution": "郑州银行股份有限公司",
+      "isCredit": false,
+      "name": "郑州银行",
+      "region": "河南",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "郑州银行郑州银行股份有限公司郑州银行bankofzhengzhouco.，ltd河南zhengzhouyinhangzzyhzhengzhouyinhanggufenyouxiangongsizzyhgfyxgszhengzhouyinhangzzyhbankofzhengzhouco.，ltdbozc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "湖南银行",
+        "Bank of Hunan Corporation Limited"
+      ],
+      "group": "city",
+      "icon": "brand-nfra-b1099h243010001",
+      "id": "nfra-B1099H243010001",
+      "institution": "湖南银行股份有限公司",
+      "isCredit": false,
+      "name": "湖南银行",
+      "region": "湖南",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "湖南银行湖南银行股份有限公司湖南银行bankofhunancorporationlimited湖南hunanyinhanghnyhhunanyinhanggufenyouxiangongsihnyhgfyxgshunanyinhanghnyhbankofhunancorporationlimitedbohcl",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "长沙银行",
+        "BANK OF CHANGSHA CO.,LTD"
+      ],
+      "group": "city",
+      "icon": "brand-cscb",
+      "id": "nfra-B0192H243010001",
+      "institution": "长沙银行股份有限公司",
+      "isCredit": false,
+      "name": "长沙银行",
+      "region": "湖南",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "长沙银行长沙银行股份有限公司长沙银行bankofchangshaco.,ltd湖南changshayinhangcsyhchangshayinhanggufenyouxiangongsicsyhgfyxgschangshayinhangcsyhbankofchangshaco.,ltdbocc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "汉口银行",
+        "HANKOU BANK CO.,LTD"
+      ],
+      "group": "city",
+      "icon": "brand-hkbchina",
+      "id": "nfra-B0187H242010002",
+      "institution": "汉口银行股份有限公司",
+      "isCredit": false,
+      "name": "汉口银行",
+      "region": "湖北",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "汉口银行汉口银行股份有限公司汉口银行hankoubankco.,ltd湖北hankouyinhanghkyhhankouyinhanggufenyouxiangongsihkyhgfyxgshankouyinhanghkyhhankoubankco.,ltdhbc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "湖北银行",
+        "HUBEI BANK CO.,LTD"
+      ],
+      "group": "city",
+      "icon": "brand-hubeibank",
+      "id": "nfra-B1151H242010001",
+      "institution": "湖北银行股份有限公司",
+      "isCredit": false,
+      "name": "湖北银行",
+      "region": "湖北",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "湖北银行湖北银行股份有限公司湖北银行hubeibankco.,ltd湖北hubeiyinhanghbyhhubeiyinhanggufenyouxiangongsihbyhgfyxgshubeiyinhanghbyhhubeibankco.,ltdhbc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "广州银行",
+        "BANK OF GUANGZHOU CO.,LTD"
+      ],
+      "group": "city",
+      "icon": "brand-gzcb",
+      "id": "nfra-B1041H244010001",
+      "institution": "广州银行股份有限公司",
+      "isCredit": false,
+      "name": "广州银行",
+      "region": "广东",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "广州银行广州银行股份有限公司广州银行bankofguangzhouco.,ltd广东guangzhouyinhanggzyhguangzhouyinhanggufenyouxiangongsigzyhgfyxgsguangzhouyinhanggzyhbankofguangzhouco.,ltdbogc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "东莞银行",
+        "BANK OF DONGGUAN CO.,LTD."
+      ],
+      "group": "city",
+      "icon": "brand-dongguanbank",
+      "id": "nfra-B0201H244190001",
+      "institution": "东莞银行股份有限公司",
+      "isCredit": false,
+      "name": "东莞银行",
+      "region": "东莞金融监管分局",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "东莞银行东莞银行股份有限公司东莞银行bankofdongguanco.,ltd.东莞金融监管分局dongguanyinhangdgyhdongguanyinhanggufenyouxiangongsidgyhgfyxgsdongguanyinhangdgyhbankofdongguanco.,ltd.bodc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "广东华兴银行",
+        "GUANGDONG HUAXING BANK CO., LTD"
+      ],
+      "group": "city",
+      "icon": "brand-ghbank",
+      "id": "nfra-B1194H244050001",
+      "institution": "广东华兴银行股份有限公司",
+      "isCredit": false,
+      "name": "广东华兴银行",
+      "region": "广东",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "广东华兴银行广东华兴银行股份有限公司广东华兴银行guangdonghuaxingbankco.,ltd广东guangdonghuaxingyinhanggdhxyhguangdonghuaxingyinhanggufenyouxiangongsigdhxyhgfyxgsguangdonghuaxingyinhanggdhxyhguangdonghuaxingbankco.,ltdghbcl",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "广东南粤银行",
+        "GUANGDONG NANYUE BANK CO., LTD."
+      ],
+      "group": "city",
+      "icon": "brand-gdnybank",
+      "id": "nfra-B0200H344080001",
+      "institution": "广东南粤银行股份有限公司",
+      "isCredit": false,
+      "name": "广东南粤银行",
+      "region": "广东",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "广东南粤银行广东南粤银行股份有限公司广东南粤银行guangdongnanyuebankco.,ltd.广东guangdongnanyueyinhanggdnyyhguangdongnanyueyinhanggufenyouxiangongsigdnyyhgfyxgsguangdongnanyueyinhanggdnyyhguangdongnanyuebankco.,ltd.gnbcl",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "珠海华润银行",
+        "CHINA RESOURCES BANK OF ZHUHAI CO.,LTD."
+      ],
+      "group": "city",
+      "icon": "brand-nfra-b0199h244040001",
+      "id": "nfra-B0199H244040001",
+      "institution": "珠海华润银行股份有限公司",
+      "isCredit": false,
+      "name": "珠海华润银行",
+      "region": "珠海金融监管分局",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "珠海华润银行珠海华润银行股份有限公司珠海华润银行chinaresourcesbankofzhuhaico.,ltd.珠海金融监管分局zhuhaihuarunyinhangzhhryhzhuhaihuarunyinhanggufenyouxiangongsizhhryhgfyxgszhuhaihuarunyinhangzhhryhchinaresourcesbankofzhuhaico.,ltd.crbozc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "广西北部湾银行",
+        "GUANGXI BEIBU GULF BANK CO.,LTD"
+      ],
+      "group": "city",
+      "icon": "brand-bankofbbg",
+      "id": "nfra-B0349H245010001",
+      "institution": "广西北部湾银行股份有限公司",
+      "isCredit": false,
+      "name": "广西北部湾银行",
+      "region": "广西",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "广西北部湾银行广西北部湾银行股份有限公司广西北部湾银行guangxibeibugulfbankco.,ltd广西guangxibeibuwanyinhanggxbbwyhguangxibeibuwanyinhanggufenyouxiangongsigxbbwyhgfyxgsguangxibeibuwanyinhanggxbbwyhguangxibeibugulfbankco.,ltdgbgbc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "桂林银行",
+        "GUILIN BANK CO.,LTD."
+      ],
+      "group": "city",
+      "icon": "brand-guilinbank",
+      "id": "nfra-B1105H245030001",
+      "institution": "桂林银行股份有限公司",
+      "isCredit": false,
+      "name": "桂林银行",
+      "region": "桂林金融监管分局",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "桂林银行桂林银行股份有限公司桂林银行guilinbankco.,ltd.桂林金融监管分局guilinyinhangglyhguilinyinhanggufenyouxiangongsiglyhgfyxgsguilinyinhangglyhguilinbankco.,ltd.gbc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "柳州银行",
+        "BANK OF LIUZHOU CO.,LTD."
+      ],
+      "group": "city",
+      "icon": "brand-bolz",
+      "id": "nfra-B1087H245020001",
+      "institution": "柳州银行股份有限公司",
+      "isCredit": false,
+      "name": "柳州银行",
+      "region": "柳州金融监管分局",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "柳州银行柳州银行股份有限公司柳州银行bankofliuzhouco.,ltd.柳州金融监管分局liuzhouyinhanglzyhliuzhouyinhanggufenyouxiangongsilzyhgfyxgsliuzhouyinhanglzyhbankofliuzhouco.,ltd.bolc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "海南银行",
+        "Bank of Hainan Co.,Ltd."
+      ],
+      "group": "city",
+      "icon": "brand-nfra-b0729h246010001",
+      "id": "nfra-B0729H246010001",
+      "institution": "海南银行股份有限公司",
+      "isCredit": false,
+      "name": "海南银行",
+      "region": "海南",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "海南银行海南银行股份有限公司海南银行bankofhainanco.,ltd.海南hainanyinhanghnyhhainanyinhanggufenyouxiangongsihnyhgfyxgshainanyinhanghnyhbankofhainanco.,ltd.bohc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "重庆三峡银行",
+        "CHONGQING THREE GORGES BANK CO.,LTD"
+      ],
+      "group": "city",
+      "icon": "brand-ccqtgb",
+      "id": "nfra-B0205H250000001",
+      "institution": "重庆三峡银行股份有限公司",
+      "isCredit": false,
+      "name": "重庆三峡银行",
+      "region": "重庆",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "重庆三峡银行重庆三峡银行股份有限公司重庆三峡银行chongqingthreegorgesbankco.,ltd重庆chongqingsanxiayinhangcqsxyhchongqingsanxiayinhanggufenyouxiangongsicqsxyhgfyxgschongqingsanxiayinhangcqsxyhchongqingthreegorgesbankco.,ltdctgbc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "重庆银行"
+      ],
+      "group": "city",
+      "icon": "brand-cqcbank",
+      "id": "nfra-B0206H250000001",
+      "institution": "重庆银行股份有限公司",
+      "isCredit": false,
+      "name": "重庆银行",
+      "region": "重庆",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "重庆银行重庆银行股份有限公司重庆银行重庆chongqingyinhangcqyhchongqingyinhanggufenyouxiangongsicqyhgfyxgschongqingyinhangcqyh",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "成都银行",
+        "BANK OF CHENGDU CO.,LTD."
+      ],
+      "group": "city",
+      "icon": "brand-bocd",
+      "id": "nfra-B0207H251010001",
+      "institution": "成都银行股份有限公司",
+      "isCredit": false,
+      "name": "成都银行",
+      "region": "四川",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "成都银行成都银行股份有限公司成都银行bankofchengduco.,ltd.四川chengdouyinhangcdyhchengdouyinhanggufenyouxiangongsicdyhgfyxgschengdouyinhangcdyhbankofchengduco.,ltd.bocc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "达州银行",
+        "BANK OF DAZHOU CO.,LTD."
+      ],
+      "group": "city",
+      "icon": "brand-dzccb",
+      "id": "nfra-B1053H251170001",
+      "institution": "达州银行股份有限公司",
+      "isCredit": false,
+      "name": "达州银行",
+      "region": "四川",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "达州银行达州银行股份有限公司达州银行bankofdazhouco.,ltd.四川dazhouyinhangdzyhdazhouyinhanggufenyouxiangongsidzyhgfyxgsdazhouyinhangdzyhbankofdazhouco.,ltd.bodc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "长城华西银行",
+        "GREAT WALL WEST CHINA BANK CO.,LTD."
+      ],
+      "group": "city",
+      "icon": "brand-nfra-b0211h251060002",
+      "id": "nfra-B0211H251060002",
+      "institution": "长城华西银行股份有限公司",
+      "isCredit": false,
+      "name": "长城华西银行",
+      "region": "德阳金融监管分局",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "长城华西银行长城华西银行股份有限公司长城华西银行greatwallwestchinabankco.,ltd.德阳金融监管分局changchenghuaxiyinhangcchxyhchangchenghuaxiyinhanggufenyouxiangongsicchxyhgfyxgschangchenghuaxiyinhangcchxyhgreatwallwestchinabankco.,ltd.gwwcbc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "乐山市商业银行"
+      ],
+      "group": "city",
+      "icon": "brand-lsccb",
+      "id": "nfra-B0213H251110001",
+      "institution": "乐山市商业银行股份有限公司",
+      "isCredit": false,
+      "name": "乐山市商业银行",
+      "region": "四川",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "乐山市商业银行乐山市商业银行股份有限公司乐山市商业银行四川leshanshishangyeyinhanglsssyyhleshanshishangyeyinhanggufenyouxiangongsilsssyyhgfyxgsleshanshishangyeyinhanglsssyyh",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "泸州银行",
+        "LUZHOU BANK CO.,LTD."
+      ],
+      "group": "city",
+      "icon": "brand-lzccb",
+      "id": "nfra-B0210H251050001",
+      "institution": "泸州银行股份有限公司",
+      "isCredit": false,
+      "name": "泸州银行",
+      "region": "泸州金融监管分局",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "泸州银行泸州银行股份有限公司泸州银行luzhoubankco.,ltd.泸州金融监管分局luzhouyinhanglzyhluzhouyinhanggufenyouxiangongsilzyhgfyxgsluzhouyinhanglzyhluzhoubankco.,ltd.lbc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "绵阳市商业银行"
+      ],
+      "group": "city",
+      "icon": "brand-nfra-b0212h251070001",
+      "id": "nfra-B0212H251070001",
+      "institution": "绵阳市商业银行股份有限公司",
+      "isCredit": false,
+      "name": "绵阳市商业银行",
+      "region": "绵阳金融监管分局",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "绵阳市商业银行绵阳市商业银行股份有限公司绵阳市商业银行绵阳金融监管分局mianyangshishangyeyinhangmyssyyhmianyangshishangyeyinhanggufenyouxiangongsimyssyyhgfyxgsmianyangshishangyeyinhangmyssyyh",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "四川天府银行",
+        "SICHUAN TIANFU BANK CO.,LTD"
+      ],
+      "group": "city",
+      "icon": "brand-tf",
+      "id": "nfra-B0214H251130001",
+      "institution": "四川天府银行股份有限公司",
+      "isCredit": false,
+      "name": "四川天府银行",
+      "region": "四川",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "四川天府银行四川天府银行股份有限公司四川天府银行sichuantianfubankco.,ltd四川sichuantianfuyinhangsctfyhsichuantianfuyinhanggufenyouxiangongsisctfyhgfyxgssichuantianfuyinhangsctfyhsichuantianfubankco.,ltdstbc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "遂宁银行",
+        "SUINING BANK CO.,LTD."
+      ],
+      "group": "city",
+      "icon": "brand-snccb",
+      "id": "nfra-B0317H251090001",
+      "institution": "遂宁银行股份有限公司",
+      "isCredit": false,
+      "name": "遂宁银行",
+      "region": "四川",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "遂宁银行遂宁银行股份有限公司遂宁银行suiningbankco.,ltd.四川suiningyinhangsnyhsuiningyinhanggufenyouxiangongsisnyhgfyxgssuiningyinhangsnyhsuiningbankco.,ltd.sbc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "雅安市商业银行",
+        "YAAN CITY COMMERCIAL BANK CO.,LTD"
+      ],
+      "group": "city",
+      "icon": "brand-nfra-b0343h251180001",
+      "id": "nfra-B0343H251180001",
+      "institution": "雅安市商业银行股份有限公司",
+      "isCredit": false,
+      "name": "雅安市商业银行",
+      "region": "雅安金融监管分局",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "雅安市商业银行雅安市商业银行股份有限公司雅安市商业银行yaancitycommercialbankco.,ltd雅安金融监管分局yaanshishangyeyinhangyassyyhyaanshishangyeyinhanggufenyouxiangongsiyassyyhgfyxgsyaanshishangyeyinhangyassyyhyaancitycommercialbankco.,ltdyccbc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "宜宾市商业银行"
+      ],
+      "group": "city",
+      "icon": "brand-nfra-b0284h251150001",
+      "id": "nfra-B0284H251150001",
+      "institution": "宜宾市商业银行股份有限公司",
+      "isCredit": false,
+      "name": "宜宾市商业银行",
+      "region": "宜宾金融监管分局",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "宜宾市商业银行宜宾市商业银行股份有限公司宜宾市商业银行宜宾金融监管分局yibinshishangyeyinhangybssyyhyibinshishangyeyinhanggufenyouxiangongsiybssyyhgfyxgsyibinshishangyeyinhangybssyyh",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "自贡银行",
+        "BANK OF ZIGONG CO.,LTD."
+      ],
+      "group": "city",
+      "icon": "brand-zgbank",
+      "id": "nfra-B0208H251030001",
+      "institution": "自贡银行股份有限公司",
+      "isCredit": false,
+      "name": "自贡银行",
+      "region": "四川",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "自贡银行自贡银行股份有限公司自贡银行bankofzigongco.,ltd.四川zigongyinhangzgyhzigongyinhanggufenyouxiangongsizgyhgfyxgszigongyinhangzgyhbankofzigongco.,ltd.bozc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "贵阳银行",
+        "BANK OF GUIYANG CO.,LTD"
+      ],
+      "group": "city",
+      "icon": "brand-bankgy",
+      "id": "nfra-B0215H252010001",
+      "institution": "贵阳银行股份有限公司",
+      "isCredit": false,
+      "name": "贵阳银行",
+      "region": "贵州",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "贵阳银行贵阳银行股份有限公司贵阳银行bankofguiyangco.,ltd贵州guiyangyinhanggyyhguiyangyinhanggufenyouxiangongsigyyhgfyxgsguiyangyinhanggyyhbankofguiyangco.,ltdbogc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "贵州银行",
+        "Bank of Guizhou Co.,Ltd"
+      ],
+      "group": "city",
+      "icon": "brand-bgzchina",
+      "id": "nfra-B1383H252010001",
+      "institution": "贵州银行股份有限公司",
+      "isCredit": false,
+      "name": "贵州银行",
+      "region": "贵州",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "贵州银行贵州银行股份有限公司贵州银行bankofguizhouco.,ltd贵州guizhouyinhanggzyhguizhouyinhanggufenyouxiangongsigzyhgfyxgsguizhouyinhanggzyhbankofguizhouco.,ltdbogc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "富滇银行",
+        "FUDIAN BANK CO.,LTD."
+      ],
+      "group": "city",
+      "icon": "brand-fudian",
+      "id": "nfra-B0258H253010001",
+      "institution": "富滇银行股份有限公司",
+      "isCredit": false,
+      "name": "富滇银行",
+      "region": "云南",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "富滇银行富滇银行股份有限公司富滇银行fudianbankco.,ltd.云南fudianyinhangfdyhfudianyinhanggufenyouxiangongsifdyhgfyxgsfudianyinhangfdyhfudianbankco.,ltd.fbc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "曲靖市商业银行",
+        "QUJING CITY COMMERCIAL BANK CO.,LTD."
+      ],
+      "group": "city",
+      "icon": "brand-qjccb",
+      "id": "nfra-B0259H253030001",
+      "institution": "曲靖市商业银行股份有限公司",
+      "isCredit": false,
+      "name": "曲靖市商业银行",
+      "region": "云南",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "曲靖市商业银行曲靖市商业银行股份有限公司曲靖市商业银行qujingcitycommercialbankco.,ltd.云南qujingshishangyeyinhangqjssyyhqujingshishangyeyinhanggufenyouxiangongsiqjssyyhgfyxgsqujingshishangyeyinhangqjssyyhqujingcitycommercialbankco.,ltd.qccbc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "云南红塔银行",
+        "YUNNAN HONGTA BANK CO.,LTD."
+      ],
+      "group": "city",
+      "icon": "brand-nfra-b0260h253040001",
+      "id": "nfra-B0260H253040001",
+      "institution": "云南红塔银行股份有限公司",
+      "isCredit": false,
+      "name": "云南红塔银行",
+      "region": "玉溪金融监管分局",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "云南红塔银行云南红塔银行股份有限公司云南红塔银行yunnanhongtabankco.,ltd.玉溪金融监管分局yunnanhongtayinhangynhtyhyunnanhongtayinhanggufenyouxiangongsiynhtyhgfyxgsyunnanhongtayinhangynhtyhyunnanhongtabankco.,ltd.yhbc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "西藏银行",
+        "BANK OF TIBET CO.,LTD"
+      ],
+      "group": "city",
+      "icon": "brand-nfra-b1293h254010001",
+      "id": "nfra-B1293H254010001",
+      "institution": "西藏银行股份有限公司",
+      "isCredit": false,
+      "name": "西藏银行",
+      "region": "西藏",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "西藏银行西藏银行股份有限公司西藏银行bankoftibetco.,ltd西藏xicangyinhangxcyhxicangyinhanggufenyouxiangongsixcyhgfyxgsxicangyinhangxcyhbankoftibetco.,ltdbotc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "西安银行",
+        "THE BANK OF XI’AN CO.,LTD"
+      ],
+      "group": "city",
+      "icon": "brand-xacbank",
+      "id": "nfra-B0274H261010001",
+      "institution": "西安银行股份有限公司",
+      "isCredit": false,
+      "name": "西安银行",
+      "region": "陕西",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "西安银行西安银行股份有限公司西安银行thebankofxi’anco.,ltd陕西xianyinhangxayhxianyinhanggufenyouxiangongsixayhgfyxgsxianyinhangxayhthebankofxi’anco.,ltdtboxc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "长安银行",
+        "CHANG’AN BANK CO.,LTD"
+      ],
+      "group": "city",
+      "icon": "brand-ccabchina",
+      "id": "nfra-B1027H261010001",
+      "institution": "长安银行股份有限公司",
+      "isCredit": false,
+      "name": "长安银行",
+      "region": "陕西",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "长安银行长安银行股份有限公司长安银行chang’anbankco.,ltd陕西changanyinhangcayhchanganyinhanggufenyouxiangongsicayhgfyxgschanganyinhangcayhchang’anbankco.,ltdcbc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "甘肃银行",
+        "BANK OF GANSU CO.，LTD."
+      ],
+      "group": "city",
+      "icon": "brand-gsbankchina",
+      "id": "nfra-B1228H262010001",
+      "institution": "甘肃银行股份有限公司",
+      "isCredit": false,
+      "name": "甘肃银行",
+      "region": "甘肃",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "甘肃银行甘肃银行股份有限公司甘肃银行bankofgansuco.，ltd.甘肃gansuyinhanggsyhgansuyinhanggufenyouxiangongsigsyhgfyxgsgansuyinhanggsyhbankofgansuco.，ltd.bogc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "兰州银行",
+        "BANK OF LANZHOU CO.，LTD."
+      ],
+      "group": "city",
+      "icon": "brand-lzbank",
+      "id": "nfra-B0268H262010001",
+      "institution": "兰州银行股份有限公司",
+      "isCredit": false,
+      "name": "兰州银行",
+      "region": "甘肃",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "兰州银行兰州银行股份有限公司兰州银行bankoflanzhouco.，ltd.甘肃lanzhouyinhanglzyhlanzhouyinhanggufenyouxiangongsilzyhgfyxgslanzhouyinhanglzyhbankoflanzhouco.，ltd.bolc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "青海银行"
+      ],
+      "group": "city",
+      "icon": "brand-bankqh",
+      "id": "nfra-B0223H263010002",
+      "institution": "青海银行股份有限公司",
+      "isCredit": false,
+      "name": "青海银行",
+      "region": "青海",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "青海银行青海银行股份有限公司青海银行青海qinghaiyinhangqhyhqinghaiyinhanggufenyouxiangongsiqhyhgfyxgsqinghaiyinhangqhyh",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "宁夏银行",
+        "BANK OF NINGXIA CO.,LTD."
+      ],
+      "group": "city",
+      "icon": "brand-bankofnx",
+      "id": "nfra-B0314H264010001",
+      "institution": "宁夏银行股份有限公司",
+      "isCredit": false,
+      "name": "宁夏银行",
+      "region": "宁夏",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "宁夏银行宁夏银行股份有限公司宁夏银行bankofningxiaco.,ltd.宁夏ningxiayinhangnxyhningxiayinhanggufenyouxiangongsinxyhgfyxgsningxiayinhangnxyhbankofningxiaco.,ltd.bonc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "石嘴山银行",
+        "BANK OF SHIZUISHAN CO.,LTD."
+      ],
+      "group": "city",
+      "icon": "brand-szsccb",
+      "id": "nfra-B1009H364020001",
+      "institution": "石嘴山银行股份有限公司",
+      "isCredit": false,
+      "name": "石嘴山银行",
+      "region": "宁夏",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "石嘴山银行石嘴山银行股份有限公司石嘴山银行bankofshizuishanco.,ltd.宁夏shizuishanyinhangszsyhshizuishanyinhanggufenyouxiangongsiszsyhgfyxgsshizuishanyinhangszsyhbankofshizuishanco.,ltd.bosc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "乌鲁木齐银行",
+        "Bank of Urumqi CO.,Ltd"
+      ],
+      "group": "city",
+      "icon": "brand-nfra-b0796h265010001",
+      "id": "nfra-B0796H265010001",
+      "institution": "乌鲁木齐银行股份有限公司",
+      "isCredit": false,
+      "name": "乌鲁木齐银行",
+      "region": "新疆",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "乌鲁木齐银行乌鲁木齐银行股份有限公司乌鲁木齐银行bankofurumqico.,ltd新疆wulumuqiyinhangwlmqyhwulumuqiyinhanggufenyouxiangongsiwlmqyhgfyxgswulumuqiyinhangwlmqyhbankofurumqico.,ltdbouc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "昆仑银行",
+        "Bank of Kunlun Co.，Ltd"
+      ],
+      "group": "city",
+      "icon": "brand-klb",
+      "id": "nfra-B0226H365020002",
+      "institution": "昆仑银行股份有限公司",
+      "isCredit": false,
+      "name": "昆仑银行",
+      "region": "新疆",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "昆仑银行昆仑银行股份有限公司昆仑银行bankofkunlunco.，ltd新疆kunlunyinhangklyhkunlunyinhanggufenyouxiangongsiklyhgfyxgskunlunyinhangklyhbankofkunlunco.，ltdbokc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "哈密市商业银行",
+        "HAMI CITY COMMERCIAL BANK CO.,LTD"
+      ],
+      "group": "city",
+      "icon": "brand-nfra-b1085h365220001",
+      "id": "nfra-B1085H365220001",
+      "institution": "哈密市商业银行股份有限公司",
+      "isCredit": false,
+      "name": "哈密市商业银行",
+      "region": "新疆",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "哈密市商业银行哈密市商业银行股份有限公司哈密市商业银行hamicitycommercialbankco.,ltd新疆hamishishangyeyinhanghmssyyhhamishishangyeyinhanggufenyouxiangongsihmssyyhgfyxgshamishishangyeyinhanghmssyyhhamicitycommercialbankco.,ltdhccbc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "大连银行",
+        "Bank of Dalian Co.,Ltd."
+      ],
+      "group": "city",
+      "icon": "brand-bankofdl",
+      "id": "nfra-B0261H221020001",
+      "institution": "大连银行股份有限公司",
+      "isCredit": false,
+      "name": "大连银行",
+      "region": "大连",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "大连银行大连银行股份有限公司大连银行bankofdalianco.,ltd.大连dalianyinhangdlyhdalianyinhanggufenyouxiangongsidlyhgfyxgsdalianyinhangdlyhbankofdalianco.,ltd.bodc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "宁波银行",
+        "BANK OF NINGBO CO.,LTD"
+      ],
+      "group": "city",
+      "icon": "brand-nbcb",
+      "id": "nfra-B0152H233020001",
+      "institution": "宁波银行股份有限公司",
+      "isCredit": false,
+      "name": "宁波银行",
+      "region": "宁波",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "宁波银行宁波银行股份有限公司宁波银行bankofningboco.,ltd宁波ningboyinhangnbyhningboyinhanggufenyouxiangongsinbyhgfyxgsningboyinhangnbyhbankofningboco.,ltdbonc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "宁波东海银行",
+        "NINGBO DONGHAI BANK CO., LTD."
+      ],
+      "group": "city",
+      "icon": "brand-nfra-b0358h233020001",
+      "id": "nfra-B0358H233020001",
+      "institution": "宁波东海银行股份有限公司",
+      "isCredit": false,
+      "name": "宁波东海银行",
+      "region": "宁波",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "宁波东海银行宁波东海银行股份有限公司宁波东海银行ningbodonghaibankco.,ltd.宁波ningbodonghaiyinhangnbdhyhningbodonghaiyinhanggufenyouxiangongsinbdhyhgfyxgsningbodonghaiyinhangnbdhyhningbodonghaibankco.,ltd.ndbcl",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "宁波通商银行",
+        "NINGBO COMMERCE BANK COMPANY LIMITED"
+      ],
+      "group": "city",
+      "icon": "brand-ncbank",
+      "id": "nfra-B1311H233020001",
+      "institution": "宁波通商银行股份有限公司",
+      "isCredit": false,
+      "name": "宁波通商银行",
+      "region": "宁波",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "宁波通商银行宁波通商银行股份有限公司宁波通商银行ningbocommercebankcompanylimited宁波ningbotongshangyinhangnbtsyhningbotongshangyinhanggufenyouxiangongsinbtsyhgfyxgsningbotongshangyinhangnbtsyhningbocommercebankcompanylimitedncbcl",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "厦门银行",
+        "XIAMEN BANK CO.,LTD"
+      ],
+      "group": "city",
+      "icon": "brand-nfra-b0164h235020001",
+      "id": "nfra-B0164H235020001",
+      "institution": "厦门银行股份有限公司",
+      "isCredit": false,
+      "name": "厦门银行",
+      "region": "厦门",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "厦门银行厦门银行股份有限公司厦门银行xiamenbankco.,ltd厦门xiamenyinhangxmyhxiamenyinhanggufenyouxiangongsixmyhgfyxgsxiamenyinhangxmyhxiamenbankco.,ltdxbc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "厦门国际银行",
+        "Xiamen International Bank Co., Ltd."
+      ],
+      "group": "city",
+      "icon": "brand-xib",
+      "id": "nfra-B0025H235020001",
+      "institution": "厦门国际银行股份有限公司",
+      "isCredit": false,
+      "name": "厦门国际银行",
+      "region": "厦门",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "厦门国际银行厦门国际银行股份有限公司厦门国际银行xiameninternationalbankco.,ltd.厦门xiamenguojiyinhangxmgjyhxiamenguojiyinhanggufenyouxiangongsixmgjyhgfyxgsxiamenguojiyinhangxmgjyhxiameninternationalbankco.,ltd.xibcl",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "青岛银行",
+        "BANK OF QINGDAO CO.,LTD."
+      ],
+      "group": "city",
+      "icon": "brand-qdccb",
+      "id": "nfra-B0170H237020001",
+      "institution": "青岛银行股份有限公司",
+      "isCredit": false,
+      "name": "青岛银行",
+      "region": "青岛",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "青岛银行青岛银行股份有限公司青岛银行bankofqingdaoco.,ltd.青岛qingdaoyinhangqdyhqingdaoyinhanggufenyouxiangongsiqdyhgfyxgsqingdaoyinhangqdyhbankofqingdaoco.,ltd.boqc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "新疆银行",
+        "Xinjiang Bank CO.,LTD."
+      ],
+      "group": "city",
+      "icon": "brand-nfra-b1522h265010001",
+      "id": "nfra-B1522H265010001",
+      "institution": "新疆银行股份有限公司",
+      "isCredit": false,
+      "name": "新疆银行",
+      "region": "新疆",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "新疆银行新疆银行股份有限公司新疆银行xinjiangbankco.,ltd.新疆xinjiangyinhangxjyhxinjiangyinhanggufenyouxiangongsixjyhgfyxgsxinjiangyinhangxjyhxinjiangbankco.,ltd.xbc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "蒙商银行",
+        "MENGSHANG BANK Co.,LTD"
+      ],
+      "group": "city",
+      "icon": "brand-nfra-b1954h215020001",
+      "id": "nfra-B1954H215020001",
+      "institution": "蒙商银行股份有限公司",
+      "isCredit": false,
+      "name": "蒙商银行",
+      "region": "内蒙古",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "蒙商银行蒙商银行股份有限公司蒙商银行mengshangbankco.,ltd内蒙古mengshangyinhangmsyhmengshangyinhanggufenyouxiangongsimsyhgfyxgsmengshangyinhangmsyhmengshangbankco.,ltdmbc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "四川银行",
+        "SICHUAN BANK CO., LTD."
+      ],
+      "group": "city",
+      "icon": "brand-nfra-b1987h251010001",
+      "id": "nfra-B1987H251010001",
+      "institution": "四川银行股份有限公司",
+      "isCredit": false,
+      "name": "四川银行",
+      "region": "四川",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "四川银行四川银行股份有限公司四川银行sichuanbankco.,ltd.四川sichuanyinhangscyhsichuanyinhanggufenyouxiangongsiscyhgfyxgssichuanyinhangscyhsichuanbankco.,ltd.sbcl",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "辽沈银行",
+        "LIAOSHEN BANK CO.,LTD."
+      ],
+      "group": "city",
+      "icon": "brand-nfra-b2036h221010001",
+      "id": "nfra-B2036H221010001",
+      "institution": "辽沈银行股份有限公司",
+      "isCredit": false,
+      "name": "辽沈银行",
+      "region": "辽宁",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "辽沈银行辽沈银行股份有限公司辽沈银行liaoshenbankco.,ltd.辽宁liaoshenyinhanglsyhliaoshenyinhanggufenyouxiangongsilsyhgfyxgsliaoshenyinhanglsyhliaoshenbankco.,ltd.lbc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "山西银行",
+        "SHANXI BANK CO., LTD."
+      ],
+      "group": "city",
+      "icon": "brand-nfra-b2027h214010001",
+      "id": "nfra-B2027H214010001",
+      "institution": "山西银行股份有限公司",
+      "isCredit": false,
+      "name": "山西银行",
+      "region": "山西",
+      "regulatoryType": "城市商业银行",
+      "searchKey": "山西银行山西银行股份有限公司山西银行shanxibankco.,ltd.山西shanxiyinhangsxyhshanxiyinhanggufenyouxiangongsisxyhgfyxgsshanxiyinhangsxyhshanxibankco.,ltd.sbcl",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "天津金城银行",
+        "Kincheng Bank of Tianjin Co.,Ltd."
+      ],
+      "group": "digital",
+      "icon": "brand-nfra-b0655h212000001",
+      "id": "nfra-B0655H212000001",
+      "institution": "天津金城银行股份有限公司",
+      "isCredit": false,
+      "name": "天津金城银行",
+      "region": "天津",
+      "regulatoryType": "民营银行",
+      "searchKey": "天津金城银行天津金城银行股份有限公司天津金城银行kinchengbankoftianjinco.,ltd.天津tianjinjinchengyinhangtjjcyhtianjinjinchengyinhanggufenyouxiangongsitjjcyhgfyxgstianjinjinchengyinhangtjjcyhkinchengbankoftianjinco.,ltd.kbotc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "上海华瑞银行"
+      ],
+      "group": "digital",
+      "icon": "brand-nfra-b0606h231000001",
+      "id": "nfra-B0606H231000001",
+      "institution": "上海华瑞银行股份有限公司",
+      "isCredit": false,
+      "name": "上海华瑞银行",
+      "region": "上海",
+      "regulatoryType": "民营银行",
+      "searchKey": "上海华瑞银行上海华瑞银行股份有限公司上海华瑞银行上海shanghaihuaruiyinhangshhryhshanghaihuaruiyinhanggufenyouxiangongsishhryhgfyxgsshanghaihuaruiyinhangshhryh",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "浙江网商银行",
+        "网商",
+        "mybank"
+      ],
+      "group": "digital",
+      "icon": "brand-nfra-b0675h233010001",
+      "id": "nfra-B0675H233010001",
+      "institution": "浙江网商银行股份有限公司",
+      "isCredit": false,
+      "name": "网商银行",
+      "region": "浙江",
+      "regulatoryType": "民营银行",
+      "searchKey": "网商银行浙江网商银行股份有限公司浙江网商银行网商mybank浙江wangshangyinhangwsyhzhejiangwangshangyinhanggufenyouxiangongsizjwsyhgfyxgszhejiangwangshangyinhangzjwsyhwangshangwsmybankm",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "温州民商银行"
+      ],
+      "group": "digital",
+      "icon": "brand-nfra-b0651h233030001",
+      "id": "nfra-B0651H233030001",
+      "institution": "温州民商银行股份有限公司",
+      "isCredit": false,
+      "name": "温州民商银行",
+      "region": "浙江",
+      "regulatoryType": "民营银行",
+      "searchKey": "温州民商银行温州民商银行股份有限公司温州民商银行浙江wenzhouminshangyinhangwzmsyhwenzhouminshangyinhanggufenyouxiangongsiwzmsyhgfyxgswenzhouminshangyinhangwzmsyh",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "深圳前海微众银行",
+        "WeBank Co.,Ltd",
+        "微众",
+        "webank"
+      ],
+      "group": "digital",
+      "icon": "brand-nfra-b0593h244030001",
+      "id": "nfra-B0593H244030001",
+      "institution": "深圳前海微众银行股份有限公司",
+      "isCredit": false,
+      "name": "微众银行",
+      "region": "深圳",
+      "regulatoryType": "民营银行",
+      "searchKey": "微众银行深圳前海微众银行股份有限公司深圳前海微众银行webankco.,ltd微众webank深圳weizhongyinhangwzyhshenzhenqianhaiweizhongyinhanggufenyouxiangongsiszqhwzyhgfyxgsshenzhenqianhaiweizhongyinhangszqhwzyhwebankco.,ltdwcweizhongwzwebankw",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "湖南三湘银行",
+        "BANK OF SANXIANG"
+      ],
+      "group": "digital",
+      "icon": "brand-nfra-b1519h243010001",
+      "id": "nfra-B1519H243010001",
+      "institution": "湖南三湘银行股份有限公司",
+      "isCredit": false,
+      "name": "湖南三湘银行",
+      "region": "湖南",
+      "regulatoryType": "民营银行",
+      "searchKey": "湖南三湘银行湖南三湘银行股份有限公司湖南三湘银行bankofsanxiang湖南hunansanxiangyinhanghnsxyhhunansanxiangyinhanggufenyouxiangongsihnsxyhgfyxgshunansanxiangyinhanghnsxyhbankofsanxiangbos",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "重庆富民银行"
+      ],
+      "group": "digital",
+      "icon": "brand-nfra-b1191h250000001",
+      "id": "nfra-B1191H250000001",
+      "institution": "重庆富民银行股份有限公司",
+      "isCredit": false,
+      "name": "重庆富民银行",
+      "region": "重庆",
+      "regulatoryType": "民营银行",
+      "searchKey": "重庆富民银行重庆富民银行股份有限公司重庆富民银行重庆chongqingfuminyinhangcqfmyhchongqingfuminyinhanggufenyouxiangongsicqfmyhgfyxgschongqingfuminyinhangcqfmyh",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "四川新网银行",
+        "新网",
+        "xwbank"
+      ],
+      "group": "digital",
+      "icon": "brand-nfra-b1544h251010001",
+      "id": "nfra-B1544H251010001",
+      "institution": "四川新网银行股份有限公司",
+      "isCredit": false,
+      "name": "新网银行",
+      "region": "四川",
+      "regulatoryType": "民营银行",
+      "searchKey": "新网银行四川新网银行股份有限公司四川新网银行新网xwbank四川xinwangyinhangxwyhsichuanxinwangyinhanggufenyouxiangongsiscxwyhgfyxgssichuanxinwangyinhangscxwyhxinwangxwxwbankx",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "北京中关村银行",
+        "Beijing Zhongguancun Bank Corporation Limited"
+      ],
+      "group": "digital",
+      "icon": "brand-nfra-b1611h211000001",
+      "id": "nfra-B1611H211000001",
+      "institution": "北京中关村银行股份有限公司",
+      "isCredit": false,
+      "name": "北京中关村银行",
+      "region": "北京",
+      "regulatoryType": "民营银行",
+      "searchKey": "北京中关村银行北京中关村银行股份有限公司北京中关村银行beijingzhongguancunbankcorporationlimited北京beijingzhongguancunyinhangbjzgcyhbeijingzhongguancunyinhanggufenyouxiangongsibjzgcyhgfyxgsbeijingzhongguancunyinhangbjzgcyhbeijingzhongguancunbankcorporationlimitedbzbcl",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "吉林亿联银行"
+      ],
+      "group": "digital",
+      "icon": "brand-nfra-b1600h222010001",
+      "id": "nfra-B1600H222010001",
+      "institution": "吉林亿联银行股份有限公司",
+      "isCredit": false,
+      "name": "吉林亿联银行",
+      "region": "吉林",
+      "regulatoryType": "民营银行",
+      "searchKey": "吉林亿联银行吉林亿联银行股份有限公司吉林亿联银行吉林jilinyilianyinhangjlylyhjilinyilianyinhanggufenyouxiangongsijlylyhgfyxgsjilinyilianyinhangjlylyh",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "武汉众邦银行",
+        "WUHANZBANK CO.,LTD."
+      ],
+      "group": "digital",
+      "icon": "brand-z-bank",
+      "id": "nfra-B1596H242010001",
+      "institution": "武汉众邦银行股份有限公司",
+      "isCredit": false,
+      "name": "武汉众邦银行",
+      "region": "湖北",
+      "regulatoryType": "民营银行",
+      "searchKey": "武汉众邦银行武汉众邦银行股份有限公司武汉众邦银行wuhanzbankco.,ltd.湖北wuhanzhongbangyinhangwhzbyhwuhanzhongbangyinhanggufenyouxiangongsiwhzbyhgfyxgswuhanzhongbangyinhangwhzbyhwuhanzbankco.,ltd.wc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "福建华通银行",
+        "Fujian OneBank Company Limited"
+      ],
+      "group": "digital",
+      "icon": "brand-nfra-b1563h235010001",
+      "id": "nfra-B1563H235010001",
+      "institution": "福建华通银行股份有限公司",
+      "isCredit": false,
+      "name": "福建华通银行",
+      "region": "福建",
+      "regulatoryType": "民营银行",
+      "searchKey": "福建华通银行福建华通银行股份有限公司福建华通银行fujianonebankcompanylimited福建fujianhuatongyinhangfjhtyhfujianhuatongyinhanggufenyouxiangongsifjhtyhgfyxgsfujianhuatongyinhangfjhtyhfujianonebankcompanylimitedfocl",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "威海蓝海银行"
+      ],
+      "group": "digital",
+      "icon": "brand-nfra-b1606h237100001",
+      "id": "nfra-B1606H237100001",
+      "institution": "威海蓝海银行股份有限公司",
+      "isCredit": false,
+      "name": "威海蓝海银行",
+      "region": "山东",
+      "regulatoryType": "民营银行",
+      "searchKey": "威海蓝海银行威海蓝海银行股份有限公司威海蓝海银行山东weihailanhaiyinhangwhlhyhweihailanhaiyinhanggufenyouxiangongsiwhlhyhgfyxgsweihailanhaiyinhangwhlhyh",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "江苏苏商银行",
+        "JIANGSU SU MERCHANTS BANK CO.，LTD.",
+        "苏商",
+        "江苏苏宁银行",
+        "苏宁银行"
+      ],
+      "group": "digital",
+      "icon": "brand-nfra-b1621h232010001",
+      "id": "nfra-B1621H232010001",
+      "institution": "江苏苏商银行股份有限公司",
+      "isCredit": false,
+      "name": "江苏苏商银行",
+      "region": "江苏",
+      "regulatoryType": "民营银行",
+      "searchKey": "江苏苏商银行江苏苏商银行股份有限公司江苏苏商银行jiangsusumerchantsbankco.，ltd.苏商江苏苏宁银行苏宁银行江苏jiangsusushangyinhangjsssyhjiangsusushangyinhanggufenyouxiangongsijsssyhgfyxgsjiangsusushangyinhangjsssyhjiangsusumerchantsbankco.，ltd.jsmbcsushangssjiangsusuningyinhangjssnyhsuningyinhangsnyh",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "梅州客商银行",
+        "MEIZHOU HAKKA BANK CO.,LTD."
+      ],
+      "group": "digital",
+      "icon": "brand-nfra-b1627h244140001",
+      "id": "nfra-B1627H244140001",
+      "institution": "梅州客商银行股份有限公司",
+      "isCredit": false,
+      "name": "梅州客商银行",
+      "region": "广东",
+      "regulatoryType": "民营银行",
+      "searchKey": "梅州客商银行梅州客商银行股份有限公司梅州客商银行meizhouhakkabankco.,ltd.广东meizhoukeshangyinhangmzksyhmeizhoukeshangyinhanggufenyouxiangongsimzksyhgfyxgsmeizhoukeshangyinhangmzksyhmeizhouhakkabankco.,ltd.mhbc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "安徽新安银行"
+      ],
+      "group": "digital",
+      "icon": "brand-nfra-b1686h234010001",
+      "id": "nfra-B1686H234010001",
+      "institution": "安徽新安银行股份有限公司",
+      "isCredit": false,
+      "name": "安徽新安银行",
+      "region": "安徽",
+      "regulatoryType": "民营银行",
+      "searchKey": "安徽新安银行安徽新安银行股份有限公司安徽新安银行安徽anhuixinanyinhangahxayhanhuixinanyinhanggufenyouxiangongsiahxayhgfyxgsanhuixinanyinhangahxayh",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "辽宁振兴银行"
+      ],
+      "group": "digital",
+      "icon": "brand-nfra-b1661h221010001",
+      "id": "nfra-B1661H221010001",
+      "institution": "辽宁振兴银行股份有限公司",
+      "isCredit": false,
+      "name": "辽宁振兴银行",
+      "region": "辽宁",
+      "regulatoryType": "民营银行",
+      "searchKey": "辽宁振兴银行辽宁振兴银行股份有限公司辽宁振兴银行辽宁liaoningzhenxingyinhanglnzxyhliaoningzhenxingyinhanggufenyouxiangongsilnzxyhgfyxgsliaoningzhenxingyinhanglnzxyh",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "江西裕民银行",
+        "JIANGXI YUMIN BANK CO., LTD."
+      ],
+      "group": "digital",
+      "icon": "brand-nfra-b1877h236010001",
+      "id": "nfra-B1877H236010001",
+      "institution": "江西裕民银行股份有限公司",
+      "isCredit": false,
+      "name": "江西裕民银行",
+      "region": "江西",
+      "regulatoryType": "民营银行",
+      "searchKey": "江西裕民银行江西裕民银行股份有限公司江西裕民银行jiangxiyuminbankco.,ltd.江西jiangxiyuminyinhangjxymyhjiangxiyuminyinhanggufenyouxiangongsijxymyhgfyxgsjiangxiyuminyinhangjxymyhjiangxiyuminbankco.,ltd.jybcl",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "无锡锡商银行",
+        "WUXI XISHANG BANK CO.，LTD."
+      ],
+      "group": "digital",
+      "icon": "brand-nfra-b1949h332020001",
+      "id": "nfra-B1949H332020001",
+      "institution": "无锡锡商银行股份有限公司",
+      "isCredit": false,
+      "name": "无锡锡商银行",
+      "region": "江苏",
+      "regulatoryType": "民营银行",
+      "searchKey": "无锡锡商银行无锡锡商银行股份有限公司无锡锡商银行wuxixishangbankco.，ltd.江苏wuxixishangyinhangwxxsyhwuxixishangyinhanggufenyouxiangongsiwxxsyhgfyxgswuxixishangyinhangwxxsyhwuxixishangbankco.，ltd.wxbc",
+      "type": "bank"
+    },
+    {
+      "aliases": [
+        "中信百信银行",
+        "百信",
+        "aibank"
+      ],
+      "group": "digital",
+      "icon": "brand-nfra-z0041h111000001",
+      "id": "nfra-Z0041H111000001",
+      "institution": "中信百信银行股份有限公司",
+      "isCredit": false,
+      "name": "百信银行",
+      "region": "北京",
+      "regulatoryType": "直销银行",
+      "searchKey": "百信银行中信百信银行股份有限公司中信百信银行百信aibank北京baixinyinhangbxyhzhongxinbaixinyinhanggufenyouxiangongsizxbxyhgfyxgszhongxinbaixinyinhangzxbxyhbaixinbxaibanka",
+      "type": "bank"
+    }
+  ]
+}

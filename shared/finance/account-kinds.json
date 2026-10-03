@@ -1,0 +1,778 @@
+{
+  "sections": [
+    {
+      "id": "funds",
+      "title": "资金账户"
+    },
+    {
+      "id": "credit",
+      "title": "信用账户"
+    },
+    {
+      "id": "prepaid",
+      "title": "充值账户"
+    },
+    {
+      "id": "investment",
+      "title": "理财账户"
+    },
+    {
+      "id": "receivable",
+      "title": "应收账户"
+    },
+    {
+      "id": "payable",
+      "title": "应付账户"
+    }
+  ],
+  "items": [
+    {
+      "id": "kind-1",
+      "name": "现金钱包",
+      "section": "funds",
+      "type": "cash",
+      "institution": "现金",
+      "icon": "type-wallet",
+      "aliases": [
+        "现金"
+      ],
+      "isCredit": false,
+      "route": ""
+    },
+    {
+      "id": "kind-2",
+      "name": "储蓄卡",
+      "section": "funds",
+      "type": "bank",
+      "institution": "储蓄卡",
+      "icon": "type-card",
+      "aliases": [],
+      "isCredit": false,
+      "route": "bank"
+    },
+    {
+      "id": "kind-3",
+      "name": "支付宝",
+      "section": "funds",
+      "type": "alipay",
+      "institution": "支付宝",
+      "icon": "alipay",
+      "aliases": [],
+      "isCredit": false,
+      "route": ""
+    },
+    {
+      "id": "kind-4",
+      "name": "余额宝",
+      "section": "funds",
+      "type": "investment",
+      "institution": "余额宝",
+      "icon": "type-coins",
+      "aliases": [],
+      "isCredit": false,
+      "route": ""
+    },
+    {
+      "id": "kind-5",
+      "name": "余利宝",
+      "section": "funds",
+      "type": "investment",
+      "institution": "余利宝",
+      "icon": "type-coins",
+      "aliases": [],
+      "isCredit": false,
+      "route": ""
+    },
+    {
+      "id": "kind-6",
+      "name": "小荷包",
+      "section": "funds",
+      "type": "other",
+      "institution": "小荷包",
+      "icon": "type-coins",
+      "aliases": [],
+      "isCredit": false,
+      "route": ""
+    },
+    {
+      "id": "kind-7",
+      "name": "蚂蚁财富",
+      "section": "funds",
+      "type": "investment",
+      "institution": "蚂蚁财富",
+      "icon": "brand-kind-7",
+      "aliases": [],
+      "isCredit": false,
+      "route": ""
+    },
+    {
+      "id": "kind-8",
+      "name": "微信钱包",
+      "section": "funds",
+      "type": "wechat",
+      "institution": "微信支付",
+      "icon": "wechat",
+      "aliases": [
+        "微信",
+        "零钱",
+        "wechat"
+      ],
+      "isCredit": false,
+      "route": ""
+    },
+    {
+      "id": "kind-9",
+      "name": "微信零钱通",
+      "section": "funds",
+      "type": "investment",
+      "institution": "微信零钱通",
+      "icon": "type-coins",
+      "aliases": [
+        "零钱通"
+      ],
+      "isCredit": false,
+      "route": ""
+    },
+    {
+      "id": "kind-10",
+      "name": "腾讯理财通",
+      "section": "funds",
+      "type": "investment",
+      "institution": "腾讯理财通",
+      "icon": "brand-kind-10",
+      "aliases": [
+        "理财通"
+      ],
+      "isCredit": false,
+      "route": ""
+    },
+    {
+      "id": "kind-11",
+      "name": "QQ钱包",
+      "section": "funds",
+      "type": "other",
+      "institution": "QQ钱包",
+      "icon": "brand-kind-11",
+      "aliases": [],
+      "isCredit": false,
+      "route": ""
+    },
+    {
+      "id": "kind-12",
+      "name": "抖音钱包",
+      "section": "funds",
+      "type": "other",
+      "institution": "抖音钱包",
+      "icon": "brand-kind-12",
+      "aliases": [],
+      "isCredit": false,
+      "route": ""
+    },
+    {
+      "id": "kind-13",
+      "name": "多多钱包",
+      "section": "funds",
+      "type": "other",
+      "institution": "多多钱包",
+      "icon": "brand-kind-13",
+      "aliases": [],
+      "isCredit": false,
+      "route": ""
+    },
+    {
+      "id": "kind-14",
+      "name": "LINE Pay",
+      "section": "funds",
+      "type": "other",
+      "institution": "LINE Pay",
+      "icon": "brand-kind-14",
+      "aliases": [],
+      "isCredit": false,
+      "route": ""
+    },
+    {
+      "id": "kind-15",
+      "name": "PayPay",
+      "section": "funds",
+      "type": "other",
+      "institution": "PayPay",
+      "icon": "brand-kind-15",
+      "aliases": [],
+      "isCredit": false,
+      "route": ""
+    },
+    {
+      "id": "kind-16",
+      "name": "PayPal",
+      "section": "funds",
+      "type": "other",
+      "institution": "PayPal",
+      "icon": "brand-kind-16",
+      "aliases": [],
+      "isCredit": false,
+      "route": ""
+    },
+    {
+      "id": "kind-17",
+      "name": "PayMe",
+      "section": "funds",
+      "type": "other",
+      "institution": "PayMe",
+      "icon": "brand-kind-17",
+      "aliases": [],
+      "isCredit": false,
+      "route": ""
+    },
+    {
+      "id": "kind-18",
+      "name": "Paga",
+      "section": "funds",
+      "type": "other",
+      "institution": "Paga",
+      "icon": "brand-kind-18",
+      "aliases": [],
+      "isCredit": false,
+      "route": ""
+    },
+    {
+      "id": "kind-19",
+      "name": "Chipper Cash",
+      "section": "funds",
+      "type": "other",
+      "institution": "Chipper Cash",
+      "icon": "brand-kind-19",
+      "aliases": [],
+      "isCredit": false,
+      "route": ""
+    },
+    {
+      "id": "kind-20",
+      "name": "YouTrip",
+      "section": "funds",
+      "type": "other",
+      "institution": "YouTrip",
+      "icon": "brand-kind-20",
+      "aliases": [],
+      "isCredit": false,
+      "route": ""
+    },
+    {
+      "id": "kind-21",
+      "name": "TNG eWallet",
+      "section": "funds",
+      "type": "other",
+      "institution": "TNG eWallet",
+      "icon": "brand-kind-21",
+      "aliases": [],
+      "isCredit": false,
+      "route": ""
+    },
+    {
+      "id": "kind-22",
+      "name": "UseTimon",
+      "section": "funds",
+      "type": "other",
+      "institution": "UseTimon",
+      "icon": "brand-kind-22",
+      "aliases": [],
+      "isCredit": false,
+      "route": ""
+    },
+    {
+      "id": "kind-23",
+      "name": "公积金",
+      "section": "funds",
+      "type": "other",
+      "institution": "公积金",
+      "icon": "type-house",
+      "aliases": [],
+      "isCredit": false,
+      "route": ""
+    },
+    {
+      "id": "kind-24",
+      "name": "医保卡",
+      "section": "funds",
+      "type": "other",
+      "institution": "医保卡",
+      "icon": "type-card",
+      "aliases": [],
+      "isCredit": false,
+      "route": ""
+    },
+    {
+      "id": "kind-25",
+      "name": "养老金",
+      "section": "funds",
+      "type": "other",
+      "institution": "养老金",
+      "icon": "type-coins",
+      "aliases": [],
+      "isCredit": false,
+      "route": ""
+    },
+    {
+      "id": "kind-26",
+      "name": "存折",
+      "section": "funds",
+      "type": "savings",
+      "institution": "存折",
+      "icon": "type-card",
+      "aliases": [],
+      "isCredit": false,
+      "route": ""
+    },
+    {
+      "id": "kind-27",
+      "name": "其他资产",
+      "section": "funds",
+      "type": "other",
+      "institution": "其他资产",
+      "icon": "type-wallet",
+      "aliases": [],
+      "isCredit": false,
+      "route": ""
+    },
+    {
+      "id": "kind-28",
+      "name": "信用卡",
+      "section": "credit",
+      "type": "bank",
+      "institution": "信用卡",
+      "icon": "type-card",
+      "aliases": [],
+      "isCredit": true,
+      "route": "creditCard"
+    },
+    {
+      "id": "kind-29",
+      "name": "贷款",
+      "section": "credit",
+      "type": "other",
+      "institution": "贷款",
+      "icon": "type-credit",
+      "aliases": [],
+      "isCredit": true,
+      "route": ""
+    },
+    {
+      "id": "kind-30",
+      "name": "蚂蚁花呗",
+      "section": "credit",
+      "type": "other",
+      "institution": "花呗",
+      "icon": "brand-kind-30",
+      "aliases": [
+        "花呗"
+      ],
+      "isCredit": true,
+      "route": ""
+    },
+    {
+      "id": "kind-31",
+      "name": "京东白条",
+      "section": "credit",
+      "type": "other",
+      "institution": "京东白条",
+      "icon": "brand-kind-31",
+      "aliases": [
+        "白条"
+      ],
+      "isCredit": true,
+      "route": ""
+    },
+    {
+      "id": "kind-32",
+      "name": "京东金条",
+      "section": "credit",
+      "type": "other",
+      "institution": "京东金条",
+      "icon": "brand-kind-32",
+      "aliases": [
+        "金条"
+      ],
+      "isCredit": true,
+      "route": ""
+    },
+    {
+      "id": "kind-33",
+      "name": "借呗",
+      "section": "credit",
+      "type": "other",
+      "institution": "借呗",
+      "icon": "type-credit",
+      "aliases": [
+        "蚂蚁借呗"
+      ],
+      "isCredit": true,
+      "route": ""
+    },
+    {
+      "id": "kind-34",
+      "name": "微粒贷",
+      "section": "credit",
+      "type": "other",
+      "institution": "微粒贷",
+      "icon": "brand-kind-34",
+      "aliases": [],
+      "isCredit": true,
+      "route": ""
+    },
+    {
+      "id": "kind-35",
+      "name": "美团借钱",
+      "section": "credit",
+      "type": "other",
+      "institution": "美团借钱",
+      "icon": "brand-kind-35",
+      "aliases": [],
+      "isCredit": true,
+      "route": ""
+    },
+    {
+      "id": "kind-36",
+      "name": "美团月付",
+      "section": "credit",
+      "type": "other",
+      "institution": "美团月付",
+      "icon": "brand-kind-36",
+      "aliases": [],
+      "isCredit": true,
+      "route": ""
+    },
+    {
+      "id": "kind-37",
+      "name": "抖音放心借",
+      "section": "credit",
+      "type": "other",
+      "institution": "抖音放心借",
+      "icon": "brand-kind-37",
+      "aliases": [
+        "放心借"
+      ],
+      "isCredit": true,
+      "route": ""
+    },
+    {
+      "id": "kind-38",
+      "name": "抖音月付",
+      "section": "credit",
+      "type": "other",
+      "institution": "抖音月付",
+      "icon": "brand-kind-38",
+      "aliases": [],
+      "isCredit": true,
+      "route": ""
+    },
+    {
+      "id": "kind-39",
+      "name": "微信分付",
+      "section": "credit",
+      "type": "other",
+      "institution": "微信分付",
+      "icon": "type-credit",
+      "aliases": [
+        "分付"
+      ],
+      "isCredit": true,
+      "route": ""
+    },
+    {
+      "id": "kind-40",
+      "name": "备用金",
+      "section": "credit",
+      "type": "other",
+      "institution": "备用金",
+      "icon": "type-credit",
+      "aliases": [],
+      "isCredit": true,
+      "route": ""
+    },
+    {
+      "id": "kind-41",
+      "name": "公交卡",
+      "section": "prepaid",
+      "type": "other",
+      "institution": "公交卡",
+      "icon": "type-bus",
+      "aliases": [],
+      "isCredit": false,
+      "route": ""
+    },
+    {
+      "id": "kind-42",
+      "name": "饭卡",
+      "section": "prepaid",
+      "type": "other",
+      "institution": "饭卡",
+      "icon": "type-card",
+      "aliases": [],
+      "isCredit": false,
+      "route": ""
+    },
+    {
+      "id": "kind-43",
+      "name": "话费",
+      "section": "prepaid",
+      "type": "other",
+      "institution": "话费",
+      "icon": "type-phone",
+      "aliases": [],
+      "isCredit": false,
+      "route": ""
+    },
+    {
+      "id": "kind-44",
+      "name": "会员卡",
+      "section": "prepaid",
+      "type": "other",
+      "institution": "会员卡",
+      "icon": "type-card",
+      "aliases": [],
+      "isCredit": false,
+      "route": ""
+    },
+    {
+      "id": "kind-45",
+      "name": "加油卡",
+      "section": "prepaid",
+      "type": "other",
+      "institution": "加油卡",
+      "icon": "type-fuel",
+      "aliases": [],
+      "isCredit": false,
+      "route": ""
+    },
+    {
+      "id": "kind-46",
+      "name": "押金",
+      "section": "prepaid",
+      "type": "other",
+      "institution": "押金",
+      "icon": "type-house",
+      "aliases": [],
+      "isCredit": false,
+      "route": ""
+    },
+    {
+      "id": "kind-47",
+      "name": "Apple ID",
+      "section": "prepaid",
+      "type": "other",
+      "institution": "Apple ID",
+      "icon": "type-wallet",
+      "aliases": [],
+      "isCredit": false,
+      "route": ""
+    },
+    {
+      "id": "kind-48",
+      "name": "八达通",
+      "section": "prepaid",
+      "type": "other",
+      "institution": "八达通",
+      "icon": "brand-kind-48",
+      "aliases": [],
+      "isCredit": false,
+      "route": ""
+    },
+    {
+      "id": "kind-49",
+      "name": "澳门通",
+      "section": "prepaid",
+      "type": "other",
+      "institution": "澳门通",
+      "icon": "brand-kind-49",
+      "aliases": [],
+      "isCredit": false,
+      "route": ""
+    },
+    {
+      "id": "kind-50",
+      "name": "Suica",
+      "section": "prepaid",
+      "type": "other",
+      "institution": "Suica",
+      "icon": "brand-kind-50",
+      "aliases": [],
+      "isCredit": false,
+      "route": ""
+    },
+    {
+      "id": "kind-51",
+      "name": "ICOCA",
+      "section": "prepaid",
+      "type": "other",
+      "institution": "ICOCA",
+      "icon": "brand-kind-51",
+      "aliases": [],
+      "isCredit": false,
+      "route": ""
+    },
+    {
+      "id": "kind-52",
+      "name": "PASMO",
+      "section": "prepaid",
+      "type": "other",
+      "institution": "PASMO",
+      "icon": "brand-kind-52",
+      "aliases": [],
+      "isCredit": false,
+      "route": ""
+    },
+    {
+      "id": "kind-53",
+      "name": "WOWPASS",
+      "section": "prepaid",
+      "type": "other",
+      "institution": "WOWPASS",
+      "icon": "brand-kind-53",
+      "aliases": [],
+      "isCredit": false,
+      "route": ""
+    },
+    {
+      "id": "kind-54",
+      "name": "其他充值卡",
+      "section": "prepaid",
+      "type": "other",
+      "institution": "其他充值卡",
+      "icon": "type-wallet",
+      "aliases": [],
+      "isCredit": false,
+      "route": ""
+    },
+    {
+      "id": "kind-55",
+      "name": "股票",
+      "section": "investment",
+      "type": "investment",
+      "institution": "股票",
+      "icon": "type-chart",
+      "aliases": [],
+      "isCredit": false,
+      "route": ""
+    },
+    {
+      "id": "kind-56",
+      "name": "基金",
+      "section": "investment",
+      "type": "investment",
+      "institution": "基金",
+      "icon": "type-chart",
+      "aliases": [],
+      "isCredit": false,
+      "route": ""
+    },
+    {
+      "id": "kind-57",
+      "name": "黄金",
+      "section": "investment",
+      "type": "investment",
+      "institution": "黄金",
+      "icon": "type-gold",
+      "aliases": [],
+      "isCredit": false,
+      "route": ""
+    },
+    {
+      "id": "kind-58",
+      "name": "保险",
+      "section": "investment",
+      "type": "investment",
+      "institution": "保险",
+      "icon": "type-shield",
+      "aliases": [],
+      "isCredit": false,
+      "route": ""
+    },
+    {
+      "id": "kind-59",
+      "name": "期货",
+      "section": "investment",
+      "type": "investment",
+      "institution": "期货",
+      "icon": "type-chart",
+      "aliases": [],
+      "isCredit": false,
+      "route": ""
+    },
+    {
+      "id": "kind-60",
+      "name": "数字货币",
+      "section": "investment",
+      "type": "investment",
+      "institution": "数字货币",
+      "icon": "type-coins",
+      "aliases": [],
+      "isCredit": false,
+      "route": ""
+    },
+    {
+      "id": "kind-61",
+      "name": "定期存款",
+      "section": "investment",
+      "type": "savings",
+      "institution": "定期存款",
+      "icon": "type-bank",
+      "aliases": [],
+      "isCredit": false,
+      "route": ""
+    },
+    {
+      "id": "kind-62",
+      "name": "其它理财",
+      "section": "investment",
+      "type": "investment",
+      "institution": "其它理财",
+      "icon": "type-coins",
+      "aliases": [],
+      "isCredit": false,
+      "route": ""
+    },
+    {
+      "id": "kind-63",
+      "name": "借出",
+      "section": "receivable",
+      "type": "other",
+      "institution": "借出",
+      "icon": "type-receivable",
+      "aliases": [],
+      "isCredit": false,
+      "route": ""
+    },
+    {
+      "id": "kind-64",
+      "name": "其他应收",
+      "section": "receivable",
+      "type": "other",
+      "institution": "其他应收",
+      "icon": "type-receivable",
+      "aliases": [],
+      "isCredit": false,
+      "route": ""
+    },
+    {
+      "id": "kind-65",
+      "name": "借入",
+      "section": "payable",
+      "type": "other",
+      "institution": "借入",
+      "icon": "type-payable",
+      "aliases": [],
+      "isCredit": true,
+      "route": ""
+    },
+    {
+      "id": "kind-66",
+      "name": "其他应付",
+      "section": "payable",
+      "type": "other",
+      "institution": "其他应付",
+      "icon": "type-payable",
+      "aliases": [],
+      "isCredit": true,
+      "route": ""
+    }
+  ]
+}

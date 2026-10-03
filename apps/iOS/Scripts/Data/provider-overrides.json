@@ -1,0 +1,242 @@
+[
+  {
+    "id": "cmb",
+    "name": "招商银行",
+    "type": "bank",
+    "institution": "招商银行",
+    "icon": "bank-cmb",
+    "aliases": [
+      "招商",
+      "cmb",
+      "cmbchina"
+    ],
+    "matchName": "招商银行"
+  },
+  {
+    "id": "icbc",
+    "name": "中国工商银行",
+    "type": "bank",
+    "institution": "中国工商银行",
+    "icon": "bank-icbc",
+    "aliases": [
+      "工商银行",
+      "工行",
+      "icbc"
+    ],
+    "matchName": "中国工商银行"
+  },
+  {
+    "id": "ccb",
+    "name": "中国建设银行",
+    "type": "bank",
+    "institution": "中国建设银行",
+    "icon": "bank-ccb",
+    "aliases": [
+      "建设银行",
+      "建行",
+      "ccb"
+    ],
+    "matchName": "中国建设银行"
+  },
+  {
+    "id": "abc",
+    "name": "中国农业银行",
+    "type": "bank",
+    "institution": "中国农业银行",
+    "icon": "bank-abc",
+    "aliases": [
+      "农业银行",
+      "农行",
+      "abc",
+      "abchina"
+    ],
+    "matchName": "中国农业银行"
+  },
+  {
+    "id": "boc",
+    "name": "中国银行",
+    "type": "bank",
+    "institution": "中国银行",
+    "icon": "bank-boc",
+    "aliases": [
+      "中行",
+      "boc"
+    ],
+    "matchName": "中国银行"
+  },
+  {
+    "id": "bocom",
+    "name": "交通银行",
+    "type": "bank",
+    "institution": "交通银行",
+    "icon": "bank-bocom",
+    "aliases": [
+      "交行",
+      "bocom",
+      "bankcomm"
+    ],
+    "matchName": "交通银行"
+  },
+  {
+    "id": "psbc",
+    "name": "中国邮政储蓄银行",
+    "type": "bank",
+    "institution": "中国邮政储蓄银行",
+    "icon": "bank-psbc",
+    "aliases": [
+      "邮储银行",
+      "邮政储蓄",
+      "邮储",
+      "psbc"
+    ],
+    "matchName": "中国邮政储蓄银行"
+  },
+  {
+    "id": "spdb",
+    "name": "浦发银行",
+    "type": "bank",
+    "institution": "浦发银行",
+    "icon": "bank-spdb",
+    "aliases": [
+      "上海浦东发展银行",
+      "浦发",
+      "spdb"
+    ],
+    "matchName": "上海浦东发展银行"
+  },
+  {
+    "id": "cib",
+    "name": "兴业银行",
+    "type": "bank",
+    "institution": "兴业银行",
+    "icon": "bank-cib",
+    "aliases": [
+      "兴业",
+      "cib"
+    ],
+    "matchName": "兴业银行"
+  },
+  {
+    "id": "citic",
+    "name": "中信银行",
+    "type": "bank",
+    "institution": "中信银行",
+    "icon": "bank-citic",
+    "aliases": [
+      "中信",
+      "citic"
+    ],
+    "matchName": "中信银行"
+  },
+  {
+    "id": "pingan",
+    "name": "平安银行",
+    "type": "bank",
+    "institution": "平安银行",
+    "icon": "bank-pingan",
+    "aliases": [
+      "平安",
+      "pingan"
+    ],
+    "matchName": "平安银行"
+  },
+  {
+    "id": "cmbc",
+    "name": "中国民生银行",
+    "type": "bank",
+    "institution": "中国民生银行",
+    "icon": "bank-cmbc",
+    "aliases": [
+      "民生银行",
+      "民生",
+      "cmbc"
+    ],
+    "matchName": "中国民生银行"
+  },
+  {
+    "id": "cgb",
+    "name": "广发银行",
+    "type": "bank",
+    "institution": "广发银行",
+    "icon": "bank-cgb",
+    "aliases": [
+      "广东发展银行",
+      "广发",
+      "cgb",
+      "cgbchina"
+    ],
+    "matchName": "广发银行"
+  },
+  {
+    "id": "ceb",
+    "name": "中国光大银行",
+    "type": "bank",
+    "institution": "中国光大银行",
+    "icon": "bank-ceb",
+    "aliases": [
+      "光大银行",
+      "光大",
+      "ceb",
+      "cebbank"
+    ],
+    "matchName": "中国光大银行"
+  },
+  {
+    "id": "nanjing",
+    "name": "南京银行",
+    "type": "bank",
+    "institution": "南京银行",
+    "icon": "bank",
+    "aliases": [
+      "南京",
+      "njcb"
+    ],
+    "matchName": "南京银行"
+  },
+  {
+    "matchName": "浙江网商银行",
+    "name": "网商银行",
+    "icon": "bank",
+    "aliases": [
+      "网商",
+      "mybank"
+    ]
+  },
+  {
+    "matchName": "深圳前海微众银行",
+    "name": "微众银行",
+    "icon": "bank",
+    "aliases": [
+      "微众",
+      "webank"
+    ]
+  },
+  {
+    "matchName": "四川新网银行",
+    "name": "新网银行",
+    "icon": "bank",
+    "aliases": [
+      "新网",
+      "xwbank"
+    ]
+  },
+  {
+    "matchName": "中信百信银行",
+    "name": "百信银行",
+    "icon": "bank",
+    "aliases": [
+      "百信",
+      "aibank"
+    ]
+  },
+  {
+    "matchName": "江苏苏商银行",
+    "name": "江苏苏商银行",
+    "icon": "bank",
+    "aliases": [
+      "苏商",
+      "江苏苏宁银行",
+      "苏宁银行"
+    ]
+  }
+]

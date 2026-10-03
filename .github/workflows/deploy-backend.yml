@@ -1,0 +1,202 @@
+name: Build and deploy backend
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: personal-assistant-backend-production
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build and test Linux ARM64 binary
+    runs-on: [self-hosted, macOS, ARM64]
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: backend/go.mod
+          cache-dependency-path: backend/go.sum
+
+      - name: Test backend on Mac
+        shell: bash
+        working-directory: backend
+        run: go test ./...
+
+      - name: Build Linux ARM64 executable
+        shell: bash
+        working-directory: backend
+        env:
+          CGO_ENABLED: "0"
+          GOOS: linux
+          GOARCH: arm64
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          go build \
+            -trimpath \
+            -ldflags='-s -w' \
+            -o dist/personal-assistant-backend \
+            .
+          chmod 755 dist/personal-assistant-backend
+          file dist/personal-assistant-backend
+          file dist/personal-assistant-backend | grep -q 'ELF 64-bit.*ARM aarch64'
+
+      - name: Upload compiled binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: personal-assistant-backend-linux-arm64
+          path: backend/dist/personal-assistant-backend
+          if-no-files-found: error
+          retention-days: 3
+
+  deploy:
+    name: Deploy and verify backend service
+    needs: build
+    runs-on: [self-hosted, macOS, ARM64]
+    env:
+      SERVER_HOST: 192.168.31.5
+      SERVER_PORT: 16101
+      SERVER_USER: dok
+      SERVER_ROOT: /srv/personal-assistant-backend
+      SERVICE_NAME: personal-assistant-backend.service
+      SSH_KEY_PATH: /Users/lyu/.ssh/personal_assistant_backend
+
+    steps:
+      - name: Check out deployment files
+        uses: actions/checkout@v4
+
+      - name: Download compiled binary
+        uses: actions/download-artifact@v4
+        with:
+          name: personal-assistant-backend-linux-arm64
+          path: backend/dist
+
+      - name: Validate deployment settings
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -r "${SSH_KEY_PATH}" || { echo "SSH key is not readable: ${SSH_KEY_PATH}" >&2; exit 1; }
+          grep -Eq '^listen_addr:[[:space:]]*"?:16101"?[[:space:]]*$' backend/config.example.yaml || {
+            echo "backend/config.example.yaml must set listen_addr: :16101" >&2
+            exit 1
+          }
+          ssh -i "${SSH_KEY_PATH}" \
+            -o IdentitiesOnly=yes \
+            -o BatchMode=yes \
+            -o ConnectTimeout=10 \
+            -o StrictHostKeyChecking=yes \
+            "${SERVER_USER}@${SERVER_HOST}" \
+            "test \"\$(uname -m)\" = aarch64"
+
+      - name: Validate remote MySQL runtime configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+          ssh_options="-i ${SSH_KEY_PATH} -o IdentitiesOnly=yes -o BatchMode=yes -o ConnectTimeout=10 -o StrictHostKeyChecking=yes"
+
+          ssh ${ssh_options} "${SERVER_USER}@${SERVER_HOST}" \
+            "SERVER_ROOT='${SERVER_ROOT}' bash -s" <<'REMOTE_CHECK'
+          set -euo pipefail
+          config_file="${SERVER_ROOT}/shared/config.yaml"
+
+          if [[ ! -r "${config_file}" ]]; then
+            echo "Remote runtime configuration is not readable: ${config_file}" >&2
+            exit 1
+          fi
+
+          grep -Eq '^database_driver:[[:space:]]*mysql[[:space:]]*$' "${config_file}" || {
+            echo "Runtime config must use database_driver: mysql" >&2
+            exit 1
+          }
+          if grep -Eq '^[[:space:]]*password:[[:space:]]*(replace-with-database-password)?[[:space:]]*$' "${config_file}"; then
+            echo "Remote password is empty or still uses the example placeholder" >&2
+            exit 1
+          fi
+          mysql_host="$(awk '/^mysql_connection:/ { section=1; next } section && /^[^[:space:]]/ { section=0 } section && /^[[:space:]]+host:/ { gsub(/"/, "", $2); print $2; exit }' "${config_file}")"
+          mysql_port="$(awk '/^mysql_connection:/ { section=1; next } section && /^[^[:space:]]/ { section=0 } section && /^[[:space:]]+port:/ { gsub(/"/, "", $2); print $2; exit }' "${config_file}")"
+          if [[ -z "${mysql_host}" || -z "${mysql_port}" ]]; then
+            echo "Remote MySQL host or port is missing" >&2
+            exit 1
+          fi
+          if ! timeout 3 bash -c "</dev/tcp/${mysql_host}/${mysql_port}" 2>/dev/null; then
+            echo "Remote MySQL endpoint is unreachable from the backend server: ${mysql_host}:${mysql_port}" >&2
+            exit 1
+          fi
+
+          echo "Remote MySQL runtime configuration is ready: ${mysql_host}:${mysql_port}"
+          REMOTE_CHECK
+
+      - name: Upload executable and configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+          release_id="${GITHUB_SHA:0:12}"
+          remote_release="${SERVER_ROOT}/releases/${release_id}"
+          ssh_options="-i ${SSH_KEY_PATH} -o IdentitiesOnly=yes -o BatchMode=yes -o ConnectTimeout=10 -o StrictHostKeyChecking=yes"
+
+          ssh ${ssh_options} "${SERVER_USER}@${SERVER_HOST}" \
+            "mkdir -p '${remote_release}' '${SERVER_ROOT}/shared' '${SERVER_ROOT}/log' '${SERVER_ROOT}/deploy'"
+
+          rsync -az \
+            -e "ssh ${ssh_options}" \
+            backend/dist/personal-assistant-backend \
+            "${SERVER_USER}@${SERVER_HOST}:${remote_release}/personal-assistant-backend"
+
+          rsync -az \
+            -e "ssh ${ssh_options}" \
+            backend/config.example.yaml \
+            "${SERVER_USER}@${SERVER_HOST}:${remote_release}/config.yaml"
+
+          rsync -az --delete \
+            -e "ssh ${ssh_options}" \
+            deploy/backend/ \
+            "${SERVER_USER}@${SERVER_HOST}:${SERVER_ROOT}/deploy/"
+
+          ssh ${ssh_options} "${SERVER_USER}@${SERVER_HOST}" \
+            "if [ ! -f '${SERVER_ROOT}/shared/config.yaml' ]; then umask 077 && cp '${remote_release}/config.yaml' '${SERVER_ROOT}/shared/config.yaml'; fi"
+
+      - name: Activate release
+        shell: bash
+        run: |
+          set -euo pipefail
+          release_id="${GITHUB_SHA:0:12}"
+          remote_release="${SERVER_ROOT}/releases/${release_id}"
+          ssh_options="-i ${SSH_KEY_PATH} -o IdentitiesOnly=yes -o BatchMode=yes -o ConnectTimeout=10 -o StrictHostKeyChecking=yes"
+
+          previous_release="$(ssh ${ssh_options} "${SERVER_USER}@${SERVER_HOST}" \
+            "readlink -f '${SERVER_ROOT}/current' 2>/dev/null || true")"
+
+          ssh ${ssh_options} "${SERVER_USER}@${SERVER_HOST}" \
+            "chmod 755 '${remote_release}/personal-assistant-backend' && ln -sfnT '${remote_release}' '${SERVER_ROOT}/current' && sudo -n systemctl restart '${SERVICE_NAME}'"
+
+          healthy=false
+          for _ in $(seq 1 18); do
+            if curl --fail --silent --max-time 3 \
+              "http://${SERVER_HOST}:${SERVER_PORT}/api/health" >/dev/null; then
+              healthy=true
+              break
+            fi
+            sleep 5
+          done
+
+          if [[ "${healthy}" != true ]]; then
+            echo "::error::New backend process did not pass /api/health; collecting remote runtime logs before rollback"
+            ssh ${ssh_options} "${SERVER_USER}@${SERVER_HOST}" \
+              "systemctl status '${SERVICE_NAME}' --no-pager -l || true; journalctl -u '${SERVICE_NAME}' --since '5 minutes ago' --no-pager -n 200 || true"
+
+            if [[ -n "${previous_release}" ]]; then
+              ssh ${ssh_options} "${SERVER_USER}@${SERVER_HOST}" \
+                "ln -sfnT '${previous_release}' '${SERVER_ROOT}/current' && sudo -n systemctl restart '${SERVICE_NAME}'"
+            fi
+            echo "Backend runtime health check failed; previous release restored" >&2
+            exit 1
+          fi
+
+          echo "Backend deployed: http://${SERVER_HOST}:${SERVER_PORT}/api"

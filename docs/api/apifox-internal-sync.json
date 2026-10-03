@@ -1,0 +1,555 @@
+{
+  "projectId": 8566884,
+  "branch": "ai/20261003-from-main-user-models",
+  "branchId": 8695469,
+  "syncedAt": "2026-10-03T08:51:10Z",
+  "spec": "docs/api/internal.openapi.json",
+  "endpointCount": 57,
+  "schemaCount": 54,
+  "folders": {
+    "task-endpoint": 96941836,
+    "task-schema": 21421924,
+    "finance-endpoint": 96941837,
+    "finance-schema": 21421927,
+    "health-endpoint": 96941843,
+    "health-schema": 21421929,
+    "ai-endpoint": 96941844,
+    "ai-schema": 21421931,
+    "platform-endpoint": 96941845,
+    "platform-schema": 21421933
+  },
+  "schemas": {
+    "ApiError": 318161971,
+    "AIAction": 318173873,
+    "AIChatMessage": 318173874,
+    "AIChatInput": 318173875,
+    "AIResult": 318173899,
+    "AIScreenshotInput": 318173900,
+    "AIScreenshotResult": 318173901,
+    "EmptyRequest": 318173902,
+    "FinanceAccountCard": 318173903,
+    "FinanceLoanPayment": 318173904,
+    "FinanceLoanPlan": 318173905,
+    "FinanceAccount": 318173906,
+    "FinanceAccountCreateRequest": 318173907,
+    "FinanceAccountImpact": 318173908,
+    "FinanceAccountUpdateRequest": 318173909,
+    "FinanceCashFlow": 318173910,
+    "FinanceCategory": 318173911,
+    "FinanceCategoryCreateRequest": 318173912,
+    "FinanceCreditStatement": 318173913,
+    "FinanceEvent": 318173914,
+    "FinanceInstallmentRow": 318173915,
+    "FinanceInstallmentPlan": 318173916,
+    "FinanceTransaction": 318173917,
+    "FinanceInstallmentSummary": 318173918,
+    "FinanceInstallmentTerms": 318173919,
+    "FinanceInstallmentUpdateRequest": 318173920,
+    "FinanceLoanAdjustmentInput": 318173921,
+    "FinanceLoanTerms": 318173922,
+    "FinanceMetric": 318173923,
+    "FinanceOverview": 318173924,
+    "FinanceTransactionInput": 318173925,
+    "FinancePreset": 318173928,
+    "FinancePresetCreateRequest": 318173929,
+    "FinancePresetUpdateRequest": 318173930,
+    "FinanceRefundRequest": 318173931,
+    "FinanceSyncCommand": 318173932,
+    "FinanceSyncSnapshot": 318173933,
+    "FinanceTransactionSummary": 318173934,
+    "FinanceTransactionUpdateRequest": 318173935,
+    "HealthAnalyzeInput": 318173936,
+    "HealthDay": 318173937,
+    "HealthReport": 318173938,
+    "HealthOverview": 318173939,
+    "HealthSyncInput": 318173940,
+    "HealthSyncedData": 318173941,
+    "TaskCreateRequest": 318173942,
+    "TaskEvent": 318173943,
+    "TaskList": 318173944,
+    "TaskListCreateRequest": 318173945,
+    "TaskListUpdateRequest": 318173954,
+    "TaskProgressRequest": 318173955,
+    "TaskReorderData": 318173956,
+    "TaskReorderRequest": 318173957,
+    "TaskTask": 318173958,
+    "TaskUpdateRequest": 318173959
+  },
+  "endpoints": {
+    "get /api/tasks": {
+      "id": 521357387,
+      "operationId": "task_list",
+      "module": "task",
+      "name": "查询任务列表",
+      "folderId": 96942174,
+      "folderPath": "任务管理/任务与进度"
+    },
+    "post /api/tasks": {
+      "id": 521357388,
+      "operationId": "task_create",
+      "module": "task",
+      "name": "创建任务",
+      "folderId": 96942174,
+      "folderPath": "任务管理/任务与进度"
+    },
+    "patch /api/tasks/{id}": {
+      "id": 521357389,
+      "operationId": "task_update",
+      "module": "task",
+      "name": "更新任务",
+      "folderId": 96942174,
+      "folderPath": "任务管理/任务与进度"
+    },
+    "delete /api/tasks/{id}": {
+      "id": 521357390,
+      "operationId": "task_delete",
+      "module": "task",
+      "name": "删除任务",
+      "folderId": 96942174,
+      "folderPath": "任务管理/任务与进度"
+    },
+    "patch /api/tasks/{id}/progress": {
+      "id": 521357392,
+      "operationId": "task_progress",
+      "module": "task",
+      "name": "调整任务进度",
+      "folderId": 96942174,
+      "folderPath": "任务管理/任务与进度"
+    },
+    "put /api/tasks/reorder": {
+      "id": 521357393,
+      "operationId": "task_reorder",
+      "module": "task",
+      "name": "调整任务排序",
+      "folderId": 96942174,
+      "folderPath": "任务管理/任务与进度"
+    },
+    "get /api/tasks/events": {
+      "id": 521357395,
+      "operationId": "task_events",
+      "module": "task",
+      "name": "查询任务变更记录",
+      "folderId": 96942176,
+      "folderPath": "任务管理/变更记录"
+    },
+    "get /api/task-lists": {
+      "id": 521357414,
+      "operationId": "task_list_list",
+      "module": "task",
+      "name": "查询任务清单",
+      "folderId": 96942175,
+      "folderPath": "任务管理/任务清单"
+    },
+    "post /api/task-lists": {
+      "id": 521357415,
+      "operationId": "task_list_create",
+      "module": "task",
+      "name": "创建任务清单",
+      "folderId": 96942175,
+      "folderPath": "任务管理/任务清单"
+    },
+    "get /api/task-lists/{id}": {
+      "id": 521357428,
+      "operationId": "task_list_get",
+      "module": "task",
+      "name": "获取任务清单详情",
+      "folderId": 96942175,
+      "folderPath": "任务管理/任务清单"
+    },
+    "patch /api/task-lists/{id}": {
+      "id": 521357429,
+      "operationId": "task_list_update",
+      "module": "task",
+      "name": "部分更新任务清单",
+      "folderId": 96942175,
+      "folderPath": "任务管理/任务清单"
+    },
+    "delete /api/task-lists/{id}": {
+      "id": 521357430,
+      "operationId": "task_list_delete",
+      "module": "task",
+      "name": "删除任务清单",
+      "folderId": 96942175,
+      "folderPath": "任务管理/任务清单"
+    },
+    "get /api/finance/presets": {
+      "id": 521357431,
+      "operationId": "finance_preset_list",
+      "module": "finance",
+      "name": "查询预设列表",
+      "folderId": 96942182,
+      "folderPath": "记账管理/预设与周期"
+    },
+    "post /api/finance/presets": {
+      "id": 521357433,
+      "operationId": "finance_preset_create",
+      "module": "finance",
+      "name": "创建预设",
+      "folderId": 96942182,
+      "folderPath": "记账管理/预设与周期"
+    },
+    "patch /api/finance/presets/{id}": {
+      "id": 521357434,
+      "operationId": "finance_preset_update",
+      "module": "finance",
+      "name": "部分更新预设",
+      "folderId": 96942182,
+      "folderPath": "记账管理/预设与周期"
+    },
+    "delete /api/finance/presets/{id}": {
+      "id": 521357435,
+      "operationId": "finance_preset_delete",
+      "module": "finance",
+      "name": "删除预设",
+      "folderId": 96942182,
+      "folderPath": "记账管理/预设与周期"
+    },
+    "post /api/finance/recurring/materialize": {
+      "id": 521357436,
+      "operationId": "finance_recurring_materialize",
+      "module": "finance",
+      "name": "生成周期计划到期流水",
+      "folderId": 96942182,
+      "folderPath": "记账管理/预设与周期"
+    },
+    "get /api/finance/accounts/{id}/statements": {
+      "id": 521357437,
+      "operationId": "finance_account_statements",
+      "module": "finance",
+      "name": "查询账户各期账单金额",
+      "folderId": 96942177,
+      "folderPath": "记账管理/账户与账单"
+    },
+    "get /api/finance/accounts/{id}/statement": {
+      "id": 521357438,
+      "operationId": "finance_account_statement",
+      "module": "finance",
+      "name": "查询账户当前账单",
+      "folderId": 96942177,
+      "folderPath": "记账管理/账户与账单"
+    },
+    "get /api/finance/accounts": {
+      "id": 521357439,
+      "operationId": "finance_account_list",
+      "module": "finance",
+      "name": "查询账户列表",
+      "folderId": 96942177,
+      "folderPath": "记账管理/账户与账单"
+    },
+    "post /api/finance/accounts": {
+      "id": 521357441,
+      "operationId": "finance_account_create",
+      "module": "finance",
+      "name": "创建账户",
+      "folderId": 96942177,
+      "folderPath": "记账管理/账户与账单"
+    },
+    "patch /api/finance/accounts/{id}": {
+      "id": 521357442,
+      "operationId": "finance_account_update",
+      "module": "finance",
+      "name": "部分更新账户",
+      "folderId": 96942177,
+      "folderPath": "记账管理/账户与账单"
+    },
+    "delete /api/finance/accounts/{id}": {
+      "id": 521357444,
+      "operationId": "finance_account_archive",
+      "module": "finance",
+      "name": "归档账户",
+      "folderId": 96942177,
+      "folderPath": "记账管理/账户与账单"
+    },
+    "get /api/finance/accounts/{id}/impact": {
+      "id": 521357445,
+      "operationId": "finance_account_impact",
+      "module": "finance",
+      "name": "查询账户归档影响",
+      "folderId": 96942177,
+      "folderPath": "记账管理/账户与账单"
+    },
+    "get /api/finance/categories": {
+      "id": 521357446,
+      "operationId": "finance_category_list",
+      "module": "finance",
+      "name": "查询记账分类",
+      "folderId": 96942178,
+      "folderPath": "记账管理/记账分类"
+    },
+    "post /api/finance/categories": {
+      "id": 521357448,
+      "operationId": "finance_category_create",
+      "module": "finance",
+      "name": "创建记账分类",
+      "folderId": 96942178,
+      "folderPath": "记账管理/记账分类"
+    },
+    "post /api/finance/transactions/{id}/refund": {
+      "id": 521357449,
+      "operationId": "finance_transaction_refund",
+      "module": "finance",
+      "name": "创建流水退款",
+      "folderId": 96942179,
+      "folderPath": "记账管理/交易流水"
+    },
+    "delete /api/finance/transactions/{id}": {
+      "id": 521357450,
+      "operationId": "finance_transaction_delete",
+      "module": "finance",
+      "name": "删除流水",
+      "folderId": 96942179,
+      "folderPath": "记账管理/交易流水"
+    },
+    "get /api/finance/transactions/{id}": {
+      "id": 521357451,
+      "operationId": "finance_transaction_get",
+      "module": "finance",
+      "name": "获取流水详情",
+      "folderId": 96942179,
+      "folderPath": "记账管理/交易流水"
+    },
+    "patch /api/finance/transactions/{id}": {
+      "id": 521357452,
+      "operationId": "finance_transaction_update",
+      "module": "finance",
+      "name": "部分更新流水",
+      "folderId": 96942179,
+      "folderPath": "记账管理/交易流水"
+    },
+    "get /api/finance/transactions": {
+      "id": 521357453,
+      "operationId": "finance_transaction_list",
+      "module": "finance",
+      "name": "查询流水列表",
+      "folderId": 96942179,
+      "folderPath": "记账管理/交易流水"
+    },
+    "post /api/finance/transactions": {
+      "id": 521357454,
+      "operationId": "finance_transaction_create",
+      "module": "finance",
+      "name": "创建流水",
+      "folderId": 96942179,
+      "folderPath": "记账管理/交易流水"
+    },
+    "post /api/finance/transactions/{id}/confirm": {
+      "id": 521357455,
+      "operationId": "finance_transaction_confirm",
+      "module": "finance",
+      "name": "确认流水入账",
+      "folderId": 96942179,
+      "folderPath": "记账管理/交易流水"
+    },
+    "post /api/finance/transactions/{id}/void": {
+      "id": 521357456,
+      "operationId": "finance_transaction_void",
+      "module": "finance",
+      "name": "作废流水",
+      "folderId": 96942179,
+      "folderPath": "记账管理/交易流水"
+    },
+    "get /api/finance/transactions-summary": {
+      "id": 521357457,
+      "operationId": "finance_transaction_summary",
+      "module": "finance",
+      "name": "汇总流水收支",
+      "folderId": 96942183,
+      "folderPath": "记账管理/统计概览"
+    },
+    "get /api/finance/installments": {
+      "id": 521357458,
+      "operationId": "finance_installment_list",
+      "module": "finance",
+      "name": "查询消费分期列表",
+      "folderId": 96942180,
+      "folderPath": "记账管理/消费分期"
+    },
+    "patch /api/finance/installments/{id}": {
+      "id": 521357459,
+      "operationId": "finance_installment_update",
+      "module": "finance",
+      "name": "部分更新消费分期",
+      "folderId": 96942180,
+      "folderPath": "记账管理/消费分期"
+    },
+    "delete /api/finance/installments/{id}": {
+      "id": 521357460,
+      "operationId": "finance_installment_delete",
+      "module": "finance",
+      "name": "删除消费分期",
+      "folderId": 96942180,
+      "folderPath": "记账管理/消费分期"
+    },
+    "post /api/finance/installments/{id}/finish": {
+      "id": 521357461,
+      "operationId": "finance_installment_finish",
+      "module": "finance",
+      "name": "提前结清消费分期",
+      "folderId": 96942180,
+      "folderPath": "记账管理/消费分期"
+    },
+    "get /api/finance/transactions/{id}/installment": {
+      "id": 521357463,
+      "operationId": "finance_installment_plan",
+      "module": "finance",
+      "name": "获取消费分期计划",
+      "folderId": 96942180,
+      "folderPath": "记账管理/消费分期"
+    },
+    "post /api/finance/transactions/{id}/installment": {
+      "id": 521357488,
+      "operationId": "finance_installment_create",
+      "module": "finance",
+      "name": "创建消费分期",
+      "folderId": 96942180,
+      "folderPath": "记账管理/消费分期"
+    },
+    "post /api/finance/transactions/{id}/installment-preview": {
+      "id": 521357489,
+      "operationId": "finance_installment_preview",
+      "module": "finance",
+      "name": "预览消费分期计划",
+      "folderId": 96942180,
+      "folderPath": "记账管理/消费分期"
+    },
+    "post /api/finance/loan-preview": {
+      "id": 521357490,
+      "operationId": "finance_loan_preview",
+      "module": "finance",
+      "name": "预览贷款计划",
+      "folderId": 96942181,
+      "folderPath": "记账管理/贷款计划"
+    },
+    "get /api/finance/accounts/{id}/loan-plan": {
+      "id": 521357492,
+      "operationId": "finance_loan_plan",
+      "module": "finance",
+      "name": "获取贷款计划",
+      "folderId": 96942181,
+      "folderPath": "记账管理/贷款计划"
+    },
+    "post /api/finance/accounts/{id}/loan-adjustment-preview": {
+      "id": 521357493,
+      "operationId": "finance_loan_adjustment_preview",
+      "module": "finance",
+      "name": "预览贷款计划调整",
+      "folderId": 96942181,
+      "folderPath": "记账管理/贷款计划"
+    },
+    "post /api/finance/accounts/{id}/loan-adjustments": {
+      "id": 521357494,
+      "operationId": "finance_loan_adjustment_save",
+      "module": "finance",
+      "name": "保存贷款计划调整",
+      "folderId": 96942181,
+      "folderPath": "记账管理/贷款计划"
+    },
+    "get /api/finance/overview": {
+      "id": 521357495,
+      "operationId": "finance_overview",
+      "module": "finance",
+      "name": "查询财务概览",
+      "folderId": 96942183,
+      "folderPath": "记账管理/统计概览"
+    },
+    "get /api/finance/events": {
+      "id": 521357496,
+      "operationId": "finance_events",
+      "module": "finance",
+      "name": "查询记账变更记录",
+      "folderId": 96942185,
+      "folderPath": "记账管理/变更记录"
+    },
+    "get /api/finance/sync/snapshot": {
+      "id": 521357497,
+      "operationId": "finance_sync_snapshot",
+      "module": "finance",
+      "name": "读取账本同步快照",
+      "folderId": 96942184,
+      "folderPath": "记账管理/账本同步"
+    },
+    "post /api/finance/sync/commands": {
+      "id": 521357498,
+      "operationId": "finance_sync_commands",
+      "module": "finance",
+      "name": "提交账本同步命令",
+      "folderId": 96942184,
+      "folderPath": "记账管理/账本同步"
+    },
+    "get /api/health-management": {
+      "id": 521357500,
+      "operationId": "health_read",
+      "module": "health",
+      "name": "查询健康汇总和报告",
+      "folderId": 96942189,
+      "folderPath": "健康管理/健康数据"
+    },
+    "delete /api/health-management": {
+      "id": 521357501,
+      "operationId": "health_clear",
+      "module": "health",
+      "name": "清除个人健康数据",
+      "folderId": 96942189,
+      "folderPath": "健康管理/健康数据"
+    },
+    "post /api/health-management/sync": {
+      "id": 521357502,
+      "operationId": "health_sync",
+      "module": "health",
+      "name": "同步健康日汇总",
+      "folderId": 96942189,
+      "folderPath": "健康管理/健康数据"
+    },
+    "post /api/health-management/reports": {
+      "id": 521357503,
+      "operationId": "health_analyze",
+      "module": "health",
+      "name": "生成健康分析报告",
+      "folderId": 96942190,
+      "folderPath": "健康管理/分析报告"
+    },
+    "post /api/ai/chat": {
+      "id": 521357504,
+      "operationId": "ai_chat",
+      "module": "ai",
+      "name": "AI 对话与业务工具执行",
+      "folderId": 96942192,
+      "folderPath": "AI 对话与识别/智能对话"
+    },
+    "post /api/ai/screenshot": {
+      "id": 521357505,
+      "operationId": "ai_screenshot",
+      "module": "ai",
+      "name": "只读识别账单截图",
+      "folderId": 96942193,
+      "folderPath": "AI 对话与识别/截图识别"
+    },
+    "get /api/health": {
+      "id": 521357506,
+      "operationId": "platform_health",
+      "module": "platform"
+    }
+  },
+  "verified": true,
+  "verifiedResourceCount": 111,
+  "verifiedAt": "2026-10-03T08:59:54Z",
+  "functionalFolders": {
+    "任务管理/任务与进度": 96942174,
+    "任务管理/任务清单": 96942175,
+    "任务管理/变更记录": 96942176,
+    "记账管理/账户与账单": 96942177,
+    "记账管理/记账分类": 96942178,
+    "记账管理/交易流水": 96942179,
+    "记账管理/消费分期": 96942180,
+    "记账管理/贷款计划": 96942181,
+    "记账管理/预设与周期": 96942182,
+    "记账管理/统计概览": 96942183,
+    "记账管理/账本同步": 96942184,
+    "记账管理/变更记录": 96942185,
+    "健康管理/健康数据": 96942189,
+    "健康管理/分析报告": 96942190,
+    "AI 对话与识别/智能对话": 96942192,
+    "AI 对话与识别/截图识别": 96942193
+  },
+  "folderOrganizationVerifiedAt": "2026-10-03T09:15:28Z"
+}

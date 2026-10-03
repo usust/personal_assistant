@@ -1,0 +1,536 @@
+{
+  "projectId": 8566884,
+  "branch": "ai/20261003-from-main-user-models",
+  "verifiedAt": "2026-10-03T09:15:28Z",
+  "functionalFolderCount": 19,
+  "movedEndpointCount": 63,
+  "totalEndpointCount": 70,
+  "verified": true,
+  "folders": {
+    "任务管理/任务与进度": 96942174,
+    "任务管理/任务清单": 96942175,
+    "任务管理/变更记录": 96942176,
+    "记账管理/账户与账单": 96942177,
+    "记账管理/记账分类": 96942178,
+    "记账管理/交易流水": 96942179,
+    "记账管理/消费分期": 96942180,
+    "记账管理/贷款计划": 96942181,
+    "记账管理/预设与周期": 96942182,
+    "记账管理/统计概览": 96942183,
+    "记账管理/账本同步": 96942184,
+    "记账管理/变更记录": 96942185,
+    "模型配置/配置管理": 96942186,
+    "模型配置/提供商目录": 96942187,
+    "模型配置/模型目录": 96942188,
+    "健康管理/健康数据": 96942189,
+    "健康管理/分析报告": 96942190,
+    "AI 对话与识别/智能对话": 96942192,
+    "AI 对话与识别/截图识别": 96942193
+  },
+  "endpoints": {
+    "521357387": {
+      "id": 521357387,
+      "method": "get",
+      "path": "/api/tasks",
+      "name": "查询任务列表",
+      "folderId": 96942174,
+      "folderPath": "任务管理/任务与进度"
+    },
+    "521354842": {
+      "id": 521354842,
+      "method": "get",
+      "path": "/api/setting/ai/providers",
+      "name": "获取模型提供商目录",
+      "folderId": 96942187,
+      "folderPath": "模型配置/提供商目录"
+    },
+    "521357431": {
+      "id": 521357431,
+      "method": "get",
+      "path": "/api/finance/presets",
+      "name": "查询预设列表",
+      "folderId": 96942182,
+      "folderPath": "记账管理/预设与周期"
+    },
+    "521357500": {
+      "id": 521357500,
+      "method": "get",
+      "path": "/api/health-management",
+      "name": "查询健康汇总和报告",
+      "folderId": 96942189,
+      "folderPath": "健康管理/健康数据"
+    },
+    "521357504": {
+      "id": 521357504,
+      "method": "post",
+      "path": "/api/ai/chat",
+      "name": "AI 对话与业务工具执行",
+      "folderId": 96942192,
+      "folderPath": "AI 对话与识别/智能对话"
+    },
+    "521357388": {
+      "id": 521357388,
+      "method": "post",
+      "path": "/api/tasks",
+      "name": "创建任务",
+      "folderId": 96942174,
+      "folderPath": "任务管理/任务与进度"
+    },
+    "521354843": {
+      "id": 521354843,
+      "method": "get",
+      "path": "/api/setting/ai/provider_config",
+      "name": "获取可用模型配置",
+      "folderId": 96942186,
+      "folderPath": "模型配置/配置管理"
+    },
+    "521357433": {
+      "id": 521357433,
+      "method": "post",
+      "path": "/api/finance/presets",
+      "name": "创建预设",
+      "folderId": 96942182,
+      "folderPath": "记账管理/预设与周期"
+    },
+    "521357501": {
+      "id": 521357501,
+      "method": "delete",
+      "path": "/api/health-management",
+      "name": "清除个人健康数据",
+      "folderId": 96942189,
+      "folderPath": "健康管理/健康数据"
+    },
+    "521357505": {
+      "id": 521357505,
+      "method": "post",
+      "path": "/api/ai/screenshot",
+      "name": "只读识别账单截图",
+      "folderId": 96942193,
+      "folderPath": "AI 对话与识别/截图识别"
+    },
+    "521339104": {
+      "id": 521339104,
+      "method": "get",
+      "path": "/api/users",
+      "name": "查询用户列表",
+      "folderId": 96937817,
+      "folderPath": "用户模块/用户管理"
+    },
+    "521357389": {
+      "id": 521357389,
+      "method": "patch",
+      "path": "/api/tasks/{id}",
+      "name": "更新任务",
+      "folderId": 96942174,
+      "folderPath": "任务管理/任务与进度"
+    },
+    "521354844": {
+      "id": 521354844,
+      "method": "post",
+      "path": "/api/setting/ai/provider_config/create",
+      "name": "创建模型配置",
+      "folderId": 96942186,
+      "folderPath": "模型配置/配置管理"
+    },
+    "521357434": {
+      "id": 521357434,
+      "method": "patch",
+      "path": "/api/finance/presets/{id}",
+      "name": "部分更新预设",
+      "folderId": 96942182,
+      "folderPath": "记账管理/预设与周期"
+    },
+    "521357502": {
+      "id": 521357502,
+      "method": "post",
+      "path": "/api/health-management/sync",
+      "name": "同步健康日汇总",
+      "folderId": 96942189,
+      "folderPath": "健康管理/健康数据"
+    },
+    "521357390": {
+      "id": 521357390,
+      "method": "delete",
+      "path": "/api/tasks/{id}",
+      "name": "删除任务",
+      "folderId": 96942174,
+      "folderPath": "任务管理/任务与进度"
+    },
+    "521354845": {
+      "id": 521354845,
+      "method": "patch",
+      "path": "/api/setting/ai/provider_config/{id}",
+      "name": "部分更新模型配置",
+      "folderId": 96942186,
+      "folderPath": "模型配置/配置管理"
+    },
+    "521357435": {
+      "id": 521357435,
+      "method": "delete",
+      "path": "/api/finance/presets/{id}",
+      "name": "删除预设",
+      "folderId": 96942182,
+      "folderPath": "记账管理/预设与周期"
+    },
+    "521357503": {
+      "id": 521357503,
+      "method": "post",
+      "path": "/api/health-management/reports",
+      "name": "生成健康分析报告",
+      "folderId": 96942190,
+      "folderPath": "健康管理/分析报告"
+    },
+    "521357392": {
+      "id": 521357392,
+      "method": "patch",
+      "path": "/api/tasks/{id}/progress",
+      "name": "调整任务进度",
+      "folderId": 96942174,
+      "folderPath": "任务管理/任务与进度"
+    },
+    "521354846": {
+      "id": 521354846,
+      "method": "delete",
+      "path": "/api/setting/ai/provider_config/{id}",
+      "name": "删除模型配置",
+      "folderId": 96942186,
+      "folderPath": "模型配置/配置管理"
+    },
+    "521357436": {
+      "id": 521357436,
+      "method": "post",
+      "path": "/api/finance/recurring/materialize",
+      "name": "生成周期计划到期流水",
+      "folderId": 96942182,
+      "folderPath": "记账管理/预设与周期"
+    },
+    "521357393": {
+      "id": 521357393,
+      "method": "put",
+      "path": "/api/tasks/reorder",
+      "name": "调整任务排序",
+      "folderId": 96942174,
+      "folderPath": "任务管理/任务与进度"
+    },
+    "521354847": {
+      "id": 521354847,
+      "method": "post",
+      "path": "/api/setting/ai/models",
+      "name": "获取上游模型目录",
+      "folderId": 96942188,
+      "folderPath": "模型配置/模型目录"
+    },
+    "521357437": {
+      "id": 521357437,
+      "method": "get",
+      "path": "/api/finance/accounts/{id}/statements",
+      "name": "查询账户各期账单金额",
+      "folderId": 96942177,
+      "folderPath": "记账管理/账户与账单"
+    },
+    "521357395": {
+      "id": 521357395,
+      "method": "get",
+      "path": "/api/tasks/events",
+      "name": "查询任务变更记录",
+      "folderId": 96942176,
+      "folderPath": "任务管理/变更记录"
+    },
+    "521357438": {
+      "id": 521357438,
+      "method": "get",
+      "path": "/api/finance/accounts/{id}/statement",
+      "name": "查询账户当前账单",
+      "folderId": 96942177,
+      "folderPath": "记账管理/账户与账单"
+    },
+    "521357414": {
+      "id": 521357414,
+      "method": "get",
+      "path": "/api/task-lists",
+      "name": "查询任务清单",
+      "folderId": 96942175,
+      "folderPath": "任务管理/任务清单"
+    },
+    "521357439": {
+      "id": 521357439,
+      "method": "get",
+      "path": "/api/finance/accounts",
+      "name": "查询账户列表",
+      "folderId": 96942177,
+      "folderPath": "记账管理/账户与账单"
+    },
+    "521357415": {
+      "id": 521357415,
+      "method": "post",
+      "path": "/api/task-lists",
+      "name": "创建任务清单",
+      "folderId": 96942175,
+      "folderPath": "任务管理/任务清单"
+    },
+    "521357441": {
+      "id": 521357441,
+      "method": "post",
+      "path": "/api/finance/accounts",
+      "name": "创建账户",
+      "folderId": 96942177,
+      "folderPath": "记账管理/账户与账单"
+    },
+    "521357428": {
+      "id": 521357428,
+      "method": "get",
+      "path": "/api/task-lists/{id}",
+      "name": "获取任务清单详情",
+      "folderId": 96942175,
+      "folderPath": "任务管理/任务清单"
+    },
+    "521357442": {
+      "id": 521357442,
+      "method": "patch",
+      "path": "/api/finance/accounts/{id}",
+      "name": "部分更新账户",
+      "folderId": 96942177,
+      "folderPath": "记账管理/账户与账单"
+    },
+    "521357429": {
+      "id": 521357429,
+      "method": "patch",
+      "path": "/api/task-lists/{id}",
+      "name": "部分更新任务清单",
+      "folderId": 96942175,
+      "folderPath": "任务管理/任务清单"
+    },
+    "521357444": {
+      "id": 521357444,
+      "method": "delete",
+      "path": "/api/finance/accounts/{id}",
+      "name": "归档账户",
+      "folderId": 96942177,
+      "folderPath": "记账管理/账户与账单"
+    },
+    "521357430": {
+      "id": 521357430,
+      "method": "delete",
+      "path": "/api/task-lists/{id}",
+      "name": "删除任务清单",
+      "folderId": 96942175,
+      "folderPath": "任务管理/任务清单"
+    },
+    "521357445": {
+      "id": 521357445,
+      "method": "get",
+      "path": "/api/finance/accounts/{id}/impact",
+      "name": "查询账户归档影响",
+      "folderId": 96942177,
+      "folderPath": "记账管理/账户与账单"
+    },
+    "521357446": {
+      "id": 521357446,
+      "method": "get",
+      "path": "/api/finance/categories",
+      "name": "查询记账分类",
+      "folderId": 96942178,
+      "folderPath": "记账管理/记账分类"
+    },
+    "521357448": {
+      "id": 521357448,
+      "method": "post",
+      "path": "/api/finance/categories",
+      "name": "创建记账分类",
+      "folderId": 96942178,
+      "folderPath": "记账管理/记账分类"
+    },
+    "521357449": {
+      "id": 521357449,
+      "method": "post",
+      "path": "/api/finance/transactions/{id}/refund",
+      "name": "创建流水退款",
+      "folderId": 96942179,
+      "folderPath": "记账管理/交易流水"
+    },
+    "521357450": {
+      "id": 521357450,
+      "method": "delete",
+      "path": "/api/finance/transactions/{id}",
+      "name": "删除流水",
+      "folderId": 96942179,
+      "folderPath": "记账管理/交易流水"
+    },
+    "521357451": {
+      "id": 521357451,
+      "method": "get",
+      "path": "/api/finance/transactions/{id}",
+      "name": "获取流水详情",
+      "folderId": 96942179,
+      "folderPath": "记账管理/交易流水"
+    },
+    "521357452": {
+      "id": 521357452,
+      "method": "patch",
+      "path": "/api/finance/transactions/{id}",
+      "name": "部分更新流水",
+      "folderId": 96942179,
+      "folderPath": "记账管理/交易流水"
+    },
+    "521357453": {
+      "id": 521357453,
+      "method": "get",
+      "path": "/api/finance/transactions",
+      "name": "查询流水列表",
+      "folderId": 96942179,
+      "folderPath": "记账管理/交易流水"
+    },
+    "521357454": {
+      "id": 521357454,
+      "method": "post",
+      "path": "/api/finance/transactions",
+      "name": "创建流水",
+      "folderId": 96942179,
+      "folderPath": "记账管理/交易流水"
+    },
+    "521357455": {
+      "id": 521357455,
+      "method": "post",
+      "path": "/api/finance/transactions/{id}/confirm",
+      "name": "确认流水入账",
+      "folderId": 96942179,
+      "folderPath": "记账管理/交易流水"
+    },
+    "521357456": {
+      "id": 521357456,
+      "method": "post",
+      "path": "/api/finance/transactions/{id}/void",
+      "name": "作废流水",
+      "folderId": 96942179,
+      "folderPath": "记账管理/交易流水"
+    },
+    "521357457": {
+      "id": 521357457,
+      "method": "get",
+      "path": "/api/finance/transactions-summary",
+      "name": "汇总流水收支",
+      "folderId": 96942183,
+      "folderPath": "记账管理/统计概览"
+    },
+    "521357458": {
+      "id": 521357458,
+      "method": "get",
+      "path": "/api/finance/installments",
+      "name": "查询消费分期列表",
+      "folderId": 96942180,
+      "folderPath": "记账管理/消费分期"
+    },
+    "521357459": {
+      "id": 521357459,
+      "method": "patch",
+      "path": "/api/finance/installments/{id}",
+      "name": "部分更新消费分期",
+      "folderId": 96942180,
+      "folderPath": "记账管理/消费分期"
+    },
+    "521357460": {
+      "id": 521357460,
+      "method": "delete",
+      "path": "/api/finance/installments/{id}",
+      "name": "删除消费分期",
+      "folderId": 96942180,
+      "folderPath": "记账管理/消费分期"
+    },
+    "521357461": {
+      "id": 521357461,
+      "method": "post",
+      "path": "/api/finance/installments/{id}/finish",
+      "name": "提前结清消费分期",
+      "folderId": 96942180,
+      "folderPath": "记账管理/消费分期"
+    },
+    "521357463": {
+      "id": 521357463,
+      "method": "get",
+      "path": "/api/finance/transactions/{id}/installment",
+      "name": "获取消费分期计划",
+      "folderId": 96942180,
+      "folderPath": "记账管理/消费分期"
+    },
+    "521357488": {
+      "id": 521357488,
+      "method": "post",
+      "path": "/api/finance/transactions/{id}/installment",
+      "name": "创建消费分期",
+      "folderId": 96942180,
+      "folderPath": "记账管理/消费分期"
+    },
+    "521357489": {
+      "id": 521357489,
+      "method": "post",
+      "path": "/api/finance/transactions/{id}/installment-preview",
+      "name": "预览消费分期计划",
+      "folderId": 96942180,
+      "folderPath": "记账管理/消费分期"
+    },
+    "521357490": {
+      "id": 521357490,
+      "method": "post",
+      "path": "/api/finance/loan-preview",
+      "name": "预览贷款计划",
+      "folderId": 96942181,
+      "folderPath": "记账管理/贷款计划"
+    },
+    "521357492": {
+      "id": 521357492,
+      "method": "get",
+      "path": "/api/finance/accounts/{id}/loan-plan",
+      "name": "获取贷款计划",
+      "folderId": 96942181,
+      "folderPath": "记账管理/贷款计划"
+    },
+    "521357493": {
+      "id": 521357493,
+      "method": "post",
+      "path": "/api/finance/accounts/{id}/loan-adjustment-preview",
+      "name": "预览贷款计划调整",
+      "folderId": 96942181,
+      "folderPath": "记账管理/贷款计划"
+    },
+    "521357494": {
+      "id": 521357494,
+      "method": "post",
+      "path": "/api/finance/accounts/{id}/loan-adjustments",
+      "name": "保存贷款计划调整",
+      "folderId": 96942181,
+      "folderPath": "记账管理/贷款计划"
+    },
+    "521357495": {
+      "id": 521357495,
+      "method": "get",
+      "path": "/api/finance/overview",
+      "name": "查询财务概览",
+      "folderId": 96942183,
+      "folderPath": "记账管理/统计概览"
+    },
+    "521357496": {
+      "id": 521357496,
+      "method": "get",
+      "path": "/api/finance/events",
+      "name": "查询记账变更记录",
+      "folderId": 96942185,
+      "folderPath": "记账管理/变更记录"
+    },
+    "521357497": {
+      "id": 521357497,
+      "method": "get",
+      "path": "/api/finance/sync/snapshot",
+      "name": "读取账本同步快照",
+      "folderId": 96942184,
+      "folderPath": "记账管理/账本同步"
+    },
+    "521357498": {
+      "id": 521357498,
+      "method": "post",
+      "path": "/api/finance/sync/commands",
+      "name": "提交账本同步命令",
+      "folderId": 96942184,
+      "folderPath": "记账管理/账本同步"
+    }
+  }
+}

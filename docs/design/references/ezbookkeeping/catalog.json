@@ -1,0 +1,586 @@
+{
+  "source": "https://github.com/mayswind/ezbookkeeping",
+  "commit": "bfdaf0a96a74953123aef3bdb40f913efc0662a2",
+  "iconSource": "https://github.com/icons8/line-awesome",
+  "iconCommit": "2bb7870e4d3f3a2d966eea2c94912096621e0662",
+  "groups": [
+    {
+      "name": "食品饮料",
+      "categoryIconId": "1",
+      "color": "ff6b22",
+      "subCategories": [
+        {
+          "name": "食品",
+          "categoryIconId": "2",
+          "color": "ff6b22",
+          "sourceName": "Food",
+          "iconClass": "las la-concierge-bell",
+          "iconFile": "concierge-bell-solid.svg"
+        },
+        {
+          "name": "饮料",
+          "categoryIconId": "30",
+          "color": "ff6b22",
+          "sourceName": "Drink",
+          "iconClass": "las la-mug-hot",
+          "iconFile": "mug-hot-solid.svg"
+        },
+        {
+          "name": "水果零食",
+          "categoryIconId": "70",
+          "color": "ff6b22",
+          "sourceName": "Fruit & Snack",
+          "iconClass": "las la-ice-cream",
+          "iconFile": "ice-cream-solid.svg"
+        }
+      ],
+      "type": "expense",
+      "sourceName": "Food & Drink",
+      "iconClass": "las la-utensils",
+      "iconFile": "utensils-solid.svg"
+    },
+    {
+      "name": "服饰外貌",
+      "categoryIconId": "100",
+      "color": "673ab7",
+      "subCategories": [
+        {
+          "name": "衣服",
+          "categoryIconId": "110",
+          "color": "673ab7",
+          "sourceName": "Clothing",
+          "iconClass": "las la-tshirt",
+          "iconFile": "tshirt-solid.svg"
+        },
+        {
+          "name": "饰品",
+          "categoryIconId": "170",
+          "color": "673ab7",
+          "sourceName": "Jewelry",
+          "iconClass": "las la-gem",
+          "iconFile": "gem-solid.svg"
+        },
+        {
+          "name": "化妆品",
+          "categoryIconId": "180",
+          "color": "673ab7",
+          "sourceName": "Cosmetic",
+          "iconClass": "las la-spray-can",
+          "iconFile": "spray-can-solid.svg"
+        },
+        {
+          "name": "美容美发",
+          "categoryIconId": "190",
+          "color": "673ab7",
+          "sourceName": "Hair Cuts & Salon",
+          "iconClass": "las la-cut",
+          "iconFile": "cut-solid.svg"
+        }
+      ],
+      "type": "expense",
+      "sourceName": "Clothing & Appearance",
+      "iconClass": "las la-user-tie",
+      "iconFile": "user-tie-solid.svg"
+    },
+    {
+      "name": "住宅家居",
+      "categoryIconId": "200",
+      "color": "000000",
+      "subCategories": [
+        {
+          "name": "家居用品",
+          "categoryIconId": "210",
+          "color": "000000",
+          "sourceName": "Houseware",
+          "iconClass": "las la-toilet-paper",
+          "iconFile": "toilet-paper-solid.svg"
+        },
+        {
+          "name": "电子产品",
+          "categoryIconId": "230",
+          "color": "000000",
+          "sourceName": "Electronics",
+          "iconClass": "las la-plug",
+          "iconFile": "plug-solid.svg"
+        },
+        {
+          "name": "维修保养",
+          "categoryIconId": "250",
+          "color": "000000",
+          "sourceName": "Repairs & Maintenance",
+          "iconClass": "las la-tools",
+          "iconFile": "tools-solid.svg"
+        },
+        {
+          "name": "家政服务",
+          "categoryIconId": "260",
+          "color": "000000",
+          "sourceName": "Housekeeping Services",
+          "iconClass": "las la-broom",
+          "iconFile": "broom-solid.svg"
+        },
+        {
+          "name": "水电煤气",
+          "categoryIconId": "270",
+          "color": "000000",
+          "sourceName": "Utilities Expense",
+          "iconClass": "las la-tint",
+          "iconFile": "tint-solid.svg"
+        },
+        {
+          "name": "租金贷款",
+          "categoryIconId": "290",
+          "color": "000000",
+          "sourceName": "Rent & Mortgage",
+          "iconClass": "las la-file-invoice",
+          "iconFile": "file-invoice-solid.svg"
+        }
+      ],
+      "type": "expense",
+      "sourceName": "Housing & Houseware",
+      "iconClass": "las la-home",
+      "iconFile": "home-solid.svg"
+    },
+    {
+      "name": "交通出行",
+      "categoryIconId": "300",
+      "color": "009688",
+      "subCategories": [
+        {
+          "name": "公共交通",
+          "categoryIconId": "310",
+          "color": "009688",
+          "sourceName": "Public Transit",
+          "iconClass": "las la-bus",
+          "iconFile": "bus-solid.svg"
+        },
+        {
+          "name": "打车租车",
+          "categoryIconId": "320",
+          "color": "009688",
+          "sourceName": "Taxi & Car Rental",
+          "iconClass": "las la-taxi",
+          "iconFile": "taxi-solid.svg"
+        },
+        {
+          "name": "私家车费用",
+          "categoryIconId": "330",
+          "color": "009688",
+          "sourceName": "Personal Car Expense",
+          "iconClass": "las la-car",
+          "iconFile": "car-solid.svg"
+        },
+        {
+          "name": "火车票",
+          "categoryIconId": "370",
+          "color": "009688",
+          "sourceName": "Train Tickets",
+          "iconClass": "las la-train",
+          "iconFile": "train-solid.svg"
+        },
+        {
+          "name": "飞机票",
+          "categoryIconId": "390",
+          "color": "009688",
+          "sourceName": "Airline Tickets",
+          "iconClass": "las la-plane",
+          "iconFile": "plane-solid.svg"
+        }
+      ],
+      "type": "expense",
+      "sourceName": "Transportation",
+      "iconClass": "las la-traffic-light",
+      "iconFile": "traffic-light-solid.svg"
+    },
+    {
+      "name": "交流通讯",
+      "categoryIconId": "400",
+      "color": "2196f3",
+      "subCategories": [
+        {
+          "name": "电话费",
+          "categoryIconId": "420",
+          "color": "2196f3",
+          "sourceName": "Telephone Bill",
+          "iconClass": "las la-mobile",
+          "iconFile": "mobile-solid.svg"
+        },
+        {
+          "name": "上网费",
+          "categoryIconId": "430",
+          "color": "2196f3",
+          "sourceName": "Internet Bill",
+          "iconClass": "las la-desktop",
+          "iconFile": "desktop-solid.svg"
+        },
+        {
+          "name": "快递费",
+          "categoryIconId": "480",
+          "color": "2196f3",
+          "sourceName": "Express Fee",
+          "iconClass": "las la-shipping-fast",
+          "iconFile": "shipping-fast-solid.svg"
+        }
+      ],
+      "type": "expense",
+      "sourceName": "Communication",
+      "iconClass": "las la-phone-volume",
+      "iconFile": "phone-volume-solid.svg"
+    },
+    {
+      "name": "休闲娱乐",
+      "categoryIconId": "500",
+      "color": "ff2d55",
+      "subCategories": [
+        {
+          "name": "运动健身",
+          "categoryIconId": "510",
+          "color": "ff2d55",
+          "sourceName": "Sports & Fitness",
+          "iconClass": "las la-dumbbell",
+          "iconFile": "dumbbell-solid.svg"
+        },
+        {
+          "name": "聚会支出",
+          "categoryIconId": "540",
+          "color": "ff2d55",
+          "sourceName": "Party Expense",
+          "iconClass": "las la-microphone-alt",
+          "iconFile": "microphone-alt-solid.svg"
+        },
+        {
+          "name": "电影演出",
+          "categoryIconId": "550",
+          "color": "ff2d55",
+          "sourceName": "Movies & Shows",
+          "iconClass": "las la-film",
+          "iconFile": "film-solid.svg"
+        },
+        {
+          "name": "玩具游戏",
+          "categoryIconId": "560",
+          "color": "ff2d55",
+          "sourceName": "Toys & Games",
+          "iconClass": "las la-gamepad",
+          "iconFile": "gamepad-solid.svg"
+        },
+        {
+          "name": "会员订阅",
+          "categoryIconId": "570",
+          "color": "ff2d55",
+          "sourceName": "Subscriptions",
+          "iconClass": "las la-id-card-alt",
+          "iconFile": "id-card-alt-solid.svg"
+        },
+        {
+          "name": "宠物花费",
+          "categoryIconId": "580",
+          "color": "ff2d55",
+          "sourceName": "Pet Expense",
+          "iconClass": "las la-dog",
+          "iconFile": "dog-solid.svg"
+        },
+        {
+          "name": "旅游度假",
+          "categoryIconId": "590",
+          "color": "ff2d55",
+          "sourceName": "Travelling",
+          "iconClass": "las la-umbrella-beach",
+          "iconFile": "umbrella-beach-solid.svg"
+        }
+      ],
+      "type": "expense",
+      "sourceName": "Entertainment",
+      "iconClass": "las la-heart",
+      "iconFile": "heart-solid.svg"
+    },
+    {
+      "name": "教育学习",
+      "categoryIconId": "600",
+      "color": "cddc39",
+      "subCategories": [
+        {
+          "name": "书报杂志",
+          "categoryIconId": "610",
+          "color": "cddc39",
+          "sourceName": "Books & Newspaper & Magazines",
+          "iconClass": "las la-book-open",
+          "iconFile": "book-open-solid.svg"
+        },
+        {
+          "name": "培训课程",
+          "categoryIconId": "660",
+          "color": "cddc39",
+          "sourceName": "Training Courses",
+          "iconClass": "las la-chalkboard-teacher",
+          "iconFile": "chalkboard-teacher-solid.svg"
+        },
+        {
+          "name": "认证考试",
+          "categoryIconId": "680",
+          "color": "cddc39",
+          "sourceName": "Certification & Examination",
+          "iconClass": "las la-award",
+          "iconFile": "award-solid.svg"
+        }
+      ],
+      "type": "expense",
+      "sourceName": "Education & Studying",
+      "iconClass": "las la-book-reader",
+      "iconFile": "book-reader-solid.svg"
+    },
+    {
+      "name": "礼物捐赠",
+      "categoryIconId": "700",
+      "color": "4cd964",
+      "subCategories": [
+        {
+          "name": "礼物",
+          "categoryIconId": "710",
+          "color": "4cd964",
+          "sourceName": "Gifts",
+          "iconClass": "las la-gift",
+          "iconFile": "gift-solid.svg"
+        },
+        {
+          "name": "捐赠",
+          "categoryIconId": "780",
+          "color": "4cd964",
+          "sourceName": "Donations",
+          "iconClass": "las la-donate",
+          "iconFile": "donate-solid.svg"
+        }
+      ],
+      "type": "expense",
+      "sourceName": "Gifts & Donations",
+      "iconClass": "las la-glass-cheers",
+      "iconFile": "glass-cheers-solid.svg"
+    },
+    {
+      "name": "医疗健康",
+      "categoryIconId": "800",
+      "color": "ff3b30",
+      "subCategories": [
+        {
+          "name": "检查治疗",
+          "categoryIconId": "840",
+          "color": "ff3b30",
+          "sourceName": "Diagnosis & Treatment",
+          "iconClass": "las la-stethoscope",
+          "iconFile": "stethoscope-solid.svg"
+        },
+        {
+          "name": "药品",
+          "categoryIconId": "860",
+          "color": "ff3b30",
+          "sourceName": "Medications",
+          "iconClass": "las la-capsules",
+          "iconFile": "capsules-solid.svg"
+        },
+        {
+          "name": "医疗器械",
+          "categoryIconId": "890",
+          "color": "ff3b30",
+          "sourceName": "Medical Devices",
+          "iconClass": "las la-thermometer",
+          "iconFile": "thermometer-solid.svg"
+        }
+      ],
+      "type": "expense",
+      "sourceName": "Medical & Healthcare",
+      "iconClass": "las la-briefcase-medical",
+      "iconFile": "briefcase-medical-solid.svg"
+    },
+    {
+      "name": "金融保险",
+      "categoryIconId": "900",
+      "color": "ff9500",
+      "subCategories": [
+        {
+          "name": "税费支出",
+          "categoryIconId": "910",
+          "color": "ff9500",
+          "sourceName": "Tax Expense",
+          "iconClass": "las la-coins",
+          "iconFile": "coins-solid.svg"
+        },
+        {
+          "name": "手续费",
+          "categoryIconId": "930",
+          "color": "ff9500",
+          "sourceName": "Service Charge",
+          "iconClass": "las la-hand-holding-usd",
+          "iconFile": "hand-holding-usd-solid.svg"
+        },
+        {
+          "name": "保险支出",
+          "categoryIconId": "950",
+          "color": "ff9500",
+          "sourceName": "Insurance Expense",
+          "iconClass": "las la-file-invoice-dollar",
+          "iconFile": "file-invoice-dollar-solid.svg"
+        },
+        {
+          "name": "利息支出",
+          "categoryIconId": "970",
+          "color": "ff9500",
+          "sourceName": "Interest Expense",
+          "iconClass": "las la-percentage",
+          "iconFile": "percentage-solid.svg"
+        },
+        {
+          "name": "赔偿罚款",
+          "categoryIconId": "990",
+          "color": "ff9500",
+          "sourceName": "Compensation & Fine",
+          "iconClass": "las la-gavel",
+          "iconFile": "gavel-solid.svg"
+        }
+      ],
+      "type": "expense",
+      "sourceName": "Finance & Insurance",
+      "iconClass": "las la-landmark",
+      "iconFile": "landmark-solid.svg"
+    },
+    {
+      "name": "其他杂项",
+      "categoryIconId": "1000",
+      "color": "8e8e93",
+      "subCategories": [
+        {
+          "name": "其他支出",
+          "categoryIconId": "1010",
+          "color": "8e8e93",
+          "sourceName": "Other Expense",
+          "iconClass": "las la-minus-circle",
+          "iconFile": "minus-circle-solid.svg"
+        }
+      ],
+      "type": "expense",
+      "sourceName": "Miscellaneous",
+      "iconClass": "las la-pen",
+      "iconFile": "pen-solid.svg"
+    },
+    {
+      "name": "职业收入",
+      "categoryIconId": "2000",
+      "color": "ff6b22",
+      "subCategories": [
+        {
+          "name": "工资收入",
+          "categoryIconId": "2010",
+          "color": "ff6b22",
+          "sourceName": "Salary Income",
+          "iconClass": "las la-wallet",
+          "iconFile": "wallet-solid.svg"
+        },
+        {
+          "name": "奖金收入",
+          "categoryIconId": "2020",
+          "color": "ff6b22",
+          "sourceName": "Bonus Income",
+          "iconClass": "las la-trophy",
+          "iconFile": "trophy-solid.svg"
+        },
+        {
+          "name": "加班收入",
+          "categoryIconId": "231",
+          "color": "ff6b22",
+          "sourceName": "Overtime Pay",
+          "iconClass": "las la-lightbulb",
+          "iconFile": "lightbulb-solid.svg"
+        },
+        {
+          "name": "兼职收入",
+          "categoryIconId": "2080",
+          "color": "ff6b22",
+          "sourceName": "Side Job Income",
+          "iconClass": "las la-user-clock",
+          "iconFile": "user-clock-solid.svg"
+        }
+      ],
+      "type": "income",
+      "sourceName": "Occupational Earnings",
+      "iconClass": "las la-suitcase",
+      "iconFile": "suitcase-solid.svg"
+    },
+    {
+      "name": "金融投资",
+      "categoryIconId": "900",
+      "color": "ff9500",
+      "subCategories": [
+        {
+          "name": "投资收入",
+          "categoryIconId": "2100",
+          "color": "ff9500",
+          "sourceName": "Investment Income",
+          "iconClass": "las la-chart-area",
+          "iconFile": "chart-area-solid.svg"
+        },
+        {
+          "name": "租金收入",
+          "categoryIconId": "290",
+          "color": "ff9500",
+          "sourceName": "Rental Income",
+          "iconClass": "las la-file-invoice",
+          "iconFile": "file-invoice-solid.svg"
+        },
+        {
+          "name": "利息收入",
+          "categoryIconId": "970",
+          "color": "ff9500",
+          "sourceName": "Interest Income",
+          "iconClass": "las la-percentage",
+          "iconFile": "percentage-solid.svg"
+        }
+      ],
+      "type": "income",
+      "sourceName": "Finance & Investment",
+      "iconClass": "las la-landmark",
+      "iconFile": "landmark-solid.svg"
+    },
+    {
+      "name": "其他杂项",
+      "categoryIconId": "1000",
+      "color": "8e8e93",
+      "subCategories": [
+        {
+          "name": "礼品红包",
+          "categoryIconId": "710",
+          "color": "8e8e93",
+          "sourceName": "Gift & Lucky Money",
+          "iconClass": "las la-gift",
+          "iconFile": "gift-solid.svg"
+        },
+        {
+          "name": "中奖收入",
+          "categoryIconId": "564",
+          "color": "8e8e93",
+          "sourceName": "Winnings Income",
+          "iconClass": "las la-dice",
+          "iconFile": "dice-solid.svg"
+        },
+        {
+          "name": "意外收入",
+          "categoryIconId": "5200",
+          "color": "8e8e93",
+          "sourceName": "Windfall",
+          "iconClass": "las la-money-bill-wave-alt",
+          "iconFile": "money-bill-wave-alt-solid.svg"
+        },
+        {
+          "name": "其他收入",
+          "categoryIconId": "3010",
+          "color": "8e8e93",
+          "sourceName": "Other Income",
+          "iconClass": "las la-plus-circle",
+          "iconFile": "plus-circle-solid.svg"
+        }
+      ],
+      "type": "income",
+      "sourceName": "Miscellaneous",
+      "iconClass": "las la-pen",
+      "iconFile": "pen-solid.svg"
+    }
+  ]
+}

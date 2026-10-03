@@ -1,0 +1,1905 @@
+{
+  "banks": [
+    {
+      "id": "nfra-B0001H111000001",
+      "name": "中国工商银行",
+      "icon": "brand-icbc",
+      "file": "brand-icbc.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/icbc-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "b39ab756454e0213782123a09aa3e5979907a93fc1ca4cfec466b4c1f402e43b"
+    },
+    {
+      "id": "nfra-B0002H111000001",
+      "name": "中国农业银行",
+      "icon": "brand-abchina",
+      "file": "brand-abchina.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/abchina-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "1176b226eb7a88cf92eadfaf24cc02cf667592d89d1f8f5abd50951b31f2797a"
+    },
+    {
+      "id": "nfra-B0003H111000001",
+      "name": "中国银行",
+      "icon": "brand-boc",
+      "file": "brand-boc.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/boc-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "521bb1790360e95e9f45a6bba9e414acfe8d53be96f3df695ad3015309efdc4d"
+    },
+    {
+      "id": "nfra-B0004H111000001",
+      "name": "中国建设银行",
+      "icon": "brand-ccb",
+      "file": "brand-ccb.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/ccb-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "e95762dd36b78cfadc0e035566504e9fd29a1c71c82009d3daf9f94d71386350"
+    },
+    {
+      "id": "nfra-B0005H131000001",
+      "name": "交通银行",
+      "icon": "brand-bankcomm",
+      "file": "brand-bankcomm.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/bankcomm-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "6fa1f6837abc0302add8cdab8f776c2e724e6d5702700da9edd1a99145b6b49d"
+    },
+    {
+      "id": "nfra-B0018H111000001",
+      "name": "中国邮政储蓄银行",
+      "icon": "brand-psbc",
+      "file": "brand-psbc.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/psbc-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "52ba6ec2c7dc30302a7318cbe790927e882def90c51d9c4cb9b98a1bf3b25eea"
+    },
+    {
+      "id": "nfra-B0006H111000001",
+      "name": "中信银行",
+      "icon": "brand-citicbank",
+      "file": "brand-citicbank.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/citicbank-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "71c9d58020b25f5e7668cf9704321631b9728743eba59355554ddbffbb92377f"
+    },
+    {
+      "id": "nfra-B0007H111000001",
+      "name": "中国光大银行",
+      "icon": "brand-cebbank",
+      "file": "brand-cebbank.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/cebbank-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "7541efb680d58327caafaf0eaa7ed634c1d2f53de48afd4682756b5ba908fee7"
+    },
+    {
+      "id": "nfra-B0011H144030001",
+      "name": "招商银行",
+      "icon": "brand-cmbchina",
+      "file": "brand-cmbchina.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/cmbchina-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "1c9b6e27461eaa5060b118ba7960ed7e7a780928c745833c2ba34eb9b22c437b"
+    },
+    {
+      "id": "nfra-B0015H131000001",
+      "name": "浦发银行",
+      "icon": "brand-spdb",
+      "file": "brand-spdb.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/spdb-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "5f7b40df6ec9ed437d44aef42291e442063fd97176416de37293ea2845c01f50"
+    },
+    {
+      "id": "nfra-B0009H111000001",
+      "name": "中国民生银行",
+      "icon": "brand-cmbc",
+      "file": "brand-cmbc.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/cmbc-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "5cf02212314a35611e021c83a67be7fb0f2214f87eb0c938ae18748d182b14aa"
+    },
+    {
+      "id": "nfra-B0008H111000001",
+      "name": "华夏银行",
+      "icon": "brand-hxb",
+      "file": "brand-hxb.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/hxb-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "73eda23a1c81eb7b3bae1bd5f33ff895b312a42899d015753b6d7db530b61c13"
+    },
+    {
+      "id": "nfra-B0014H144030001",
+      "name": "平安银行",
+      "icon": "brand-pingan",
+      "file": "brand-pingan.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/pingan-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "134be5286dfdef3941da51c04ae679d7798e19a1828095abda37ca337bc3f1bd"
+    },
+    {
+      "id": "nfra-B0013H135010001",
+      "name": "兴业银行",
+      "icon": "brand-cib",
+      "file": "brand-cib.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/cib-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "347a95cc36c071d24fcc0dabb67487c2b8c5e3f5ca09a2e549ec45ba145f612e"
+    },
+    {
+      "id": "nfra-B0012H144010001",
+      "name": "广发银行",
+      "icon": "brand-cgbchina",
+      "file": "brand-cgbchina.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/cgbchina-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "6edd150fade4b8b6743efcf476d0eeb022a08e1e369fbb6564654dc8974c9d2b"
+    },
+    {
+      "id": "nfra-B0017H112000001",
+      "name": "渤海银行",
+      "icon": "brand-cbhb",
+      "file": "brand-cbhb.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/cbhb-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "f763631b4dbcecea699ab6092bb01f4ca08de1db85653981fb7bc9aa5739fadb"
+    },
+    {
+      "id": "nfra-B0010H133010001",
+      "name": "浙商银行",
+      "icon": "brand-czbank",
+      "file": "brand-czbank.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/czbank-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "05409cbf88fd33389f741664db966e2184b2eedbaf37962c91e4454395f66b99"
+    },
+    {
+      "id": "nfra-B0016H137010001",
+      "name": "恒丰银行",
+      "icon": "brand-hfbank",
+      "file": "brand-hfbank.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/hfbank-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "32328f09fb80ca8fc7946477f70cb4855420e1de78ab80d25ce5f07a14224688"
+    },
+    {
+      "id": "nfra-B0107H211000001",
+      "name": "北京银行",
+      "icon": "brand-bankofbeijing",
+      "file": "brand-bankofbeijing.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/bankofbeijing-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "dcda0eac0ed7093de81104081eed2054562f25b47fff695adc8475d7df321117"
+    },
+    {
+      "id": "nfra-B0108H212000001",
+      "name": "天津银行",
+      "icon": "brand-nfra-b0108h212000001",
+      "file": "brand-nfra-b0108h212000001.png",
+      "source": "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/f3/99/ba/f399ba39-9267-6d44-37e9-f08ac9dce9e0/AppIcon-0-0-1x_U007ephone-0-1-0-0-sRGB-85-220.png/512x512bb.jpg",
+      "page": "https://apps.apple.com/cn/app/%E5%A4%A9%E6%B4%A5%E9%93%B6%E8%A1%8C%E6%89%8B%E6%9C%BA%E9%93%B6%E8%A1%8C/id617997246?uo=4",
+      "publisher": "Bank of Tianjin Co., Ltd.",
+      "sha256": "3b3c642f2fb7827cb59c212e9bf337dc64e98db446fabdd9fa75542acb112f76"
+    },
+    {
+      "id": "nfra-B0282H213010001",
+      "name": "河北银行",
+      "icon": "brand-hebbank",
+      "file": "brand-hebbank.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/hebbank-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "37bb194f8ec1fc0e703b89118f3d481044d41f1b55326571d3dd12d26f9d0fb7"
+    },
+    {
+      "id": "nfra-B0340H313060001",
+      "name": "保定银行",
+      "icon": "brand-bd-bank",
+      "file": "brand-bd-bank.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/bd-bank-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "75d8ec06cbbf199b98ccd40f2fa93eda6d0dfc2fbf09040ff9ef8071a4f35efa"
+    },
+    {
+      "id": "nfra-B1018H313090001",
+      "name": "沧州银行",
+      "icon": "brand-bankcz",
+      "file": "brand-bankcz.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/bankcz-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "e3a56a8170105dae5272d03a89a1b31cea3b5a1e9fdc3f6c92eac5e8a29464c3"
+    },
+    {
+      "id": "nfra-B1021H313080001",
+      "name": "承德银行",
+      "icon": "brand-chengdebank",
+      "file": "brand-chengdebank.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/chengdebank-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "2b7ef1577f53f0f82ed65b69afe3490af3539f3ea3da42c1b0e89c0909d3b2ef"
+    },
+    {
+      "id": "nfra-B0331H313040001",
+      "name": "邯郸银行",
+      "icon": "brand-hdcb",
+      "file": "brand-hdcb.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/hdcb-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "48446d55a1901b037fbfe35bb2fa4a98dc3dc7a66eae491a7df804db98c6f628"
+    },
+    {
+      "id": "nfra-B1016H313110001",
+      "name": "衡水银行",
+      "icon": "brand-nfra-b1016h313110001",
+      "file": "brand-nfra-b1016h313110001.png",
+      "source": "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/5d/72/8d/5d728dbc-36dc-14fc-d497-b728495a27e3/AppIcon-Release-0-0-1x_U007emarketing-0-5-0-85-220.png/512x512bb.jpg",
+      "page": "https://apps.apple.com/cn/app/%E8%A1%A1%E6%B0%B4%E9%93%B6%E8%A1%8C%E6%89%8B%E6%9C%BA%E9%93%B6%E8%A1%8C%E5%AE%A2%E6%88%B7%E7%AB%AF/id1315576144?uo=4",
+      "publisher": "Hengshui Commercial Bank Co., Ltd.",
+      "sha256": "5ab7be889dbad9ca351130644ca60faa12f8b458f905fdc01ed28cad1ddaddd0"
+    },
+    {
+      "id": "nfra-B0277H313100001",
+      "name": "廊坊银行",
+      "icon": "brand-lccb",
+      "file": "brand-lccb.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/lccb-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "7ba2b7903a12f4f15559d60806cf9e56ecc8b44cadc9a426becdeae2de91efc6"
+    },
+    {
+      "id": "nfra-B0111H313030002",
+      "name": "秦皇岛银行",
+      "icon": "brand-qhdbank",
+      "file": "brand-qhdbank.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/qhdbank-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "0dcf7f4c4ee13e6a68d02198e4e27f6d5d7790a346677c6012e5d001b0591a54"
+    },
+    {
+      "id": "nfra-B1013H313020001",
+      "name": "唐山银行",
+      "icon": "brand-ts-bank",
+      "file": "brand-ts-bank.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/ts-bank-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "c05c8f058d0959815024b08412949be1047408f56ce9071d6e1a7e253fb980d7"
+    },
+    {
+      "id": "nfra-B0301H313050001",
+      "name": "邢台银行",
+      "icon": "brand-nfra-b0301h313050001",
+      "file": "brand-nfra-b0301h313050001.png",
+      "source": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/f6/09/a4/f609a473-172c-560b-25d6-90a591199958/AppIcon-Release-0-0-1x_U007emarketing-0-6-0-0-sRGB-85-220.png/512x512bb.jpg",
+      "page": "https://apps.apple.com/cn/app/%E9%82%A2%E5%8F%B0%E9%93%B6%E8%A1%8C/id1038377408?uo=4",
+      "publisher": "Bank of Xingtai Co., Ltd.",
+      "sha256": "f8bc6fb9e000c34d04aff04913674f1d832b5c4dae06c717973f5f76ce3c358c"
+    },
+    {
+      "id": "nfra-B0772H313070001",
+      "name": "张家口银行",
+      "icon": "brand-nfra-b0772h313070001",
+      "file": "brand-nfra-b0772h313070001.png",
+      "source": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/b3/06/b6/b306b606-417a-05a3-fe72-746eca65af10/AppIcon-1x_U007emarketing-0-6-0-sRGB-85-220-0.png/512x512bb.jpg",
+      "page": "https://apps.apple.com/cn/app/%E5%BC%A0%E5%AE%B6%E5%8F%A3%E9%93%B6%E8%A1%8C/id1015230242?uo=4",
+      "publisher": "Zhangjiakou Bank Co., Ltd.",
+      "sha256": "66ebad503871da00cffeafebb39b297c4ff25c90d12013ee5da8f71b558700e2"
+    },
+    {
+      "id": "nfra-B0116H214010001",
+      "name": "晋商银行",
+      "icon": "brand-jshbank",
+      "file": "brand-jshbank.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/jshbank-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "be2c8914d87d41585fba5e9b15aad01717699ffacd6dcf33be09f033af1069b5"
+    },
+    {
+      "id": "nfra-B1033H215010001",
+      "name": "内蒙古银行",
+      "icon": "brand-nfra-b1033h215010001",
+      "file": "brand-nfra-b1033h215010001.png",
+      "source": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/ee/7d/c6/ee7dc624-d72b-6e94-aa7c-cdada9803a2b/AppIcon_AppStore-0-0-1x_U007emarketing-0-6-0-0-sRGB-85-220.png/512x512bb.jpg",
+      "page": "https://apps.apple.com/cn/app/%E5%86%85%E8%92%99%E5%8F%A4%E9%93%B6%E8%A1%8C%E6%89%8B%E6%9C%BA%E5%AE%A2%E6%88%B7%E7%AB%AF/id1091196954?uo=4",
+      "publisher": "Bank Of Inner Mongolia Co.,Ltd.",
+      "sha256": "3d50c394953946b5ea98bb65e311c3894ad700d78c054f66bf72989837f97963"
+    },
+    {
+      "id": "nfra-B1067H315060001",
+      "name": "鄂尔多斯银行",
+      "icon": "brand-ordosbank",
+      "file": "brand-ordosbank.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/ordosbank-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "784bce469fffaee95e6a253d9395717c7e832ec45ec16ae058b2bee7c8914edc"
+    },
+    {
+      "id": "nfra-B1068H315030001",
+      "name": "乌海银行",
+      "icon": "brand-wuhaicb",
+      "file": "brand-wuhaicb.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/wuhaicb-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "165509254b9dc9a8ec0ec815a7de1c00a07bec32a8bdb41f5625802388887096"
+    },
+    {
+      "id": "nfra-B0264H221010001",
+      "name": "盛京银行",
+      "icon": "brand-shengjingbank",
+      "file": "brand-shengjingbank.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/shengjingbank-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "957428718bc130504fee73b6d536e062d7dfcfefae0be97c5d4f015619b3b465"
+    },
+    {
+      "id": "nfra-B0127H321070001",
+      "name": "锦州银行",
+      "icon": "brand-jinzhoubank",
+      "file": "brand-jinzhoubank.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/jinzhoubank-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "91df85f7c2dd6fe6eda5feed77b8e7493fb0c8a76fed8fd62c50dde94566e230"
+    },
+    {
+      "id": "nfra-B0124H321030001",
+      "name": "鞍山银行",
+      "icon": "brand-bankofas",
+      "file": "brand-bankofas.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/bankofas-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "666118c754b006aa3704cbe685892be99596fa66980b18fbc198aff71ba0da8d"
+    },
+    {
+      "id": "nfra-B1071H321050001",
+      "name": "本溪银行",
+      "icon": "brand-nfra-b1071h321050001",
+      "file": "brand-nfra-b1071h321050001.png",
+      "source": "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/5a/bd/b6/5abdb65e-d418-1ff5-d78b-510169ad1a6b/AppIcon_BenXi-0-0-1x_U007emarketing-0-4-0-85-220.jpeg/512x512bb.jpg",
+      "page": "https://apps.apple.com/cn/app/%E6%9C%AC%E6%BA%AA%E9%93%B6%E8%A1%8C/id1169948488?uo=4",
+      "publisher": "Benxi City Commercial Bank Co., Ltd.",
+      "sha256": "5bb54fb80641a8892827a4d0c8cce7d6e22eae953712e7ea5cad6319112a2d72"
+    },
+    {
+      "id": "nfra-B0330H321130001",
+      "name": "朝阳银行",
+      "icon": "brand-cycb",
+      "file": "brand-cycb.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/cycb-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "28b99166207b66f70c0defb296c120313801902d113f7f3e133c2ac09cbec1ab"
+    },
+    {
+      "id": "nfra-B0126H321060001",
+      "name": "丹东银行",
+      "icon": "brand-dandongbank",
+      "file": "brand-dandongbank.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/dandongbank-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "37e86a1116c13a3a5b886a24a33d6cad713e70891ef893943a67b0377d8c0bfc"
+    },
+    {
+      "id": "nfra-B0125H321040001",
+      "name": "抚顺银行",
+      "icon": "brand-bankoffs",
+      "file": "brand-bankoffs.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/bankoffs-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "327988a45cbeca712ec644c0f4d04fed2463fc440ab01517b4255e48de87ef20"
+    },
+    {
+      "id": "nfra-B0129H321090001",
+      "name": "阜新银行",
+      "icon": "brand-fuxinbank",
+      "file": "brand-fuxinbank.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/fuxinbank-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "10cf3c05a2cb36d46b730ad9bf863cf5e73c2a41b85ad1077ff9a5fb0884a478"
+    },
+    {
+      "id": "nfra-B0132H321140001",
+      "name": "葫芦岛银行",
+      "icon": "brand-bankofhld",
+      "file": "brand-bankofhld.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/bankofhld-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "452fb0e888095f40a7666a808637f4372cef6914cca91b888f40180db3bcc991"
+    },
+    {
+      "id": "nfra-B0131H321110001",
+      "name": "盘锦银行",
+      "icon": "brand-bankofpj",
+      "file": "brand-bankofpj.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/bankofpj-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "47ab12fcd9e010522642df6d98bd380436385404ad48b1babf152c67e17282be"
+    },
+    {
+      "id": "nfra-B0267H321120001",
+      "name": "铁岭银行",
+      "icon": "brand-bankoftieling",
+      "file": "brand-bankoftieling.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/bankoftieling-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "182b3c0a80c6c793f27e25f6409ca850207f88b04c3f1cb5420b6739c52462c4"
+    },
+    {
+      "id": "nfra-B0128H321080001",
+      "name": "营口银行",
+      "icon": "brand-bankofyk",
+      "file": "brand-bankofyk.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/bankofyk-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "00504916629d81d5884676f2d47b5dc4cb255dd1ce9742329ebbcd4a865ca8b2"
+    },
+    {
+      "id": "nfra-B0302H222010001",
+      "name": "吉林银行",
+      "icon": "brand-jlbank",
+      "file": "brand-jlbank.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/jlbank-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "f446bd6586b7e646be105fd58c38c5e4aff02c58686bffff585bed56bb12abf8"
+    },
+    {
+      "id": "nfra-B0306H223010001",
+      "name": "哈尔滨银行",
+      "icon": "brand-hrbb",
+      "file": "brand-hrbb.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/hrbb-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "47e5fa4b3f91362eb31811aed662cd3a570bc71068a4eaa5e9f8cecb60d699db"
+    },
+    {
+      "id": "nfra-B1056H223010001",
+      "name": "龙江银行",
+      "icon": "brand-lj-bank",
+      "file": "brand-lj-bank.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/lj-bank-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "5eda5aa6245b8ea53f239b5f1368f9134ec1d555d54d8eb0fe89751e373dfe45"
+    },
+    {
+      "id": "nfra-B0139H231000001",
+      "name": "上海银行",
+      "icon": "brand-bosc",
+      "file": "brand-bosc.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/bosc-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "3b454e30d96bb0d5a385687cf2e84127256477976df694a352f561d79e25e806"
+    },
+    {
+      "id": "nfra-B0243H232010001",
+      "name": "江苏银行",
+      "icon": "brand-jsbchina",
+      "file": "brand-jsbchina.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/jsbchina-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "9ca601202dceb72920dbc71960c1bf04ca38e58e0903db89bce4153c47a55fdc"
+    },
+    {
+      "id": "nfra-B0140H232010001",
+      "name": "南京银行",
+      "icon": "brand-njcb",
+      "file": "brand-njcb.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/njcb-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "a829f0c8a4209fb4263d38411d5b289961c15b6be4e90e076d21199de279eef6"
+    },
+    {
+      "id": "nfra-B0236H332050001",
+      "name": "苏州银行",
+      "icon": "brand-suzhoubank",
+      "file": "brand-suzhoubank.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/suzhoubank-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "4ebc6204631426021c8bc0104f43f85a56cd12949f97cd6699b903a1c0a3fcf9"
+    },
+    {
+      "id": "nfra-B0347H332120001",
+      "name": "江苏长江商业银行",
+      "icon": "brand-cjccb",
+      "file": "brand-cjccb.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/cjccb-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "bcf639e50603a89cd47e96a1512733052d09adc82b8b8c96e71b3345209f11e3"
+    },
+    {
+      "id": "nfra-B0151H233010001",
+      "name": "杭州银行",
+      "icon": "brand-hzbank",
+      "file": "brand-hzbank.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/hzbank-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "1d1806d5a783c2f53b1a27d0ee240f946cb1269d70322c91cfd240df3eda1448"
+    },
+    {
+      "id": "nfra-B0155H233050001",
+      "name": "湖州银行",
+      "icon": "brand-hzccb",
+      "file": "brand-hzccb.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/hzccb-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "ad69f7dc55860b06b6f834de4d8cca4a954f7d488d7367e77778632282e5ec57"
+    },
+    {
+      "id": "nfra-B0154H233040001",
+      "name": "嘉兴银行",
+      "icon": "brand-nfra-b0154h233040001",
+      "file": "brand-nfra-b0154h233040001.png",
+      "source": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/5a/fa/18/5afa1836-0d21-566d-249a-37c83ebb0a5e/AppIcon-0-0-1x_U007emarketing-0-6-0-0-sRGB-85-220.png/512x512bb.jpg",
+      "page": "https://apps.apple.com/cn/app/%E5%98%89%E5%85%B4%E9%93%B6%E8%A1%8C/id579494201?uo=4",
+      "publisher": "BANK OF JIAXING CO., LTD",
+      "sha256": "3e09e3b30e7d8762f1b9b87b68530a20fddc78756c89210de0a98384ec5f8b6d"
+    },
+    {
+      "id": "nfra-B0157H233070001",
+      "name": "金华银行",
+      "icon": "brand-jhccb",
+      "file": "brand-jhccb.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/jhccb-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "a080fe3114194937cb1715edee3058bc6df976ddea1ca0f1438d809345dba999"
+    },
+    {
+      "id": "nfra-B0156H233060001",
+      "name": "绍兴银行",
+      "icon": "brand-sxccb",
+      "file": "brand-sxccb.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/sxccb-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "9c0ace76bcb23d205ed4189e86fc24f6cec5d7175567a4bf7b84ee84edd69cc9"
+    },
+    {
+      "id": "nfra-B0159H233100001",
+      "name": "台州银行",
+      "icon": "brand-nfra-b0159h233100001",
+      "file": "brand-nfra-b0159h233100001.png",
+      "source": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/ea/3c/b1/ea3cb1a7-847d-feaf-6694-bf6211730ce1/AppIcon-0-0-1x_U007emarketing-0-11-0-0-sRGB-85-220.png/512x512bb.jpg",
+      "page": "https://apps.apple.com/cn/app/%E5%8F%B0%E5%B7%9E%E9%93%B6%E8%A1%8C/id1441939599?uo=4",
+      "publisher": "BANK OF TAIZHOU",
+      "sha256": "e5bfb3c6ca3fc3f8fe44b288d7164171ef739de7b735b5d929c333532c3f1a15"
+    },
+    {
+      "id": "nfra-B0153H233030001",
+      "name": "温州银行",
+      "icon": "brand-wzcb",
+      "file": "brand-wzcb.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/wzcb-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "4f2698680a306d644cff084cdb2ad802ed35e3c44673d1de1a61ee94a6d43607"
+    },
+    {
+      "id": "nfra-B0158H233070001",
+      "name": "浙江稠州商业银行",
+      "icon": "brand-czcb",
+      "file": "brand-czcb.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/czcb-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "71f762fb28ce904f79d1760ca6c01063e16d3d1557e5b6cd05a8209bf00df7e7"
+    },
+    {
+      "id": "nfra-B0161H233100001",
+      "name": "浙江民泰商业银行",
+      "icon": "brand-nfra-b0161h233100001",
+      "file": "brand-nfra-b0161h233100001.png",
+      "source": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/56/25/d1/5625d1b9-9629-8155-adea-4a9ca2ba4226/AppIcon-0-0-1x_U007ephone-0-7-0-sRGB-85-220.png/512x512bb.jpg",
+      "page": "https://apps.apple.com/cn/app/%E6%B0%91%E6%B3%B0%E9%93%B6%E8%A1%8C/id902323378?uo=4",
+      "publisher": "Zhejiang Mintai Commercial Bank Co., Ltd.",
+      "sha256": "9249c2f2c996fe68d96fe09e00b025f604e2f8fbb6dfccce8d0f36daa044fa26"
+    },
+    {
+      "id": "nfra-B0160H233100001",
+      "name": "浙江泰隆商业银行",
+      "icon": "brand-nfra-b0160h233100001",
+      "file": "brand-nfra-b0160h233100001.png",
+      "source": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/00/cd/f6/00cdf664-38a6-7ea5-7aa5-a5480fafca16/AppIcon-1x_U007ephone-0-1-0-85-220-0.png/512x512bb.jpg",
+      "page": "https://apps.apple.com/cn/app/%E6%B3%B0%E9%9A%86%E9%93%B6%E8%A1%8C/id724195760?uo=4",
+      "publisher": "Zhejiang Tailong Commercial Bank Co., Ltd.",
+      "sha256": "5f06dee3592eff5c0cfb1433fa28491b7798ee858007c5052020ddda1abdadb9"
+    },
+    {
+      "id": "nfra-B0162H234010001",
+      "name": "徽商银行",
+      "icon": "brand-hsbank",
+      "file": "brand-hsbank.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/hsbank-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "db7cba86960732ebac66b5fd4add3262313d352ddc251e4396532f45dd51615c"
+    },
+    {
+      "id": "nfra-B0163H235010001",
+      "name": "福建海峡银行",
+      "icon": "brand-fjhxbank",
+      "file": "brand-fjhxbank.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/fjhxbank-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "234611748c0f89c5ec2cb78345ec80598fddbb705a4f049bc8454d0d84e09967"
+    },
+    {
+      "id": "nfra-B0271H335050001",
+      "name": "泉州银行",
+      "icon": "brand-qzccbank",
+      "file": "brand-qzccbank.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/qzccbank-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "c3d5af15989b35c879de89ddcc666912237c22aa58cb95e05f672c999383b6b2"
+    },
+    {
+      "id": "nfra-B0792H236010001",
+      "name": "江西银行",
+      "icon": "brand-jx-bank",
+      "file": "brand-jx-bank.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/jx-bank-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "c26c13df4fd8859cc4f58a29f66cb790ae3b4a2558c94d6b237724221a73ac84"
+    },
+    {
+      "id": "nfra-B0353H336070001",
+      "name": "赣州银行",
+      "icon": "brand-gzccb",
+      "file": "brand-gzccb.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/gzccb-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "cb443336793d58b09bce1e193a13f33eb5efa42a6df03420234b768a6a82386b"
+    },
+    {
+      "id": "nfra-B0348H336040001",
+      "name": "九江银行",
+      "icon": "brand-jjccb",
+      "file": "brand-jjccb.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/jjccb-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "eb0c2112702508f6089556a0ab09738c9aa8f84f797f900bf7db2bab36262c08"
+    },
+    {
+      "id": "nfra-B1030H336110001",
+      "name": "上饶银行",
+      "icon": "brand-srbank",
+      "file": "brand-srbank.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/srbank-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "c08bc880b9005ee36baf170cff0e280e4e5554454d2929d736d103aed2b15d4d"
+    },
+    {
+      "id": "nfra-B0169H237010001",
+      "name": "齐鲁银行",
+      "icon": "brand-qlbchina",
+      "file": "brand-qlbchina.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/qlbchina-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "3229dcadd16d481c64d5259847847182d35ad3661111e733009daa6b988e7d31"
+    },
+    {
+      "id": "nfra-B0180H337140001",
+      "name": "德州银行",
+      "icon": "brand-dzbchina",
+      "file": "brand-dzbchina.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/dzbchina-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "95be78597f922fb7d1b7024a2f136b42673eed215c1ecb2fdba2c34653713457"
+    },
+    {
+      "id": "nfra-B0172H337050001",
+      "name": "东营银行",
+      "icon": "brand-dyccb",
+      "file": "brand-dyccb.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/dyccb-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "2236f1395f028b9e52490d5fff0a38e3edc9d9931ca77791e8705093bb705a81"
+    },
+    {
+      "id": "nfra-B0175H337080001",
+      "name": "济宁银行",
+      "icon": "brand-jn-bank",
+      "file": "brand-jn-bank.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/jn-bank-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "c3e6321f3ade584bc04a19b8641ef40bd904e07fdaad08d769762e1e12dd78bd"
+    },
+    {
+      "id": "nfra-B0325H337120001",
+      "name": "莱商银行",
+      "icon": "brand-lsbankchina",
+      "file": "brand-lsbankchina.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/lsbankchina-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "551e0219b700ec813fca57cf92832fa333ebae4e56a7e182c2d8cb193e219132"
+    },
+    {
+      "id": "nfra-B0179H337130001",
+      "name": "临商银行",
+      "icon": "brand-lsbchina",
+      "file": "brand-lsbchina.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/lsbchina-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "0760d65fdff6571c21ef0d7c544e788a2debf3521df5a25e9cafff075d6e91cb"
+    },
+    {
+      "id": "nfra-B0171H337030001",
+      "name": "齐商银行",
+      "icon": "brand-qsbank",
+      "file": "brand-qsbank.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/qsbank-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "07584bd430ac208c32406a15d4163cc871bf729b1e801d0010566e4f75edf871"
+    },
+    {
+      "id": "nfra-B0177H337110001",
+      "name": "日照银行",
+      "icon": "brand-bankofrizhao",
+      "file": "brand-bankofrizhao.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/bankofrizhao-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "41d48a5b25c26fca6d8318dc1d73495281154975d2b18137ebeaad76863b54b9"
+    },
+    {
+      "id": "nfra-B0297H337090001",
+      "name": "泰安银行",
+      "icon": "brand-taccb",
+      "file": "brand-taccb.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/taccb-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "48df0c0419a0af2c0eeb4ef5439269831eb750c7fdcb31ffd4618cce5fb4d9ae"
+    },
+    {
+      "id": "nfra-B0176H337100001",
+      "name": "威海市商业银行",
+      "icon": "brand-nfra-b0176h337100001",
+      "file": "brand-nfra-b0176h337100001.png",
+      "source": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/34/b2/d1/34b2d123-7ef3-0986-d56f-a85c71d4c5cc/AppIcon_AppStore-0-0-1x_U007emarketing-0-6-0-0-sRGB-85-220.png/512x512bb.jpg",
+      "page": "https://apps.apple.com/cn/app/%E5%A8%81%E6%B5%B7%E9%93%B6%E8%A1%8C%E6%89%8B%E6%9C%BA%E9%93%B6%E8%A1%8C/id919441827?uo=4",
+      "publisher": "Weihai Bank Co., Ltd.",
+      "sha256": "bef835449a330a567af79e81424ef079be454b986d34f71c85a7facc912bbf69"
+    },
+    {
+      "id": "nfra-B0174H337070001",
+      "name": "潍坊银行",
+      "icon": "brand-bankwf",
+      "file": "brand-bankwf.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/bankwf-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "1e60df792efe1fba8c776080aa3dddfd37ad3b3ca22d1dd7a900004dbc430101"
+    },
+    {
+      "id": "nfra-B0173H337060001",
+      "name": "烟台银行",
+      "icon": "brand-yantaibank",
+      "file": "brand-yantaibank.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/yantaibank-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "e712925662d50dfa97d9b5561fa898b7f01cb4bfa5195670119f695cf9e3f883"
+    },
+    {
+      "id": "nfra-B0290H337040001",
+      "name": "枣庄银行",
+      "icon": "brand-sc",
+      "file": "brand-sc.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/sc-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "cdf07d7cc2142af0cde1b6a5a71cdb5eb0a123b28f0c52243e924c4d4f1f4de2"
+    },
+    {
+      "id": "nfra-B0615H241010001",
+      "name": "中原银行",
+      "icon": "brand-zybank",
+      "file": "brand-zybank.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/zybank-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "7ff96e5389d39061f2ee2d843adc49223f87b3703f29f3b98e55f5c3ed0a13bf"
+    },
+    {
+      "id": "nfra-B1036H241010001",
+      "name": "郑州银行",
+      "icon": "brand-zzbank",
+      "file": "brand-zzbank.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/zzbank-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "730da93d57e61eaeca15b537c669f768466c13fa26e85785a6a91bf677e23874"
+    },
+    {
+      "id": "nfra-B1099H243010001",
+      "name": "湖南银行",
+      "icon": "brand-nfra-b1099h243010001",
+      "file": "brand-nfra-b1099h243010001.png",
+      "source": "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/af/9b/06/af9b06ee-d042-d57a-fe74-b23043dc3a0f/AppIcon-0-0-1x_U007emarketing-0-6-0-sRGB-85-220.png/512x512bb.jpg",
+      "page": "https://apps.apple.com/cn/app/%E6%B9%96%E5%8D%97%E9%93%B6%E8%A1%8C/id896945783?uo=4",
+      "publisher": "Bank of Hunan Corporation Limited",
+      "sha256": "bf458fe18edcc83bff4839e8930a45d5ca146eee38626bb3266e376e70b4ba11"
+    },
+    {
+      "id": "nfra-B0192H243010001",
+      "name": "长沙银行",
+      "icon": "brand-cscb",
+      "file": "brand-cscb.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/cscb-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "cad58ee32945b0a05254e029c364be02bf32f6c5cab251d81b0cb171cf49f712"
+    },
+    {
+      "id": "nfra-B0187H242010002",
+      "name": "汉口银行",
+      "icon": "brand-hkbchina",
+      "file": "brand-hkbchina.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/hkbchina-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "2c70ead2277912c3328d8f9f09453d86ecd4d2020195baa2eaf9f4cf3b25a2f9"
+    },
+    {
+      "id": "nfra-B1151H242010001",
+      "name": "湖北银行",
+      "icon": "brand-hubeibank",
+      "file": "brand-hubeibank.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/hubeibank-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "74442ad8519c64b2ffd5d7572aa595c7612010ed2c9f06854dd1e2358133bd39"
+    },
+    {
+      "id": "nfra-B1041H244010001",
+      "name": "广州银行",
+      "icon": "brand-gzcb",
+      "file": "brand-gzcb.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/gzcb-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "8ffa9c4c4c8bab177bb2de42a8d49e110961d60700293d8a870e8b3270076aa5"
+    },
+    {
+      "id": "nfra-B0201H244190001",
+      "name": "东莞银行",
+      "icon": "brand-dongguanbank",
+      "file": "brand-dongguanbank.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/dongguanbank-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "6a0740f9f48334de456d03a133850e7b4091b2864caa81115c2c8fb8713badca"
+    },
+    {
+      "id": "nfra-B1194H244050001",
+      "name": "广东华兴银行",
+      "icon": "brand-ghbank",
+      "file": "brand-ghbank.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/ghbank-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "6f7476d430899e044edac4689b44026cc6e6aba360390106e4a427ac561f66f4"
+    },
+    {
+      "id": "nfra-B0200H344080001",
+      "name": "广东南粤银行",
+      "icon": "brand-gdnybank",
+      "file": "brand-gdnybank.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/gdnybank-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "a06f763ac03f65180719cb05987bdd7e9cd3eb8987edec0b248ea4a7269198a0"
+    },
+    {
+      "id": "nfra-B0199H244040001",
+      "name": "珠海华润银行",
+      "icon": "brand-nfra-b0199h244040001",
+      "file": "brand-nfra-b0199h244040001.png",
+      "source": "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/7f/f4/0c/7ff40cdb-d1c1-a07f-9cdb-50f2d1fee2ce/Appicon-0-0-1x_U007ephone-0-1-0-0-sRGB-85-220.png/512x512bb.jpg",
+      "page": "https://apps.apple.com/cn/app/%E5%8D%8E%E6%B6%A6%E9%93%B6%E8%A1%8C/id734238203?uo=4",
+      "publisher": "China Resources Bank of Guangdong Co.,Ltd.",
+      "sha256": "bc8d4981254f6fb39ee52d52c3218897733d30afa761052e7156b80a4af945b3"
+    },
+    {
+      "id": "nfra-B0349H245010001",
+      "name": "广西北部湾银行",
+      "icon": "brand-bankofbbg",
+      "file": "brand-bankofbbg.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/bankofbbg-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "a9b3e3236d56e7d173148f6bf35050d580706bdcde50f46a2313be22a1445e31"
+    },
+    {
+      "id": "nfra-B1105H245030001",
+      "name": "桂林银行",
+      "icon": "brand-guilinbank",
+      "file": "brand-guilinbank.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/guilinbank-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "cec217a5057262b2a053927dff0d7d561bb11a67b182faaf0f85999e10b3a165"
+    },
+    {
+      "id": "nfra-B1087H245020001",
+      "name": "柳州银行",
+      "icon": "brand-bolz",
+      "file": "brand-bolz.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/bolz-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "ef3ef5d6914e143094939154d0ceda79af9e698f973050a4815bb1cad693b334"
+    },
+    {
+      "id": "nfra-B0729H246010001",
+      "name": "海南银行",
+      "icon": "brand-nfra-b0729h246010001",
+      "file": "brand-nfra-b0729h246010001.png",
+      "source": "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/e0/04/01/e00401fb-d8d6-7db2-de8a-56b4d41e284d/AppIcon-0-0-1x_U007emarketing-0-6-0-0-85-220.png/512x512bb.jpg",
+      "page": "https://apps.apple.com/cn/app/%E6%B5%B7%E5%8D%97%E9%93%B6%E8%A1%8C2-0/id1039232908?uo=4",
+      "publisher": "Bank of Hainan Co., Ltd.",
+      "sha256": "125780c10a04089755719d7317ee4c3b439deb55bc9c608311a53ccdcaa0f769"
+    },
+    {
+      "id": "nfra-B0205H250000001",
+      "name": "重庆三峡银行",
+      "icon": "brand-ccqtgb",
+      "file": "brand-ccqtgb.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/ccqtgb-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "6ee7383a014dd6e37274372e6981880ec3a942abfe5fc794ffccc77f66a2e8c4"
+    },
+    {
+      "id": "nfra-B0206H250000001",
+      "name": "重庆银行",
+      "icon": "brand-cqcbank",
+      "file": "brand-cqcbank.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/cqcbank-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "9f57c8e32fc958c5e882338e43f84903b210761c4ef176b1296b4ba6158093aa"
+    },
+    {
+      "id": "nfra-B0207H251010001",
+      "name": "成都银行",
+      "icon": "brand-bocd",
+      "file": "brand-bocd.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/bocd-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "5f46bd75425e5569c8841639cc4a771b7612b7768651fa40fbe90a2c901c4eac"
+    },
+    {
+      "id": "nfra-B1053H251170001",
+      "name": "达州银行",
+      "icon": "brand-dzccb",
+      "file": "brand-dzccb.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/dzccb-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "7fe5002fa0d1669289a6a5e7dbad49be0f190f0af4446db3e3adebd4dbe79d09"
+    },
+    {
+      "id": "nfra-B0211H251060002",
+      "name": "长城华西银行",
+      "icon": "brand-nfra-b0211h251060002",
+      "file": "brand-nfra-b0211h251060002.png",
+      "source": "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/91/8a/d9/918ad9fa-ad07-7483-f193-b6d4b4dbfd55/AppIcon-0-0-1x_U007emarketing-0-8-0-0-sRGB-85-220.png/512x512bb.jpg",
+      "page": "https://apps.apple.com/cn/app/%E9%95%BF%E5%9F%8E%E5%8D%8E%E8%A5%BF%E9%93%B6%E8%A1%8C/id687207277?uo=4",
+      "publisher": "GREAT WALL WEST CHINA BANK CO., LTD.",
+      "sha256": "0cf4dd7e9e31a85934eab04a5be1196aae267f0679b81cd21460787f31f43a02"
+    },
+    {
+      "id": "nfra-B0213H251110001",
+      "name": "乐山市商业银行",
+      "icon": "brand-lsccb",
+      "file": "brand-lsccb.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/lsccb-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "a428c4460fcab84a6197e726c60aab30a64f5145105479fe58cd26bf341304b0"
+    },
+    {
+      "id": "nfra-B0210H251050001",
+      "name": "泸州银行",
+      "icon": "brand-lzccb",
+      "file": "brand-lzccb.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/lzccb-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "4db8bd305c0d4f43a84b90c00b62d8f591cf2ccb545859ae4ab1fde842465f0d"
+    },
+    {
+      "id": "nfra-B0212H251070001",
+      "name": "绵阳市商业银行",
+      "icon": "brand-nfra-b0212h251070001",
+      "file": "brand-nfra-b0212h251070001.png",
+      "source": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/26/02/d4/2602d4ad-9347-e6fd-b5e2-f54e7f0436ac/AppIcon-0-0-1x_U007emarketing-0-6-0-sRGB-85-220.png/512x512bb.jpg",
+      "page": "https://apps.apple.com/cn/app/%E7%BB%B5%E9%98%B3%E5%B8%82%E5%95%86%E4%B8%9A%E9%93%B6%E8%A1%8C/id1218665717?uo=4",
+      "publisher": "Mianyang City Commercial Bank Co., LTD",
+      "sha256": "c92a10a7234a1f52190380d4325f0497ad86744d87c54e77da4030a542b343b0"
+    },
+    {
+      "id": "nfra-B0214H251130001",
+      "name": "四川天府银行",
+      "icon": "brand-tf",
+      "file": "brand-tf.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/tf-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "5c8f59a6715374d3f48d2049d3ecc87b0511bd4df53f07bcc43a43bf2db60d7b"
+    },
+    {
+      "id": "nfra-B0317H251090001",
+      "name": "遂宁银行",
+      "icon": "brand-snccb",
+      "file": "brand-snccb.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/snccb-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "42b968d97e9db41e15e9a56afdfc7a6e6bbab476baaa60a399a296502596f4d6"
+    },
+    {
+      "id": "nfra-B0343H251180001",
+      "name": "雅安市商业银行",
+      "icon": "brand-nfra-b0343h251180001",
+      "file": "brand-nfra-b0343h251180001.png",
+      "source": "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/ae/3c/14/ae3c14f0-055e-e573-315e-c16736f4fe13/template_icon-1x_U007emarketing-0-6-0-0-sRGB-85-220-0.png/512x512bb.jpg",
+      "page": "https://apps.apple.com/cn/app/%E9%9B%85%E5%AE%89%E5%B8%82%E5%95%86%E4%B8%9A%E9%93%B6%E8%A1%8C/id1254363245?uo=4",
+      "publisher": "Ya'an Commercial Bank Co., Ltd.",
+      "sha256": "7b7cb66f0787b4688ef22d57564e094d77933664f2fafa0f90d84a7c616859cd"
+    },
+    {
+      "id": "nfra-B0284H251150001",
+      "name": "宜宾市商业银行",
+      "icon": "brand-nfra-b0284h251150001",
+      "file": "brand-nfra-b0284h251150001.png",
+      "source": "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/00/20/e3/0020e32c-90ee-0c05-f980-4379b9014cd7/AppIcon-0-0-1x_U007emarketing-0-6-0-0-sRGB-85-220.png/512x512bb.jpg",
+      "page": "https://apps.apple.com/cn/app/%E5%AE%9C%E5%AE%BE%E5%95%86%E4%B8%9A%E9%93%B6%E8%A1%8C%E6%89%8B%E6%9C%BA%E9%93%B6%E8%A1%8C/id1056495508?uo=4",
+      "publisher": "Yibin Commercial Bank Co., Ltd.",
+      "sha256": "dd4700a795fefc84ba60d6b5d184c21b1d553204262f614e7f88f59f0b8622b5"
+    },
+    {
+      "id": "nfra-B0208H251030001",
+      "name": "自贡银行",
+      "icon": "brand-zgbank",
+      "file": "brand-zgbank.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/zgbank-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "2c089fca1d83c46133df587e27c8514e83e7890f96e32400d30f8b1dc9f098d6"
+    },
+    {
+      "id": "nfra-B0215H252010001",
+      "name": "贵阳银行",
+      "icon": "brand-bankgy",
+      "file": "brand-bankgy.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/bankgy-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "e3e7477a19d4820bba6349d85e5786fb1710d21bc0268d810f2b8ec4675c0f92"
+    },
+    {
+      "id": "nfra-B1383H252010001",
+      "name": "贵州银行",
+      "icon": "brand-bgzchina",
+      "file": "brand-bgzchina.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/bgzchina-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "b859a542e8ba3ecad7b6f5d6091e24f8637f5955147d9b482ef71cdb7fa7b0b7"
+    },
+    {
+      "id": "nfra-B0258H253010001",
+      "name": "富滇银行",
+      "icon": "brand-fudian",
+      "file": "brand-fudian.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/fudian-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "ee654196d58665c782958ff69c94f4d669be6750209e83bb3590e0d870d0602f"
+    },
+    {
+      "id": "nfra-B0259H253030001",
+      "name": "曲靖市商业银行",
+      "icon": "brand-qjccb",
+      "file": "brand-qjccb.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/qjccb-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "c4226573dc1190e4c398de64cebde1fe0b1920954f6f7d6f960e9c9158cc5b98"
+    },
+    {
+      "id": "nfra-B0260H253040001",
+      "name": "云南红塔银行",
+      "icon": "brand-nfra-b0260h253040001",
+      "file": "brand-nfra-b0260h253040001.png",
+      "source": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/da/6a/ba/da6aba3f-4172-1369-b667-e6f32901b204/AppIcon-0-0-1x_U007emarketing-0-9-0-0-sRGB-85-220.png/512x512bb.jpg",
+      "page": "https://apps.apple.com/cn/app/%E4%BA%91%E5%8D%97%E7%BA%A2%E5%A1%94%E9%93%B6%E8%A1%8C/id1127158623?uo=4",
+      "publisher": "YUNNAN HONGTA BANK CO.,LTD",
+      "sha256": "1c16d371d0828aebf7f7b31f726fa58ad9a4ce117774de3ab2e1c6cbdde0629b"
+    },
+    {
+      "id": "nfra-B1293H254010001",
+      "name": "西藏银行",
+      "icon": "brand-nfra-b1293h254010001",
+      "file": "brand-nfra-b1293h254010001.png",
+      "source": "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/5c/1b/2e/5c1b2e83-a98c-7e36-33d8-33f8d70a0884/AppIcon-0-0-1x_U007emarketing-0-6-0-sRGB-85-220.png/512x512bb.jpg",
+      "page": "https://apps.apple.com/cn/app/%E8%A5%BF%E8%97%8F%E9%93%B6%E8%A1%8C/id1250408911?uo=4",
+      "publisher": "Bank of Tibet Co.,Ltd.",
+      "sha256": "54734c3a9b3d736758b1c0994fec48fabacf256e8694c3d46808ac0b201f542c"
+    },
+    {
+      "id": "nfra-B0274H261010001",
+      "name": "西安银行",
+      "icon": "brand-xacbank",
+      "file": "brand-xacbank.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/xacbank-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "cf7254237951b327667d419155b0008579aa1fd9f558f143844eb6e784bb78d4"
+    },
+    {
+      "id": "nfra-B1027H261010001",
+      "name": "长安银行",
+      "icon": "brand-ccabchina",
+      "file": "brand-ccabchina.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/ccabchina-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "44b3a9f8bbd860cd6badd71ee7076d112a3c3d345dab8da1371a8a8bffe59668"
+    },
+    {
+      "id": "nfra-B1228H262010001",
+      "name": "甘肃银行",
+      "icon": "brand-gsbankchina",
+      "file": "brand-gsbankchina.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/gsbankchina-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "07f67a32136f6de7c786815b6b53064c0dacd895c58dc5c2b4c720ebdc161a25"
+    },
+    {
+      "id": "nfra-B0268H262010001",
+      "name": "兰州银行",
+      "icon": "brand-lzbank",
+      "file": "brand-lzbank.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/lzbank-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "b76fbae895ca8cd8f0fbe7309ada5e26c11931c13360f4cc8687ca8e3e31af7b"
+    },
+    {
+      "id": "nfra-B0223H263010002",
+      "name": "青海银行",
+      "icon": "brand-bankqh",
+      "file": "brand-bankqh.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/bankqh-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "3d5631ab9dd66f18a5dc6ede6353d0e7087c29a3362f72131dd3ff22042b6350"
+    },
+    {
+      "id": "nfra-B0314H264010001",
+      "name": "宁夏银行",
+      "icon": "brand-bankofnx",
+      "file": "brand-bankofnx.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/bankofnx-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "22333f44618d53b1cfa3c48ae4cf9caf89154010501844e87a19ee63dc25f48a"
+    },
+    {
+      "id": "nfra-B1009H364020001",
+      "name": "石嘴山银行",
+      "icon": "brand-szsccb",
+      "file": "brand-szsccb.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/szsccb-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "995abd182ac3ac30bad55e20f81646167f7d159b25dcce787f0df375fb812af1"
+    },
+    {
+      "id": "nfra-B0796H265010001",
+      "name": "乌鲁木齐银行",
+      "icon": "brand-nfra-b0796h265010001",
+      "file": "brand-nfra-b0796h265010001.png",
+      "source": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/da/73/db/da73dbfe-7cf9-288d-01a2-77bb7244c995/AppIcon-0-0-1x_U007emarketing-0-7-0-0-sRGB-85-220.jpeg/512x512bb.jpg",
+      "page": "https://apps.apple.com/cn/app/%E4%B9%8C%E9%B2%81%E6%9C%A8%E9%BD%90%E9%93%B6%E8%A1%8C-%E5%AE%98%E6%96%B9%E7%89%88/id1050551165?uo=4",
+      "publisher": "Bank of Urumqi Co., Ltd.",
+      "sha256": "4bbcf9fd230e2932780f63627e7090d07f4ff286ee7fda90333f29e84134ba6c"
+    },
+    {
+      "id": "nfra-B0226H365020002",
+      "name": "昆仑银行",
+      "icon": "brand-klb",
+      "file": "brand-klb.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/klb-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "39b7c3511ef82c52d797749503388a2d41d3c7ce64ea2ac2f446af5a4960fa2e"
+    },
+    {
+      "id": "nfra-B1085H365220001",
+      "name": "哈密市商业银行",
+      "icon": "brand-nfra-b1085h365220001",
+      "file": "brand-nfra-b1085h365220001.png",
+      "source": "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/15/fa/4a/15fa4acd-1b20-c1d3-a231-6494a45b990c/AppIcon-1x_U007emarketing-0-7-0-0-sRGB-85-220-0.png/512x512bb.jpg",
+      "page": "https://apps.apple.com/cn/app/%E5%93%88%E5%AF%86%E5%B8%82%E5%95%86%E4%B8%9A%E9%93%B6%E8%A1%8C-hmccb/id1111068626?uo=4",
+      "publisher": "Hami CITY Commercial Bank Co., Ltd",
+      "sha256": "fa695b98ca66b85afdef265138787b8e806d00556391a49e277ba5f5d06ba2f7"
+    },
+    {
+      "id": "nfra-B0261H221020001",
+      "name": "大连银行",
+      "icon": "brand-bankofdl",
+      "file": "brand-bankofdl.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/bankofdl-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "a59579f489a11c2ab1e2e287b906bbfde3d2369dfdbd1bcba698ed8b3c060010"
+    },
+    {
+      "id": "nfra-B0152H233020001",
+      "name": "宁波银行",
+      "icon": "brand-nbcb",
+      "file": "brand-nbcb.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/nbcb-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "3f3c043b7c172a3ef5ddbe60fcfc5cce72fad3b60f48a6e3cfece55c064566ce"
+    },
+    {
+      "id": "nfra-B0358H233020001",
+      "name": "宁波东海银行",
+      "icon": "brand-nfra-b0358h233020001",
+      "file": "brand-nfra-b0358h233020001.png",
+      "source": "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/f5/85/0d/f5850d2e-805d-80d3-2aa6-1dfd17379742/AppIcon_AppStore-0-0-1x_U007emarketing-0-6-0-0-85-220.png/512x512bb.jpg",
+      "page": "https://apps.apple.com/cn/app/%E5%AE%81%E6%B3%A2%E4%B8%9C%E6%B5%B7%E9%93%B6%E8%A1%8C/id1227998391?uo=4",
+      "publisher": "Ningbo Donghai Bank Co., Ltd.",
+      "sha256": "6445fb3cf5da4b1fadec375202938fe5766fcfb189f89c94573296eeb4059db7"
+    },
+    {
+      "id": "nfra-B1311H233020001",
+      "name": "宁波通商银行",
+      "icon": "brand-ncbank",
+      "file": "brand-ncbank.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/ncbank-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "c84be087116501ccb3f0187882653b0953a341e01ca727141a559f04d83809db"
+    },
+    {
+      "id": "nfra-B0164H235020001",
+      "name": "厦门银行",
+      "icon": "brand-nfra-b0164h235020001",
+      "file": "brand-nfra-b0164h235020001.png",
+      "source": "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/1e/31/50/1e315047-a203-3b93-2aa3-5696a57b82cd/AppIcon-0-0-1x_U007emarketing-0-6-0-0-sRGB-85-220.png/512x512bb.jpg",
+      "page": "https://apps.apple.com/cn/app/%E5%8E%A6%E9%97%A8%E9%93%B6%E8%A1%8C/id967227066?uo=4",
+      "publisher": "Xiamen Bank Co.,Ltd.",
+      "sha256": "360fcf12215664cd15f969293f5baace56876f01b840a67ca9a07536f9e56980"
+    },
+    {
+      "id": "nfra-B0025H235020001",
+      "name": "厦门国际银行",
+      "icon": "brand-xib",
+      "file": "brand-xib.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/xib-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "8339ede934ceaf18c244d04ed29e15a5c2c2d9b2d2c021d85bdcd0b0190835e0"
+    },
+    {
+      "id": "nfra-B0170H237020001",
+      "name": "青岛银行",
+      "icon": "brand-qdccb",
+      "file": "brand-qdccb.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/qdccb-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "1a88b4258af2730bd16f2cd5595c4e197f45dc40f4181a1c5a6832d8f43e84d6"
+    },
+    {
+      "id": "nfra-B1522H265010001",
+      "name": "新疆银行",
+      "icon": "brand-nfra-b1522h265010001",
+      "file": "brand-nfra-b1522h265010001.png",
+      "source": "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/d7/e6/29/d7e6296f-f78d-b836-baeb-c8ccaf479fc0/AppIcon2-0-0-1x_U007emarketing-0-6-0-sRGB-85-220.png/512x512bb.jpg",
+      "page": "https://apps.apple.com/cn/app/%E6%96%B0%E7%96%86%E9%93%B6%E8%A1%8C%E6%89%8B%E6%9C%BA%E9%93%B6%E8%A1%8C/id1298971114?uo=4",
+      "publisher": "Xinjiang Bank Co.Ltd",
+      "sha256": "c8fdaa6be6e513d81efe26b6b0e89d39a8ce957e8389db9def2efec4e2f8ff65"
+    },
+    {
+      "id": "nfra-B1954H215020001",
+      "name": "蒙商银行",
+      "icon": "brand-nfra-b1954h215020001",
+      "file": "brand-nfra-b1954h215020001.png",
+      "source": "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/cf/70/8a/cf708a2a-a218-5666-7d12-556f60faed3d/AppIcon-0-0-1x_U007emarketing-0-6-0-0-sRGB-85-220.jpeg/512x512bb.jpg",
+      "page": "https://apps.apple.com/cn/app/%E8%92%99%E5%95%86%E9%93%B6%E8%A1%8C/id875246323?uo=4",
+      "publisher": "Mengshang Bank Co., Ltd",
+      "sha256": "5857a39fbbf8a6b9c1aceda702917685ad2dad3bb81213f1ec47d7e733e02e91"
+    },
+    {
+      "id": "nfra-B1987H251010001",
+      "name": "四川银行",
+      "icon": "brand-nfra-b1987h251010001",
+      "file": "brand-nfra-b1987h251010001.png",
+      "source": "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/3a/42/2e/3a422ea7-2e2f-5820-b9e9-a5619d0fa234/AppIcon-0-0-1x_U007emarketing-0-8-0-sRGB-85-220.png/512x512bb.jpg",
+      "page": "https://apps.apple.com/cn/app/%E5%9B%9B%E5%B7%9D%E9%93%B6%E8%A1%8C/id979547814?uo=4",
+      "publisher": "SICHUAN BANK CO., LTD",
+      "sha256": "417a92acc31e00ff01495a2a4b9a32b716578dd689b17a8048dbf6dbcdae3c44"
+    },
+    {
+      "id": "nfra-B2036H221010001",
+      "name": "辽沈银行",
+      "icon": "brand-nfra-b2036h221010001",
+      "file": "brand-nfra-b2036h221010001.png",
+      "source": "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/0f/1b/59/0f1b59d7-bd51-72d2-61b9-3a37c707f69b/AppIcon-0-0-1x_U007emarketing-0-8-0-0-sRGB-85-220.png/512x512bb.jpg",
+      "page": "https://apps.apple.com/cn/app/%E8%BE%BD%E6%B2%88%E9%93%B6%E8%A1%8C/id999284680?uo=4",
+      "publisher": "Coastal Bank",
+      "sha256": "ff5c004f7ebc92a51c65694d47ad46147abb9943628feea4ab0d95d70bd478a0"
+    },
+    {
+      "id": "nfra-B2027H214010001",
+      "name": "山西银行",
+      "icon": "brand-nfra-b2027h214010001",
+      "file": "brand-nfra-b2027h214010001.png",
+      "source": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/b4/b9/3a/b4b93ae9-bf3e-230a-b3cd-da64700b6987/AppIcon-0-0-1x_U007ephone-0-10-0-0-sRGB-85-220.png/512x512bb.jpg",
+      "page": "https://apps.apple.com/cn/app/%E5%B1%B1%E8%A5%BF%E9%93%B6%E8%A1%8C/id6474819864?uo=4",
+      "publisher": "SHANXI BANK Co.,LTD",
+      "sha256": "f26c9a5b46e585c054c71208566d76eb1ad137a8cbca44a144badbb8cbe0cb64"
+    },
+    {
+      "id": "nfra-B0655H212000001",
+      "name": "天津金城银行",
+      "icon": "brand-nfra-b0655h212000001",
+      "file": "brand-nfra-b0655h212000001.png",
+      "source": "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/07/c0/30/07c030a3-5965-422d-8ff9-e753874d5488/AppIcon-0-0-1x_U007emarketing-0-6-0-0-85-220.png/512x512bb.jpg",
+      "page": "https://apps.apple.com/cn/app/%E9%87%91%E5%9F%8E%E9%93%B6%E8%A1%8C/id1137534325?uo=4",
+      "publisher": "Kincheng Bank of Tianjin Co., Ltd.",
+      "sha256": "1f32cb95167516785421406c91332c1ffa94a91d4b732a633d0e879e3bacfd35"
+    },
+    {
+      "id": "nfra-B0606H231000001",
+      "name": "上海华瑞银行",
+      "icon": "brand-nfra-b0606h231000001",
+      "file": "brand-nfra-b0606h231000001.png",
+      "source": "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/03/a1/b8/03a1b840-ec47-c877-3080-c89eac4523dc/AppIcon-0-0-1x_U007emarketing-0-6-0-0-sRGB-85-220.png/512x512bb.jpg",
+      "page": "https://apps.apple.com/cn/app/%E5%8D%8E%E7%91%9E%E9%93%B6%E8%A1%8C/id1054902115?uo=4",
+      "publisher": "SHANGHAI HUARUI BANK CO.LTD.",
+      "sha256": "e09d2904ebf90a09bd18ab0ae16598c0dcb2d14907d092ab87ed3e929dfcd063"
+    },
+    {
+      "id": "nfra-B0675H233010001",
+      "name": "网商银行",
+      "icon": "brand-nfra-b0675h233010001",
+      "file": "brand-nfra-b0675h233010001.png",
+      "source": "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/9c/04/8a/9c048a3b-7369-fc16-b7f4-f3555822d374/AppIcon-0-0-1x_U007emarketing-0-8-0-85-220.png/512x512bb.jpg",
+      "page": "https://apps.apple.com/cn/app/%E7%BD%91%E5%95%86%E9%93%B6%E8%A1%8C-%E8%B4%B7%E6%AC%BE%E7%90%86%E8%B4%A2%E9%93%B6%E8%A1%8C%E5%AD%98%E6%AC%BE%E4%B8%80%E7%AB%99%E5%BC%8F%E9%87%91%E8%9E%8D%E6%9C%8D%E5%8A%A1/id1012867463?uo=4",
+      "publisher": "Zhejiang E-Commerce Bank Co.Ltd",
+      "sha256": "9d0973171eb244e88f4d8224c773474f9814032502f5b82f9c5b20cc2f624962"
+    },
+    {
+      "id": "nfra-B0651H233030001",
+      "name": "温州民商银行",
+      "icon": "brand-nfra-b0651h233030001",
+      "file": "brand-nfra-b0651h233030001.png",
+      "source": "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/f8/3d/3b/f83d3b3a-f798-4bb4-a1af-07972d567b7f/AppIcon-0-0-1x_U007emarketing-0-8-0-0-85-220.png/512x512bb.jpg",
+      "page": "https://apps.apple.com/cn/app/%E6%B8%A9%E5%B7%9E%E6%B0%91%E5%95%86%E9%93%B6%E8%A1%8C%E6%89%8B%E6%9C%BA%E9%93%B6%E8%A1%8C/id1229139281?uo=4",
+      "publisher": "Wenzhou Minshang Bank Co.,Ltd",
+      "sha256": "803a8cae66d8c59c0f0b63ccb9ec2f89aef766f2d01235baf2f5337645b31302"
+    },
+    {
+      "id": "nfra-B0593H244030001",
+      "name": "微众银行",
+      "icon": "brand-nfra-b0593h244030001",
+      "file": "brand-nfra-b0593h244030001.png",
+      "source": "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/cc/d6/6c/ccd66ccb-4be6-a2c3-a602-9c423932d885/webankicon-0-0-1x_U007ephone-0-1-0-0-sRGB-85-220.png/512x512bb.jpg",
+      "page": "https://apps.apple.com/cn/app/%E5%BE%AE%E4%BC%97%E9%93%B6%E8%A1%8C-%E7%90%86%E8%B4%A2%E5%9F%BA%E9%87%91%E5%AD%98%E6%AC%BE%E8%B4%B7%E6%AC%BE%E4%BF%9D%E9%99%A9%E7%AD%89%E9%87%91%E8%9E%8D%E6%9C%8D%E5%8A%A1/id994103968?uo=4",
+      "publisher": "WeBank Co., Ltd.",
+      "sha256": "570b941db0f499cd08a8f53374717e45a6f1da2dd4f0b32f628503affc1e77ba"
+    },
+    {
+      "id": "nfra-B1519H243010001",
+      "name": "湖南三湘银行",
+      "icon": "brand-nfra-b1519h243010001",
+      "file": "brand-nfra-b1519h243010001.png",
+      "source": "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/5a/05/8c/5a058cf9-3f71-2242-eab0-c0b734384791/AppIcon-1x_U007emarketing-0-6-0-0-85-220-0.png/512x512bb.jpg",
+      "page": "https://apps.apple.com/cn/app/%E6%B9%96%E5%8D%97%E4%B8%89%E6%B9%98%E9%93%B6%E8%A1%8C/id1286963975?uo=4",
+      "publisher": "Bank of Sanxiang Co.,LTD",
+      "sha256": "307ef3973f3fb6ed19705a11e680d0a82283fa0ddf446535051d80419c93fc24"
+    },
+    {
+      "id": "nfra-B1191H250000001",
+      "name": "重庆富民银行",
+      "icon": "brand-nfra-b1191h250000001",
+      "file": "brand-nfra-b1191h250000001.png",
+      "source": "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/19/67/00/19670025-4954-64be-9244-f237832f0c43/AppIcon-1x_U007emarketing-0-6-0-0-sRGB-85-220-0.png/512x512bb.jpg",
+      "page": "https://apps.apple.com/cn/app/%E5%AF%8C%E6%B0%91%E9%93%B6%E8%A1%8C/id1251260666?uo=4",
+      "publisher": "Chongqing FuminBank Co.,Ltd.",
+      "sha256": "9a5163c13c66d46e62166718cb22afdcf13e846aea8a7c151135ccd80c2dc6ce"
+    },
+    {
+      "id": "nfra-B1544H251010001",
+      "name": "新网银行",
+      "icon": "brand-nfra-b1544h251010001",
+      "file": "brand-nfra-b1544h251010001.png",
+      "source": "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/47/8e/69/478e6981-5a29-24a2-41fd-acb546937efc/AppIcon-0-0-1x_U007emarketing-0-6-0-85-220.png/512x512bb.jpg",
+      "page": "https://apps.apple.com/cn/app/%E6%96%B0%E7%BD%91%E9%93%B6%E8%A1%8C/id1215560679?uo=4",
+      "publisher": "Sichuan XW Bank Corp., Ltd.",
+      "sha256": "21f647138aa67f0ca8ef3faa12ab5363e023b575e3b94e31dd1faade9e808b4b"
+    },
+    {
+      "id": "nfra-B1611H211000001",
+      "name": "北京中关村银行",
+      "icon": "brand-nfra-b1611h211000001",
+      "file": "brand-nfra-b1611h211000001.png",
+      "source": "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/21/3b/57/213b57a3-a3f3-994d-e2ef-bf89c4384548/AppIcon-1x_U007emarketing-0-6-0-0-sRGB-85-220-0.png/512x512bb.jpg",
+      "page": "https://apps.apple.com/cn/app/%E4%B8%AD%E5%85%B3%E6%9D%91%E9%93%B6%E8%A1%8C/id1291240252?uo=4",
+      "publisher": "Beijing Zhongguancun Bank Corporation Limited",
+      "sha256": "b0822b5d9203d9cf874ddb62fcf7bc6925133bf6d820dc3af8dc2d040c530674"
+    },
+    {
+      "id": "nfra-B1600H222010001",
+      "name": "吉林亿联银行",
+      "icon": "brand-nfra-b1600h222010001",
+      "file": "brand-nfra-b1600h222010001.png",
+      "source": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/c6/13/ac/c613ac78-488e-b2f0-ed2b-ca8b181a11ce/AppIcon-1x_U007emarketing-0-6-0-0-sRGB-85-220-0.png/512x512bb.jpg",
+      "page": "https://apps.apple.com/cn/app/%E4%BA%BF%E8%81%94%E9%93%B6%E8%A1%8C/id1274472071?uo=4",
+      "publisher": "JILIN YILLION BANK CO.,LTD.",
+      "sha256": "4f0cf59a205cd94f5bea7b3d4f4412da0c65be17abbbd492abfc5a704c75030d"
+    },
+    {
+      "id": "nfra-B1596H242010001",
+      "name": "武汉众邦银行",
+      "icon": "brand-z-bank",
+      "file": "brand-z-bank.svg",
+      "source": "https://raw.githubusercontent.com/icongo/bank-logos/main/logos/z-bank-rect.svg",
+      "page": "https://github.com/icongo/bank-logos",
+      "publisher": "IconGo/bank-logos",
+      "sha256": "26cc65dbf6f06e86e3dceab2a37b01efc651cee7afefd096d417fb3313af0899"
+    },
+    {
+      "id": "nfra-B1563H235010001",
+      "name": "福建华通银行",
+      "icon": "brand-nfra-b1563h235010001",
+      "file": "brand-nfra-b1563h235010001.png",
+      "source": "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/32/14/c6/3214c699-87bf-9ac9-8bc6-25e1a99b0b4b/AppIcon-0-0-1x_U007emarketing-0-6-0-sRGB-85-220.png/512x512bb.jpg",
+      "page": "https://apps.apple.com/cn/app/%E5%8D%8E%E9%80%9A%E9%93%B6%E8%A1%8C/id1278622165?uo=4",
+      "publisher": "Fujian OneBank Company Limited",
+      "sha256": "d3cc926931ab3166b884097383051e561dc590a68e5b9eb503b6e44233c96cf9"
+    },
+    {
+      "id": "nfra-B1606H237100001",
+      "name": "威海蓝海银行",
+      "icon": "brand-nfra-b1606h237100001",
+      "file": "brand-nfra-b1606h237100001.png",
+      "source": "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/4f/d1/d6/4fd1d6c3-edb3-5b75-58d5-8b2f768d2848/AppIcon-0-0-1x_U007emarketing-0-6-0-85-220.png/512x512bb.jpg",
+      "page": "https://apps.apple.com/cn/app/%E8%93%9D%E6%B5%B7%E9%93%B6%E8%A1%8C/id1324453829?uo=4",
+      "publisher": "WEIHAI BLUE OCEAN BANK CO.,LTD.",
+      "sha256": "67174e17c8430b1d49307388b9088b33cd26e15f8a3f4051119bca6fd15aaf88"
+    },
+    {
+      "id": "nfra-B1621H232010001",
+      "name": "江苏苏商银行",
+      "icon": "brand-nfra-b1621h232010001",
+      "file": "brand-nfra-b1621h232010001.png",
+      "source": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/68/cf/7b/68cf7b7d-4eef-01d2-bfbf-2205eaa6bc0c/AppIcon-1x_U007emarketing-0-6-0-0-sRGB-85-220-0.png/512x512bb.jpg",
+      "page": "https://apps.apple.com/cn/app/%E8%8B%8F%E5%95%86%E9%93%B6%E8%A1%8C/id1441395090?uo=4",
+      "publisher": "JIANGSU SU MERCHANTS BANK CO., LTD.",
+      "sha256": "39b4d7a34a3f4675e70f380cdf98be25619474a79cf4fb3a7e83ac7225fb5838"
+    },
+    {
+      "id": "nfra-B1627H244140001",
+      "name": "梅州客商银行",
+      "icon": "brand-nfra-b1627h244140001",
+      "file": "brand-nfra-b1627h244140001.png",
+      "source": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/63/9c/ed/639cedc4-f693-2511-9b15-9e0ff3fce9df/AppIcon-0-0-1x_U007emarketing-0-6-0-sRGB-85-220.png/512x512bb.jpg",
+      "page": "https://apps.apple.com/cn/app/%E5%AE%A2%E5%95%86%E9%93%B6%E8%A1%8C/id1445120253?uo=4",
+      "publisher": "MEIZHOU HAKKA BANK CO., LTD.",
+      "sha256": "cd5bc5630c0fee085718a63e84694ac3f5cc9668cd1887a178f242e46d8f1155"
+    },
+    {
+      "id": "nfra-B1686H234010001",
+      "name": "安徽新安银行",
+      "icon": "brand-nfra-b1686h234010001",
+      "file": "brand-nfra-b1686h234010001.png",
+      "source": "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/c7/fe/71/c7fe7172-2d4b-ac6f-c939-2a4fbbd61109/template_icon-1x_U007emarketing-0-6-0-0-sRGB-85-220-0.png/512x512bb.jpg",
+      "page": "https://apps.apple.com/cn/app/%E6%96%B0%E5%AE%89%E9%93%B6%E8%A1%8C/id1484443172?uo=4",
+      "publisher": "Anhui xin'an Bank Inc",
+      "sha256": "f4924f2b0b2ae49744a2ec8d86bd591773c79815b223e93c316ccfb655e1dceb"
+    },
+    {
+      "id": "nfra-B1661H221010001",
+      "name": "辽宁振兴银行",
+      "icon": "brand-nfra-b1661h221010001",
+      "file": "brand-nfra-b1661h221010001.png",
+      "source": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/c3/a3/fd/c3a3fdec-1dda-a1c4-78a3-b7dad995a399/AppIcon-0-0-1x_U007emarketing-0-5-0-0-sRGB-85-220.png/512x512bb.jpg",
+      "page": "https://apps.apple.com/cn/app/%E8%BE%BD%E5%AE%81%E6%8C%AF%E5%85%B4%E9%93%B6%E8%A1%8C/id1434800394?uo=4",
+      "publisher": "NewUp Bank of Liaoning co., Ltd.",
+      "sha256": "d8998647cd86f308c4de573ed3dd16d36f0117032e77560c5975e516d5d5f4e7"
+    },
+    {
+      "id": "nfra-B1877H236010001",
+      "name": "江西裕民银行",
+      "icon": "brand-nfra-b1877h236010001",
+      "file": "brand-nfra-b1877h236010001.png",
+      "source": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/1f/9b/ba/1f9bba80-4744-c411-3e8d-87cc10debb38/AppIcon-1x_U007emarketing-0-8-0-0-85-220-0.png/512x512bb.jpg",
+      "page": "https://apps.apple.com/cn/app/%E8%A3%95%E6%B0%91%E9%93%B6%E8%A1%8C/id1484932159?uo=4",
+      "publisher": "Jiangxi Yumin Bank Co., Ltd.",
+      "sha256": "d1dbc37b156ac98cbccc46577caf99f0bd4a16ab87174bfb6221438099aefc97"
+    },
+    {
+      "id": "nfra-B1949H332020001",
+      "name": "无锡锡商银行",
+      "icon": "brand-nfra-b1949h332020001",
+      "file": "brand-nfra-b1949h332020001.png",
+      "source": "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/ce/3a/66/ce3a66d7-d3b0-d98a-9508-62e448406d71/AppIcon-1x_U007emarketing-0-6-0-0-85-220-0.png/512x512bb.jpg",
+      "page": "https://apps.apple.com/cn/app/%E9%94%A1%E5%95%86%E9%93%B6%E8%A1%8C/id1521769402?uo=4",
+      "publisher": "Wuxi Xishang Bank Co.,Ltd",
+      "sha256": "4448fbe0f16a6566b90d2d39f2c3b1668561ea2f800b4fe35b875ef8b946830d"
+    },
+    {
+      "id": "nfra-Z0041H111000001",
+      "name": "百信银行",
+      "icon": "brand-nfra-z0041h111000001",
+      "file": "brand-nfra-z0041h111000001.png",
+      "source": "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/ef/16/8e/ef168e95-d771-1e59-f115-ef9030ba1870/AppIcon-0-0-1x_U007emarketing-0-11-0-85-220.png/512x512bb.jpg",
+      "page": "https://apps.apple.com/cn/app/%E4%B8%AD%E4%BF%A1%E7%99%BE%E4%BF%A1%E9%93%B6%E8%A1%8C/id1324387551?uo=4",
+      "publisher": "CITIC aiBank Corp Ltd.",
+      "sha256": "4f7beb9dd91a6d1d3aae9489102485d508697466f40b1ed09cb1286f2fd0d3c4"
+    }
+  ],
+  "products": [
+    {
+      "id": "kind-7",
+      "name": "蚂蚁财富",
+      "icon": "brand-kind-7",
+      "source": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/ed/c2/74/edc274d7-b21d-bdcb-700c-8a002cc3885d/AppIcon-0-0-1x_U007epad-0-1-0-85-220.png/512x512bb.jpg",
+      "page": "https://apps.apple.com/cn/app/%E8%9A%82%E8%9A%81%E8%B4%A2%E5%AF%8C-%E5%9F%BA%E9%87%91-%E8%82%A1%E7%A5%A8/id1025628019?uo=4",
+      "note": "官方应用／所属平台品牌图标",
+      "file": "brand-kind-7.png",
+      "sha256": "d0f4473c408315b39a5a68671ce0145cdd422bdd712649a68ff7f6cf28d1af68"
+    },
+    {
+      "id": "kind-10",
+      "name": "腾讯理财通",
+      "icon": "brand-kind-10",
+      "source": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/99/29/b7/9929b754-9fcb-65ca-f34d-19d946c9d52a/AppIcon-0-1x_U007epad-0-3-0-sRGB-85-220-0.png/512x512bb.jpg",
+      "page": "https://apps.apple.com/cn/app/%E8%85%BE%E8%AE%AF%E7%90%86%E8%B4%A2%E9%80%9A-%E5%9F%BA%E9%87%91%E8%82%A1%E7%A5%A8%E9%BB%84%E9%87%91%E7%AD%89%E6%8A%95%E8%B5%84%E7%90%86%E8%B4%A2%E5%B9%B3%E5%8F%B0/id1187801604?uo=4",
+      "note": "官方应用／所属平台品牌图标",
+      "file": "brand-kind-10.png",
+      "sha256": "e731b67246153ded2210bd2f8d80673280315e165c526192027930d3f9e0e83e"
+    },
+    {
+      "id": "kind-11",
+      "name": "QQ钱包",
+      "icon": "brand-kind-11",
+      "source": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/04/ad/b6/04adb647-777c-85e3-83ed-979ea46484bf/AppIcon-1-0-0-1x_U007epad-0-1-0-sRGB-85-220.png/512x512bb.jpg",
+      "page": "https://apps.apple.com/cn/app/qq/id444934666?uo=4",
+      "note": "官方应用／所属平台品牌图标",
+      "file": "brand-kind-11.png",
+      "sha256": "0459da051240903ec3cb3c59ea773d2fcdd2513e680ce2d1ad21d1f17850ee6a"
+    },
+    {
+      "id": "kind-12",
+      "name": "抖音钱包",
+      "icon": "brand-kind-12",
+      "source": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/4d/b7/f2/4db7f24d-f39c-b291-c880-8afd5d93a1a4/AppIcon-0-0-1x_U007emarketing-0-0-0-7-0-0-85-220.png/512x512bb.jpg",
+      "page": "https://apps.apple.com/cn/app/%E6%8A%96%E9%9F%B3/id1142110895?uo=4",
+      "note": "官方应用／所属平台品牌图标",
+      "file": "brand-kind-12.png",
+      "sha256": "e4468caae50353c994d990f83853e0bcfe2c35e463c07e0e1770428f2e24b404"
+    },
+    {
+      "id": "kind-38",
+      "name": "抖音月付",
+      "icon": "brand-kind-38",
+      "source": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/4d/b7/f2/4db7f24d-f39c-b291-c880-8afd5d93a1a4/AppIcon-0-0-1x_U007emarketing-0-0-0-7-0-0-85-220.png/512x512bb.jpg",
+      "page": "https://apps.apple.com/cn/app/%E6%8A%96%E9%9F%B3/id1142110895?uo=4",
+      "note": "官方应用／所属平台品牌图标",
+      "file": "brand-kind-38.png",
+      "sha256": "e4468caae50353c994d990f83853e0bcfe2c35e463c07e0e1770428f2e24b404"
+    },
+    {
+      "id": "kind-37",
+      "name": "抖音放心借",
+      "icon": "brand-kind-37",
+      "source": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/4d/b7/f2/4db7f24d-f39c-b291-c880-8afd5d93a1a4/AppIcon-0-0-1x_U007emarketing-0-0-0-7-0-0-85-220.png/512x512bb.jpg",
+      "page": "https://apps.apple.com/cn/app/%E6%8A%96%E9%9F%B3/id1142110895?uo=4",
+      "note": "官方应用／所属平台品牌图标",
+      "file": "brand-kind-37.png",
+      "sha256": "e4468caae50353c994d990f83853e0bcfe2c35e463c07e0e1770428f2e24b404"
+    },
+    {
+      "id": "kind-13",
+      "name": "多多钱包",
+      "icon": "brand-kind-13",
+      "source": "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/2b/8d/11/2b8d11cc-2553-fbb7-0b84-458132f00c5a/AppIcon-1x_U007emarketing-0-8-0-0-85-220-0.png/512x512bb.jpg",
+      "page": "https://apps.apple.com/cn/app/%E6%8B%BC%E5%A4%9A%E5%A4%9A-%E5%A4%9A%E5%A4%9A%E4%B9%B0%E8%8F%9C-%E7%99%BE%E4%BA%BF%E8%A1%A5%E8%B4%B4/id1044283059?uo=4",
+      "note": "官方应用／所属平台品牌图标",
+      "file": "brand-kind-13.png",
+      "sha256": "8069df31ca16fde202f32f9f013af667d35f8ffd161966305db4cebfd8e72ea4"
+    },
+    {
+      "id": "kind-18",
+      "name": "Paga",
+      "icon": "brand-kind-18",
+      "source": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/98/44/a6/9844a630-55fe-f40f-a43e-6116d881bf94/AppIcon-0-0-1x_U007emarketing-0-8-0-85-220.png/512x512bb.jpg",
+      "page": "https://apps.apple.com/cn/app/paga-send-pay-and-bank/id1362357426?uo=4",
+      "note": "官方应用／所属平台品牌图标",
+      "file": "brand-kind-18.png",
+      "sha256": "23c2effd5f7e145e4f415da858356afd4fddfbf9d94092a4e3e3efae16b673ed"
+    },
+    {
+      "id": "kind-15",
+      "name": "PayPay",
+      "icon": "brand-kind-15",
+      "source": "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/a8/33/bb/a833bb34-2b89-416e-72d2-4222c24abc56/Placeholder.mill/400x400bb-75.jpg",
+      "page": "https://apps.apple.com/jp/app/paypay/id1435783608",
+      "note": "官方应用图标",
+      "file": "brand-kind-15.png",
+      "sha256": "f206da79788529e9c37791e4641b031a0dcc8b7dbdfb7b2f863c93e9c858df17"
+    },
+    {
+      "id": "kind-50",
+      "name": "Suica",
+      "icon": "brand-kind-50",
+      "source": "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/69/3f/3d/693f3d00-32ed-1958-ec31-fc341d0f1b3d/Placeholder.mill/400x400bb-75.jpg",
+      "page": "https://apps.apple.com/jp/app/suica/id1156875272",
+      "note": "官方应用图标",
+      "file": "brand-kind-50.png",
+      "sha256": "5a6f25b2a8864b4da179e41f657ca6e946539d2a8c50e71bfc3b229ff786b248"
+    },
+    {
+      "id": "kind-17",
+      "name": "PayMe",
+      "icon": "brand-kind-17",
+      "source": "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/0f/5d/75/0f5d7591-c73d-2d88-60ff-5d1de59aa6e8/Placeholder.mill/400x400bb-75.jpg",
+      "page": "https://apps.apple.com/us/app/payme-by-hsbc/id1184264977",
+      "note": "官方应用图标",
+      "file": "brand-kind-17.png",
+      "sha256": "f53e2cbdc092647977efc9be010419aebd41c1d65d6d2c19c87f4a9f38c7d0b9"
+    },
+    {
+      "id": "kind-19",
+      "name": "Chipper Cash",
+      "icon": "brand-kind-19",
+      "source": "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/61/ec/2b/61ec2b69-eb8a-70c4-e4ea-bf19ed3f0baf/Placeholder.mill/400x400bb-75.jpg",
+      "page": "https://apps.apple.com/us/app/chipper-cash/id1353631552",
+      "note": "官方应用图标",
+      "file": "brand-kind-19.png",
+      "sha256": "cbbeb07762c458c0584d67420c6d9cbc445a9e7ef9e76b6ae7452889588cb2b1"
+    },
+    {
+      "id": "kind-20",
+      "name": "YouTrip",
+      "icon": "brand-kind-20",
+      "source": "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/7d/00/2e/7d002e62-5d6a-6958-fd0d-32c1e104fcf3/Placeholder.mill/400x400bb-75.jpg",
+      "page": "https://apps.apple.com/jp/app/youtrip/id1228562274",
+      "note": "官方应用图标",
+      "file": "brand-kind-20.png",
+      "sha256": "c7ccab1fe168a9a97338624ede98f7924eeba59cacc6057e9107813ed9a5cfca"
+    },
+    {
+      "id": "kind-53",
+      "name": "WOWPASS",
+      "icon": "brand-kind-53",
+      "source": "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/9d/61/bb/9d61bba8-ec25-3960-5bdf-8e2404912828/Placeholder.mill/400x400bb-75.jpg",
+      "page": "https://apps.apple.com/tw/app/id1626691440",
+      "note": "官方应用图标",
+      "file": "brand-kind-53.png",
+      "sha256": "4c6a36bd4c5941d031f28d992b81847398e8c4e80c28886952d9b54a8c075809"
+    },
+    {
+      "id": "kind-51",
+      "name": "ICOCA",
+      "icon": "brand-kind-51",
+      "source": "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/98/cd/db/98cddb74-7767-dba9-4dfa-4c13aae3a40b/Placeholder.mill/400x400bb-75.jpg",
+      "page": "https://apps.apple.com/jp/app/id6444271546",
+      "note": "官方应用图标",
+      "file": "brand-kind-51.png",
+      "sha256": "70ae9d47e13439a3c00c81c7d85643e553f16da8106f004e42774a609e5218bd"
+    },
+    {
+      "id": "kind-52",
+      "name": "PASMO",
+      "icon": "brand-kind-52",
+      "source": "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/18/12/f8/1812f8c0-4e98-68f5-b9ed-940085e89a2e/Placeholder.mill/400x400bb-75.jpg",
+      "page": "https://apps.apple.com/jp/app/id1489151487",
+      "note": "官方应用图标",
+      "file": "brand-kind-52.png",
+      "sha256": "731ee42ad28234646a2f7a947080474cf5034f87de551ab0be94c089b849e34b"
+    },
+    {
+      "id": "kind-21",
+      "name": "TNG eWallet",
+      "icon": "brand-kind-21",
+      "source": "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/d0/5b/60/d05b601c-6b48-2d6a-940a-5970126d9e32/Placeholder.mill/400x400bb-75.jpg",
+      "page": "https://apps.apple.com/my/app/id1344696702",
+      "note": "官方应用图标",
+      "file": "brand-kind-21.png",
+      "sha256": "b293bc35f8a765af8ad771f11ab14d5f1443600be06e017dbf17c32731ad8860"
+    },
+    {
+      "id": "kind-48",
+      "name": "八达通",
+      "icon": "brand-kind-48",
+      "source": "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/43/0a/16/430a16e4-066a-e768-883c-8ff62f2cd053/Placeholder.mill/400x400bb-75.jpg",
+      "page": "https://apps.apple.com/hk/app/id1114430602",
+      "note": "官方应用图标",
+      "file": "brand-kind-48.png",
+      "sha256": "4895cd0d2f9c50e887feae1f2dbeaf089d3223121858dd448df552c025ebae2c"
+    },
+    {
+      "id": "kind-14",
+      "name": "LINE Pay",
+      "icon": "brand-kind-14",
+      "source": "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/43/f5/28/43f528d9-1d62-82c2-30ce-bd85777101e8/Placeholder.mill/400x400bb-75.jpg",
+      "page": "https://apps.apple.com/tw/app/id1563230455",
+      "note": "官方应用图标",
+      "file": "brand-kind-14.png",
+      "sha256": "d5ff96c9d6eddc0d0f87370795c6b9c7cfc2d2f5febd0fff79460a26ef4f8df7"
+    },
+    {
+      "id": "kind-31",
+      "name": "京东白条",
+      "icon": "brand-kind-31",
+      "source": "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/60/41/1a/60411a86-d92c-b714-f863-ecf08b6f4d2e/Placeholder.mill/400x400bb-75.jpg",
+      "page": "https://apps.apple.com/cn/app/id895682747",
+      "note": "京东金融平台品牌图标",
+      "file": "brand-kind-31.png",
+      "sha256": "d9ae381670093d7eb6616441872e54f70e537a9bd54ff63f136335849a5dfd7f"
+    },
+    {
+      "id": "kind-32",
+      "name": "京东金条",
+      "icon": "brand-kind-32",
+      "source": "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/60/41/1a/60411a86-d92c-b714-f863-ecf08b6f4d2e/Placeholder.mill/400x400bb-75.jpg",
+      "page": "https://apps.apple.com/cn/app/id895682747",
+      "note": "京东金融平台品牌图标",
+      "file": "brand-kind-32.png",
+      "sha256": "d9ae381670093d7eb6616441872e54f70e537a9bd54ff63f136335849a5dfd7f"
+    },
+    {
+      "id": "kind-16",
+      "name": "PayPal",
+      "icon": "brand-kind-16",
+      "file": "brand-kind-16.svg",
+      "source": "https://www.paypalobjects.com/marketing/web/logos/paypal-mark-color_new.svg",
+      "page": "https://www.paypal.com/",
+      "note": "官网品牌标识",
+      "sha256": "8766a4211434d2c318fbfa412ea9633b385ecf1cab6119f8894019d91ed7e027"
+    },
+    {
+      "id": "kind-35",
+      "name": "美团借钱",
+      "icon": "brand-kind-35",
+      "file": "brand-kind-35.png",
+      "source": "https://p0.meituan.net/smartvenus/519f64f1d51d8470ecad1f9b5fce83591696.png",
+      "page": "https://www.meituan.com/",
+      "note": "官网品牌标识",
+      "sha256": "7fdc3607c49bfe1c80a118946238b7a3a05f9a51b523e7ab4c252730fe81641d"
+    },
+    {
+      "id": "kind-36",
+      "name": "美团月付",
+      "icon": "brand-kind-36",
+      "file": "brand-kind-36.png",
+      "source": "https://p0.meituan.net/smartvenus/519f64f1d51d8470ecad1f9b5fce83591696.png",
+      "page": "https://www.meituan.com/",
+      "note": "官网品牌标识",
+      "sha256": "7fdc3607c49bfe1c80a118946238b7a3a05f9a51b523e7ab4c252730fe81641d"
+    },
+    {
+      "id": "kind-34",
+      "name": "微粒贷",
+      "icon": "brand-kind-34",
+      "file": "brand-kind-34.png",
+      "source": "https://w.welidaimkt.com/cfgs-mngx/mbwebsite/images/favicon.png",
+      "page": "https://w.webank.com/",
+      "note": "官网品牌标识",
+      "sha256": "625101822d98ee2a32f167ddc5fb420fd3a5d0cd1f7d60b32211c79a44f634a3"
+    },
+    {
+      "id": "kind-49",
+      "name": "澳门通",
+      "icon": "brand-kind-49",
+      "file": "brand-kind-49.png",
+      "source": "https://www.macaupass.com/favicon-64.png",
+      "page": "https://www.macaupass.com/",
+      "note": "官网品牌标识",
+      "sha256": "ddf041e737e8e7eb3e2b92f57d1bfb44fc1474d45220250449bbeeb8db448fe4"
+    },
+    {
+      "id": "kind-30",
+      "name": "蚂蚁花呗",
+      "icon": "brand-kind-30",
+      "file": "brand-kind-30.svg",
+      "source": "https://www.bootstrapmb.com/icon/raii6rraii-5",
+      "page": "https://www.bootstrapmb.com/icon/raii6rraii-5",
+      "note": "BootstrapMB 花呗品牌矢量，按品牌蓝色着色；非官网发布素材",
+      "sha256": "bae3eeb7fc367e338107df095e5d7931050659d0fb6e5e2106d01505165cdce0"
+    },
+    {
+      "id": "kind-22",
+      "name": "UseTimon",
+      "icon": "brand-kind-22",
+      "file": "brand-kind-22.png",
+      "source": "https://usetimon.com/favicon.ico?favicon.65676790.ico",
+      "page": "https://usetimon.com/",
+      "note": "官网品牌图标",
+      "sha256": "c2150c58de51db91a261af0dadf33d632f56ca6bb1de179ece3d3ba8ecfa37c4"
+    }
+  ],
+  "pendingProductMarks": [
+    "余额宝",
+    "余利宝",
+    "小荷包",
+    "微信零钱通",
+    "借呗",
+    "微信分付",
+    "备用金"
+  ]
+}

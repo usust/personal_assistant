@@ -1,0 +1,31 @@
+{
+  "name": "personal-assistant-frontend",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "npm run catalog:check && vue-tsc -b && vite build",
+    "preview": "vite preview",
+    "type-check": "vue-tsc -b",
+    "test": "node --test tests/*.mjs",
+    "catalog:check": "node ../../scripts/sync-account-catalog.mjs --check"
+  },
+  "dependencies": {
+    "@element-plus/icons-vue": "^2.3.2",
+    "@tabler/icons-vue": "^3.45.0",
+    "axios": "^1.11.0",
+    "element-plus": "^2.10.7",
+    "markdown-it": "^15.0.2",
+    "pinia": "^3.0.3",
+    "vue": "^3.5.21",
+    "vue-router": "^4.5.1"
+  },
+  "devDependencies": {
+    "@types/node": "^24.3.0",
+    "@vitejs/plugin-vue": "^6.0.1",
+    "typescript": "~5.9.2",
+    "vite": "^7.1.5",
+    "vue-tsc": "^3.0.6"
+  }
+}
