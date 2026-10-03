@@ -49,7 +49,9 @@ curl -f http://192.168.31.3:10000/api/health
 ## API 子域名入口
 
 现有 lylab-proxy-nginx-1 挂载 deploy/docker/paapi.nginx.conf 对应配置到 conf.d，监听 8888。
-后端加入已有外部网络 lylab-proxy_default，使用专用别名 personal-assistant-api；宿主机不映射 20000。
+后端加入已有外部网络 lylab-proxy_default，使用专用别名 personal-assistant-api；宿主机同时映射 192.168.31.3:20000，供局域网 iOS 直连。
 Nginx 使用 Docker DNS 动态解析上游，后端重新创建后自动解析新地址。
 DNS 和公网 HTTPS 入口还需将 paapi.lylab.vip 的请求（保留 Host）转发到 192.168.31.3:8888。
 Nginx 域名配置当前为服务器独立管理文件；workflow 更新 Compose 保留网络连接，不自动覆盖入口配置。
+
+局域网 iOS API 地址：http://192.168.31.3:20000/api。端口仅绑定指定服务器地址。

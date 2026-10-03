@@ -7,6 +7,9 @@ services:
       dockerfile: deploy/docker/backend.Dockerfile
     restart: unless-stopped
     stop_grace_period: 110s
+    # 为同一局域网内的 iOS 提供独立 API 入口，保留现有 Web 与子域名代理。
+    ports:
+      - "192.168.31.3:20000:20000"
     volumes:
       - type: bind
         source: ${PA_SHARED_DIR:?请设置服务器共享目录}/config.yaml
