@@ -45,3 +45,11 @@ curl -f http://192.168.31.3:10000/api/health
 
 源码 Dockerfile 仅作为可选完整构建方式；自动发布采用 runtime Dockerfile。构建上下文排除本机配置。
 当前自动发布尚未在 Runner 上实跑；首次触发需观察 Actions 输出。
+
+## API 子域名入口
+
+现有 lylab-proxy-nginx-1 挂载 deploy/docker/paapi.nginx.conf 对应配置到 conf.d，监听 8888。
+后端加入已有外部网络 lylab-proxy_default，使用专用别名 personal-assistant-api；宿主机不映射 20000。
+Nginx 使用 Docker DNS 动态解析上游，后端重新创建后自动解析新地址。
+DNS 和公网 HTTPS 入口还需将 paapi.lylab.vip 的请求（保留 Host）转发到 192.168.31.3:8888。
+Nginx 域名配置当前为服务器独立管理文件；workflow 更新 Compose 保留网络连接，不自动覆盖入口配置。

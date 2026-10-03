@@ -24,6 +24,12 @@ services:
         target: /app/log
         bind:
           create_host_path: false
+    # 接入已有入口代理网络；独立别名避免与其他应用的 backend 服务冲突。
+    networks:
+      default:
+      proxy:
+        aliases:
+          - personal-assistant-api
     extra_hosts:
       - "host.docker.internal:host-gateway"
     healthcheck:
@@ -59,3 +65,8 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
+
+networks:
+  proxy:
+    external: true
+    name: lylab-proxy_default
