@@ -74,9 +74,11 @@ func TestBankStatementRepriceGuards(t *testing.T) {
 	}
 }
 
-// TestBankStatementPreviewFixture 验证 iOS 只读账单样本与后端计算结果一致；参数：t 为测试上下文；返回值：无，只读仓库样本文件。
+// TestBankStatementPreviewFixture 验证 iOS 只读账单样本与后端计算结果一致。
+// 参数：t 为测试上下文，要求当前工作目录为本测试包目录；返回值：无，只读仓库样本文件，读取或校验失败时标记测试失败。
 func TestBankStatementPreviewFixture(t *testing.T) {
-	const root = "../../../../apps/iOS/PersonalAssistant/PersonalAssistant/Resources/"
+	// 使用当前仓库的 iOS 资源目录，避免本机残留的旧目录掩盖干净检出中的路径错误。
+	const root = "../../../../apps/iOS/PersonalAssistant/Resources/"
 	raw, err := os.ReadFile(root + "LoanUIPreview.json")
 	if err != nil {
 		t.Fatal(err)
