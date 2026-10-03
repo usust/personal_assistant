@@ -1,0 +1,61 @@
+name: personal-assistant
+services:
+  backend:
+    image: personal-assistant-backend:${RELEASE_ID:?请设置发布版本}
+    build:
+      context: ../..
+      dockerfile: deploy/docker/backend.Dockerfile
+    restart: unless-stopped
+    stop_grace_period: 110s
+    volumes:
+      - type: bind
+        source: ${PA_SHARED_DIR:?请设置服务器共享目录}/config.yaml
+        target: /app/config.yaml
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ${PA_SHARED_DIR}/data
+        target: /app/data
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ${PA_SHARED_DIR}/log
+        target: /app/log
+        bind:
+          create_host_path: false
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      # 当前接口只检查进程存活，数据库和业务仍须上线联调。
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:20000/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 60s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+  web:
+    image: personal-assistant-web:${RELEASE_ID:?请设置发布版本}
+    build:
+      context: ../..
+      dockerfile: deploy/docker/web.Dockerfile
+    restart: unless-stopped
+    ports:
+      - "${WEB_BIND_ADDRESS:-127.0.0.1}:10000:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1/index.html"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"

@@ -82,3 +82,7 @@ venv/
 
 # 移植前的本机备份
 /.migration-backup/
+
+# 自动发布的本机临时成品
+/release-package/
+/release-package.tar.gz

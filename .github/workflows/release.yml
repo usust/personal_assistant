@@ -1,0 +1,81 @@
+name: Build and deploy application
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'backend/**'
+      - 'apps/web/**'
+      - 'shared/**'
+      - 'scripts/**'
+      - 'deploy/docker/**'
+      - 'deploy/scripts/**'
+      - '.github/workflows/release.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: personal-assistant-production
+  cancel-in-progress: false
+
+jobs:
+  release:
+    if: github.ref == 'refs/heads/main'
+    runs-on: [self-hosted, macOS, ARM64]
+    timeout-minutes: 45
+    env:
+      SERVER: root@192.168.31.3
+      SERVER_ROOT: /mnt/sata2-4/personal-assistant
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Configure local tools and release ID
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo /opt/homebrew/bin >> "$GITHUB_PATH"
+          echo /usr/local/bin >> "$GITHUB_PATH"
+          echo "RELEASE_ID=${GITHUB_SHA}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" >> "$GITHUB_ENV"
+      - name: Verify runner and server
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --version
+          npm --version
+          go version
+          clang --version
+          ssh -o BatchMode=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=10 "$SERVER" 'test "$(uname -m)" = x86_64 && docker compose version'
+      - name: Test backend and build Linux executable
+        shell: bash
+        working-directory: backend
+        run: |
+          set -euo pipefail
+          go test ./...
+          go vet ./...
+          mkdir -p ../release-package
+          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -ldflags='-s -w' -o ../release-package/backend .
+          file ../release-package/backend
+          file ../release-package/backend | grep -q 'ELF 64-bit.*x86-64'
+      - name: Test and build Web
+        shell: bash
+        working-directory: apps/web
+        env:
+          VITE_API_BASE_URL: /api
+        run: |
+          set -euo pipefail
+          npm ci
+          npm test
+          npm run build
+      - name: Package and deploy
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp -R apps/web/dist release-package/web
+          cp deploy/docker/compose.yaml deploy/docker/nginx.conf deploy/docker/*.runtime.Dockerfile release-package/
+          cp deploy/scripts/deploy-release.sh release-package/
+          tar -czf release-package.tar.gz -C release-package .
+          ssh -o BatchMode=yes -o StrictHostKeyChecking=yes "$SERVER" "mkdir -p '$SERVER_ROOT/releases/$RELEASE_ID'"
+          scp -o BatchMode=yes -o StrictHostKeyChecking=yes release-package.tar.gz "$SERVER:$SERVER_ROOT/releases/$RELEASE_ID/package.tar.gz"
+          ssh -o BatchMode=yes -o StrictHostKeyChecking=yes "$SERVER" "cd '$SERVER_ROOT/releases/$RELEASE_ID' && tar -xzf package.tar.gz && sh deploy-release.sh '$RELEASE_ID'"
