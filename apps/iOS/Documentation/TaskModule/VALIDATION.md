@@ -40,3 +40,8 @@
 ## Iteration4 云身份隔离
 
 真实 Store 隔离登录/401、跨代数旧任务与配置、财务保留和既有任务竞态通过。完整范围与未验项目见 [Iteration4/VALIDATION.md](Iteration4/VALIDATION.md)。真实登录表单与 Chat 私有发送未运行，不记录为全流程通过。
+
+
+## Iteration5 空态写入口
+
+空清单正常新建、blocked禁用与刷新恢复、无清单管理入口实际UI通过。busy瞬间组合未验，见 [Iteration5/VALIDATION.md](Iteration5/VALIDATION.md)。

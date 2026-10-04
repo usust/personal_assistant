@@ -29,7 +29,11 @@ struct TasksView: View {
                 if let error { InlineError(message: error) }
                 if visible.isEmpty {
                     ContentUnavailableView(search.isEmpty ? (store.lists.isEmpty ? "创建第一个清单" : scope == "archived" ? "暂无归档任务" : "暂无任务") : "没有匹配的任务", systemImage: "checklist")
-                    if search.isEmpty && scope != "archived" { Button(store.lists.isEmpty ? "新建清单" : "新建任务") { if store.lists.isEmpty { managing = true } else { creating = true } } }
+                    if search.isEmpty && scope != "archived" {
+                        // 空态入口回调输入无、输出无；无清单打开管理，有清单新建任务与工具栏共用写保护。
+                        Button(store.lists.isEmpty ? "新建清单" : "新建任务") { if store.lists.isEmpty { managing = true } else { creating = true } }
+                            .disabled(!store.lists.isEmpty && (store.taskWriteBusy || store.taskWriteBlocked))
+                    }
                 }
             }
             ForEach(visible) { task in NavigationLink { TaskDetailView(taskID: task.id) } label: { TaskRow(task: task) } }

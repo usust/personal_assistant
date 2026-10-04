@@ -251,4 +251,23 @@ import XCTest
         XCTAssertTrue(app.buttons["刷新任务"].isEnabled)
     }
 
+    /// 验证空清单入口共享保护；参数无；返回无，使用现有样本和读取失败，不写真实账号。
+    func testEmptyEntryWriteProtection() {
+        let app=launch("refresh-error")
+        app.buttons["清单、全部清单"].tap();app.buttons["工作计划"].tap()
+        XCTAssertTrue(app.staticTexts["暂无任务"].exists)
+        let entry=app.buttons.matching(identifier:"新建任务").matching(NSPredicate(format:"enabled == true")).firstMatch
+        XCTAssertTrue(entry.exists);capture(app,"iteration5-empty-enabled");entry.tap()
+        XCTAssertTrue(app.navigationBars["新建任务"].waitForExistence(timeout:5));app.buttons["取消"].tap()
+        app.buttons["清单、工作计划"].tap();app.buttons["全部清单"].tap()
+        app.staticTexts["整理本月订阅与开销"].tap();button(app,"增加").tap();back(app)
+        app.buttons["清单、全部清单"].tap();app.buttons["工作计划"].tap()
+        XCTAssertTrue(app.staticTexts["暂无任务"].exists)
+        for entry in app.buttons.matching(identifier:"新建任务").allElementsBoundByIndex { XCTAssertFalse(entry.isEnabled) }
+        capture(app,"iteration5-empty-blocked")
+        app.buttons["刷新任务"].tap()
+        XCTAssertTrue(app.buttons.matching(identifier:"新建任务").matching(NSPredicate(format:"enabled == true")).firstMatch.waitForExistence(timeout:5))
+        capture(app,"iteration5-empty-recovered")
+    }
+
 }
