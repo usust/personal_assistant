@@ -29,7 +29,7 @@ struct TasksView: View {
             ForEach(visible) { task in NavigationLink { TaskDetailView(taskID: task.id) } label: { TaskRow(task: task) } }
                 // 拖动回调：输入为原索引与目标位置；返回无；向服务端提交完整 ID 顺序，不在失败时假装保存成功。
                 .onMove { source, destination in Task { await reorder(source, to: destination) } }
-        }.navigationTitle("任务").searchable(text: $search, prompt: "搜索任务与子任务")
+        }.navigationTitle("任务").navigationBarTitleDisplayMode(.inline).searchable(text: $search, prompt: "搜索任务与子任务")
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) { Button("清单", systemImage: "folder") { managing = true } }
                 ToolbarItem(placement: .topBarTrailing) { EditButton().disabled(loading || !search.isEmpty) }
@@ -202,8 +202,8 @@ struct TaskEditor: View {
         NavigationStack {
             Form {
                 Section("任务内容") {
-                    TextField("想完成什么？", text: $title)
-                    TextField("备注", text: $remark, axis: .vertical).lineLimit(3...8)
+                    TaskFloatingField(title: "任务名称", text: $title)
+                    TaskFloatingField(title: "备注", text: $remark, multiline: true)
                     Picker("清单", selection: $listID) { ForEach(store.lists) { Text($0.name).tag($0.id) } }.disabled(task != nil || parent != nil)
                     Picker("优先级", selection: $priority) { Text("高").tag("high"); Text("中").tag("medium"); Text("低").tag("low") }
                     if task == nil && parent == nil {
@@ -217,10 +217,10 @@ struct TaskEditor: View {
                     if hasEnd { DatePicker("截止日期", selection: $end, displayedComponents: .date); TimeInput(title: "截止时间", value: $endTime) }
                 }
                 Section("进度配置") {
-                    LabeledContent("目标总量") { TextField("目标总量", text: $total).keyboardType(.decimalPad).multilineTextAlignment(.trailing) }
-                    LabeledContent("已完成量") { TextField("已完成量", text: $completed).keyboardType(.decimalPad).multilineTextAlignment(.trailing) }
-                    LabeledContent("每次增加") { TextField("每次增加", text: $step).keyboardType(.decimalPad).multilineTextAlignment(.trailing) }
-                    TextField("单位，例如：页、次", text: $unit)
+                    TaskFloatingField(title: "目标总量", text: $total).keyboardType(.decimalPad)
+                    TaskFloatingField(title: "已完成量", text: $completed).keyboardType(.decimalPad)
+                    TaskFloatingField(title: "每次增加", text: $step).keyboardType(.decimalPad)
+                    TaskFloatingField(title: "单位", text: $unit)
                     if taskType == "main" { Text("主任务的展示进度由子任务汇总；空主任务与 Web 一样显示 100%。").font(.footnote).foregroundStyle(.secondary) }
                 }
                 if let error { InlineError(message: error) }

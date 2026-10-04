@@ -130,7 +130,7 @@ nonisolated private final class ScreenshotUploadDelegate: NSObject, URLSessionDa
         Task { await consumeResults(); await reconcile(pending) }
     }
 
-    /// 核对系统是否仍持有恢复任务；参数：contexts 为恢复时已有上下文；返回值：无；强退取消或提交中断后标记可重试，不能留下永久“识别中”。
+    /// 核对系统是否仍持有恢复任务；参数：contexts 为恢复时已有上下文；返回值：无；强退取消或提交中断后标记失败并要求重新选图，不能留下永久“识别中”。
     private func reconcile(_ contexts: [ScreenshotUploadContext]) async {
         guard let session else { return }
         let tasks = await session.allTasks
@@ -139,19 +139,20 @@ nonisolated private final class ScreenshotUploadDelegate: NSObject, URLSessionDa
             guard let file = try? ScreenshotUploadFiles.url(context.id, suffix: "context"), FileManager.default.fileExists(atPath: file.path) else { continue }
             if ids.contains(context.id) { store?.screenshotRunning.insert(context.id); continue }
             if let result = try? ScreenshotUploadFiles.url(context.id, suffix: "result"), FileManager.default.fileExists(atPath: result.path) { continue }
-            await fail(context.id, message: "后台识别已中断，请重试")
+            await fail(context.id, message: "后台识别已中断，请重新选图")
         }
     }
 
-    /// 提交已有截图；参数：job 为已持久化的当前空间任务，store 为共享会话；返回值：无；先保存身份快照及上传正文，失败保留可重试任务，成功立即交给系统网络进程。
+    /// 提交已有截图；参数：job 为已持久化的当前空间任务，store 为共享会话；返回值：无；先保存身份快照及上传正文，失败保留错误元数据并清理图片，成功立即交给系统网络进程。
     func submit(_ job: ScreenshotJob, store: AppStore) throws {
         restore(store: store)
         guard let finance = store.finance else { throw APIError(status: 0, message: "本机账本不可用") }
+        defer { finance.screenshotImages.removeValue(forKey: job.id) }
         do {
             let settings = try finance.screenshotBook().settings
             guard settings.enabled, settings.configID > 0, !settings.consentID.isEmpty else { throw APIError(status: 0, message: "请启用图片记账并同意图片外发") }
             guard let token = store.api.token, finance.cachedProfile != nil, finance.space["server"] as? String == store.api.baseURL else { throw APIError(status: 0, message: "请先登录并开启同步") }
-            guard let image = job.image, let session else { throw APIError(status: 0, message: "截图不可用") }
+            guard let image = finance.screenshotImages[job.id] ?? job.image, let session else { throw APIError(status: 0, message: "截图不可用") }
             let server = try APIClient.normalize(store.api.baseURL)
             guard let url = URL(string: server + "/ai/screenshot") else { throw APIError(status: 0, message: "服务器地址无效") }
             let context = ScreenshotUploadContext(id: job.id, spaceKey: finance.activeKey, server: server, tokenHash: Self.hash(token), settings: settings)
@@ -215,7 +216,7 @@ nonisolated private final class ScreenshotUploadDelegate: NSObject, URLSessionDa
                 else { job = try finance.includeIncompleteScreenshot(job) }
                 ScreenshotUploadFiles.remove(context.id); store.screenshotRunning.remove(context.id)
                 let activity = Activity<ScreenshotActivityAttributes>.activities.first { $0.attributes.id == context.id }
-                await ScreenshotActivityReporter.finish(activity, phase: job.state == "posted" ? .posted : .review)
+                await ScreenshotActivityReporter.finish(activity, phase: .posted)
             } catch { await fail(context.id, message: error.localizedDescription) }
         }
     }

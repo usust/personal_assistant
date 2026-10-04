@@ -130,7 +130,7 @@ struct TransactionsView: View {
             .sheet(isPresented: $addingAccount, onDismiss: { Task { await load(reset: true) } }) { AccountEditor(account: nil) }
             .navigationDestination(isPresented: Binding(get: { selected != nil }, set: { if !$0 { selected = nil } })) {
                 if let selected {
-                    if let jobID = selected.screenshotJobID { ScreenshotJobView(jobID: jobID) }
+                    if selected.screenshotJobID != nil { TransactionEditor(editingTransaction: rows.first { $0.id == selected.id } ?? selected) }
                     else { TransactionDetailView(transaction: rows.first { $0.id == selected.id } ?? selected) {
                         await refreshSelected()
                         await load(reset: true)
@@ -138,7 +138,7 @@ struct TransactionsView: View {
                     } }
                 }
             }
-            .sheet(item: $editing, onDismiss: { Task { await load(reset: true) } }) { TransactionMetadataEditor(transaction: $0) }
+            .sheet(item: $editing, onDismiss: { Task { await load(reset: true) } }) { TransactionEditor(editingTransaction: $0) }
             .sheet(item: $refunding, onDismiss: { Task { await load(reset: true) } }) { TransactionRefundEditor(transaction: $0) }
             .alert("删除流水？", isPresented: Binding(get: { deleting != nil }, set: { if !$0 { deleting = nil } }), presenting: deleting) { transaction in
                 // 确认回调捕获目标流水；参数、返回值无；异步删除失败保留列表并显示错误。
@@ -180,8 +180,8 @@ struct TransactionsView: View {
                 // 左滑按钮回调无参数、无返回值；仅打开确认或表单，不直接改余额。
                 Button { deleting = transaction } label: { Label("删除", systemImage: "trash") }
                     .tint(.red).disabled(!canDelete(transaction) || deletingBusy)
-                // 编辑回调无参数和返回值；待补全截图进入对应流水补全页，完整流水沿用元数据编辑。
-                Button { if transaction.screenshotJobID != nil { selected = transaction } else { editing = transaction } } label: { Label("编辑", systemImage: "pencil") }
+                // 编辑回调无参数和返回值；截图流水与完整流水共用编辑器。
+                Button { editing = transaction } label: { Label("编辑", systemImage: "pencil") }
                     .tint(.blue).disabled(transaction.status == "voided" || deletingBusy)
                 if transaction.status == "pending" && transaction.installmentParentId == nil {
                     // 待确认流水使用同一侧滑区域入账；回调无参数、无返回值，仅打开确认提示。
@@ -328,7 +328,7 @@ struct TransactionsView: View {
                         Text(account).lineLimit(1).truncationMode(.tail)
                             .multilineTextAlignment(.trailing)
                     }.font(.caption).foregroundStyle(.secondary)
-                    if transaction.status == "incomplete" { Text("待补全 · " + (transaction.screenshotIssue ?? "资料不完整")).font(.caption2).foregroundStyle(.orange) }
+
                     if transaction.installmentParentId != nil {
                         HStack(spacing: 6) {
                             Text("分期 \(transaction.installmentPeriod ?? 0)" + (transaction.installmentPeriods.map { "/\($0)" } ?? ""))
@@ -867,7 +867,7 @@ struct TransactionEditor: View {
         if let initialLoanID { type = "transfer"; targetID = initialLoanID; description = "贷款本金还款" }
         if let initialRepaymentID { type = "transfer"; targetID = initialRepaymentID; description = "信用卡还款"; amount = initialRepaymentAmount ?? "" }
     }
-    /// 保存流水或模板；参数：continueEntry 为新增保存后是否继续记账，编辑时忽略；返回值：无；编辑仅 PATCH 变化字段，新增重试复用幂等键，失败保留输入。
+    /// 保存流水或模板；参数：continueEntry 为新增保存后是否继续记账，编辑时忽略；返回值：无；截图流水通过本机原子事务保存，其他编辑仅 PATCH 变化字段，失败保留输入。
     private func save(continueEntry: Bool = false) async {
         guard !busy, valid, saveMode != "template" || !presetName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
         busy = true; error = nil; saved = false; defer { busy = false }
@@ -876,6 +876,15 @@ struct TransactionEditor: View {
             // 构造与新增一致的财务草稿，仅提交实际变化的白名单字段，保留空值和零值。
             let originalAmount = (Decimal(string: transaction.amount) ?? 0) + (Decimal(string: transaction.discount ?? "0") ?? 0)
             let current: [String: Any] = ["type": type, "accountId": accountID, "targetAccountId": type == "transfer" ? targetID as Any : NSNull(), "amount": amount, "discount": type == "expense" ? discount : "0.00", "fee": type == "transfer" ? fee : "0.00", "rebate": type == "transfer" ? rebate : "0.00", "rebateAccountId": type == "transfer" && (Decimal(string: rebate) ?? 0) > 0 ? (rebateAccountID == 0 ? accountID : rebateAccountID) as Any : NSNull(), "rebatePending": type == "transfer" && (Decimal(string: rebate) ?? 0) > 0 && rebatePending, "categoryId": type != "transfer" && categoryID > 0 ? categoryID as Any : NSNull(), "counterparty": counterparty, "description": description, "transactionDate": entryDateChanged ? Values.day(date) : transaction.transactionDate, "transactionTime": entryDateChanged ? Values.time(date) : transaction.transactionTime ?? ""]
+            if let jobID = transaction.screenshotJobID {
+                do {
+                    guard let finance = store.finance else { throw APIError(status: 0, message: "本机账本不可用") }
+                    try finance.saveScreenshotTransaction(jobID, body: current)
+                    dismiss()
+                    await store.refreshAfterMutation(.finance)
+                } catch { self.error = error.localizedDescription }
+                return
+            }
             let original: [String: Any] = ["type": transaction.type, "accountId": transaction.accountId, "targetAccountId": transaction.targetAccountId as Any? ?? NSNull(), "amount": NSDecimalNumber(decimal: originalAmount).stringValue, "discount": transaction.discount ?? "0.00", "fee": transaction.fee ?? "0.00", "rebate": transaction.rebate ?? "0.00", "rebateAccountId": transaction.rebateAccountId as Any? ?? NSNull(), "rebatePending": transaction.rebatePending ?? false, "categoryId": transaction.categoryId as Any? ?? NSNull(), "counterparty": transaction.counterparty, "description": transaction.description, "transactionDate": transaction.transactionDate, "transactionTime": transaction.transactionTime ?? ""]
             var fields: [String: Any] = [:]
             for (key, value) in current {

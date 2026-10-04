@@ -136,8 +136,13 @@ func TestScreenshotModelProtocol(t *testing.T) {
 		if calls == 1 {
 			messages := body["messages"].([]any)
 			prompt := messages[0].(map[string]any)["content"].(string)
-			if !strings.Contains(prompt, screenshotLanguagePrompt) {
+			if !strings.Contains(prompt, screenshotLanguagePrompt) || !strings.Contains(prompt, screenshotWechatPrompt) {
 				t.Fatal("缺少中文输出及卡尾号识别要求")
+			}
+			content := messages[1].(map[string]any)["content"].([]any)
+			imageURL := content[0].(map[string]any)["image_url"].(map[string]any)
+			if imageURL["detail"] != "high" {
+				t.Fatal("账单小字应使用高精度识别")
 			}
 			payload, _ := json.Marshal(map[string]any{"choices": []any{map[string]any{"message": map[string]any{"content": goodScreenshot()}}}})
 			return &http.Response{StatusCode: 200, Header: make(http.Header), Body: io.NopCloser(bytes.NewReader(payload))}, nil
@@ -168,5 +173,19 @@ func TestScreenshotChannelOptional(t *testing.T) {
 	}
 	if strings.Contains(screenshotPrompt, "只识别微信或支付宝") {
 		t.Fatal("提示词仍限制支付来源")
+	}
+}
+
+// TestScreenshotDefaultCurrency 验证缺省币种按人民币处理且保留独立字段；参数：t 为测试上下文；返回值：无，不联网。
+func TestScreenshotDefaultCurrency(t *testing.T) {
+	raw := strings.Replace(goodScreenshot(), `"currency":"CNY"`, `"currency":""`, 1)
+	raw = strings.Replace(raw, `"time":"12:30"`, `"time":""`, 1)
+	result, err := parseScreenshot(raw)
+	if err != nil || result.Currency != "CNY" || result.Amount != "20.50" || result.Merchant != "午餐店" || result.Date != "2026-09-29" || !*result.NeedsReview {
+		t.Fatalf("缺失时间不能丢弃其余资料：%+v %v", result, err)
+	}
+	foreign, err := parseScreenshot(strings.Replace(goodScreenshot(), `"CNY"`, `"USD"`, 1))
+	if err != nil || foreign.Currency != "USD" || !*foreign.NeedsReview {
+		t.Fatalf("明确外币不可默认人民币：%+v %v", foreign, err)
 	}
 }

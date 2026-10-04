@@ -217,6 +217,21 @@ final class StubProtocol: URLProtocol, @unchecked Sendable {
         }
         let configuration = URLSessionConfiguration.ephemeral
         configuration.protocolClasses = [StubProtocol.self]
+        let connectionSession = URLSession(configuration: configuration)
+        // 健康替身回调接收请求并返回状态码与 JSON；验证测试只访问草稿地址且不发送凭证。
+        StubProtocol.handler = { request in
+            precondition(request.url?.absoluteString == "https://draft.example.com/api/health")
+            precondition(request.value(forHTTPHeaderField: "Authorization") == nil && request.timeoutInterval == 10)
+            return (200, Data(#"{"code":200,"data":{"service":"personal-assistant","status":"ok"}}"#.utf8))
+        }
+        try await APIClient.testConnection("https://draft.example.com/api", session: connectionSession)
+        check(true, "服务器连接测试匿名访问草稿健康接口")
+        // 错误服务替身输入请求、输出其他服务响应；200 状态也不得被当作连接成功。
+        StubProtocol.handler = { _ in (200, Data(#"{"code":200,"data":{"service":"other","status":"ok"}}"#.utf8)) }
+        do {
+            try await APIClient.testConnection("https://draft.example.com/api", session: connectionSession)
+            preconditionFailure("接受了其他服务的健康响应")
+        } catch { check(error is APIError, "连接测试拒绝错误服务响应") }
         let api = APIClient(baseURL: "https://example.com/api", session: URLSession(configuration: configuration))
         api.token = "test-token"
         // 请求断言回调：输入为请求；输出为状态码与 JSON；验证 Bearer、路径、URL 编码和业务解包。

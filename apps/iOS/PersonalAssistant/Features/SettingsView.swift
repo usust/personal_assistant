@@ -4,6 +4,7 @@ import UIKit
 struct SettingsView: View {
     @Environment(AppStore.self) private var store
     @AppStorage("appearance") private var appearance = "system"
+    @State private var editingServer = false
 
     /// 构建一级设置页面；参数：无；返回值：按 AI、快捷指令、外观、连接及关于分块的设置表单，与用户账号操作分离。
     var body: some View {
@@ -18,12 +19,101 @@ struct SettingsView: View {
                 Picker("外观", selection: $appearance) { Text("跟随系统").tag("system"); Text("浅色").tag("light"); Text("深色").tag("dark") }
             }
             Section("连接") {
-                LabeledContent("服务器", value: store.api.baseURL).font(.footnote).textSelection(.enabled)
+                // 点击回调无输入和返回；打开独立编辑表单，取消时不修改当前连接。
+                Button { editingServer = true } label: {
+                    HStack {
+                        Text("服务器").foregroundStyle(.primary)
+                        Spacer()
+                        Text(store.api.baseURL).font(.footnote).foregroundStyle(.secondary).lineLimit(1).truncationMode(.middle)
+                        Image(systemName: "chevron.right").font(.footnote.weight(.semibold)).foregroundStyle(.tertiary)
+                    }.contentShape(Rectangle())
+                }.buttonStyle(.plain)
             }
             Section("关于") {
                 LabeledContent("Personal Assistant", value: "1.0")
             }
         }.navigationTitle("").navigationBarTitleDisplayMode(.inline)
+            .sheet(isPresented: $editingServer) { ServerAddressEditor() }
+    }
+}
+
+private struct ServerAddressEditor: View {
+    @Environment(AppStore.self) private var store
+    @Environment(\.dismiss) private var dismiss
+    @State private var address = ""
+    @State private var error: String?
+    @State private var testing = false
+    @State private var connectionResult: String?
+    @State private var connectionTask: Task<Void, Never>?
+
+    /// 构建服务器编辑表单；参数：无；返回值：地址输入、连接测试结果及取消和保存操作，测试不保存地址。
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("服务器地址") {
+                    TextField("https://example.com/api", text: $address)
+                        .keyboardType(.URL).textInputAutocapitalization(.never).autocorrectionDisabled()
+                        .accessibilityLabel("服务器地址")
+                        .disabled(testing)
+                }
+                Section {
+                    // 点击回调无输入和返回；针对当前草稿启动独立的匿名健康请求。
+                    Button {
+                        connectionTask = Task { await testConnection() }
+                    } label: {
+                        HStack {
+                            Label(testing ? "测试中" : "测试连接", systemImage: "network")
+                            Spacer()
+                            if testing { ProgressView() }
+                        }
+                    }.disabled(testing || address.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    if let connectionResult {
+                        Text(connectionResult).font(.footnote).foregroundStyle(.secondary)
+                    }
+                }
+                if store.api.token != nil {
+                    Section { Text("更换服务器将退出当前登录，本机账本保留。").font(.footnote).foregroundStyle(.secondary) }
+                }
+                if let error { InlineError(message: error) }
+            }.navigationTitle("服务器").navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    // 保存回调无输入和返回；校验失败保留输入，成功后关闭表单。
+                    SaveToolbar(busy: testing, valid: !address.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty) { save() }
+                }
+                // 地址改变回调参数为旧、新地址；返回值无，清理不再对应当前输入的测试结果。
+                .onChange(of: address) { _, _ in connectionResult = nil; error = nil }
+                // 页面退出回调无输入和返回；取消尚未完成的测试，避免后台继续请求。
+                .onDisappear { connectionTask?.cancel() }
+                .onAppear {
+                    // 出现回调无输入和返回；回填当前连接地址，不触发网络请求。
+                    address = store.api.baseURL
+                }
+        }
+    }
+
+    /// 检查当前输入的服务器；参数：无；返回值：无，显示简短成功或失败结果，不保存地址或改变登录状态。
+    @MainActor
+    private func testConnection() async {
+        testing = true
+        connectionResult = nil
+        error = nil
+        defer { testing = false }
+        do {
+            try await APIClient.testConnection(address)
+            try Task.checkCancellation()
+            connectionResult = "连接成功"
+        } catch {
+            guard !Task.isCancelled else { return }
+            connectionResult = "连接失败：" + error.localizedDescription
+        }
+    }
+
+    /// 保存服务器地址；参数：无；返回值：无；复用地址校验、旧会话清理与偏好持久化，失败显示错误且不关闭表单。
+    private func save() {
+        do {
+            try store.setServer(address)
+            dismiss()
+        } catch { self.error = error.localizedDescription }
     }
 }
 

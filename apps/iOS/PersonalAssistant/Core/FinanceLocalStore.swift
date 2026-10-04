@@ -5,6 +5,8 @@ import SQLite3
 /// 本地账本和上传队列在同一个 SQLite 文档事务中持久化；账号空间以服务器及用户共同隔离。
 @MainActor @Observable
 final class FinanceLocalStore {
+    /// 仅供当前识别请求使用的图片，不写入账本；任务结束立即移除。
+    var screenshotImages: [String: String] = [:]
     var revision = 0
     var syncing = false
     var syncError: String?

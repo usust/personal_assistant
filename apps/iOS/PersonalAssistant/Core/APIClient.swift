@@ -73,6 +73,22 @@ final class APIClient {
         return normalized
     }
 
+    /// 测试服务器健康接口；参数：raw 为未保存的 API 地址，session 为可选测试会话，nil 创建独立临时会话；返回值：无。
+    /// 地址、网络、HTTP 或健康协议错误抛出；不读取钥匙串、不携带登录凭证，也不修改现有客户端或会话。
+    static func testConnection(_ raw: String, session: URLSession? = nil) async throws {
+        let base = try normalize(raw)
+        let client = APIClient(baseURL: base, session: session)
+        let data = try await client.networkData("/health", method: "GET", body: nil)
+        // 同时校验业务信封和服务身份，避免代理欢迎页或其他服务被误判为连接成功。
+        guard let envelope = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let code = envelope["code"] as? Int, code == 200,
+              let health = envelope["data"] as? [String: Any],
+              health["service"] as? String == "personal-assistant",
+              health["status"] as? String == "ok" else {
+            throw APIError(status: 0, message: "服务器健康响应无效")
+        }
+    }
+
     /// 判断明文 HTTP 是否为本地服务；参数：host 为 URLComponents 解析的主机名；返回值：localhost、.local、回环或 RFC 1918 IPv4 为 true；拒绝公网、伪装后缀及非标准 IPv4，不解析 DNS，无副作用。
     static func isLocalHTTPHost(_ host: String) -> Bool {
         let normalized = host.lowercased()
@@ -116,7 +132,7 @@ final class APIClient {
         guard let url = components.url else { throw APIError(status: 0, message: "请求地址无效") }
         var request = URLRequest(url: url)
         request.httpMethod = method
-        request.timeoutInterval = (path == "/ai/chat" || path == "/ai/screenshot" || path == "/health-management/reports") ? 110 : 20
+        request.timeoutInterval = path == "/health" ? 10 : (path == "/ai/chat" || path == "/ai/screenshot" || path == "/health-management/reports") ? 110 : 20
         request.cachePolicy = .reloadIgnoringLocalCacheData
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         if let token { request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization") }

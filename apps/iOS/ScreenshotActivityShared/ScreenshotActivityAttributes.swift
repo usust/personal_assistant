@@ -11,7 +11,7 @@ nonisolated struct ScreenshotActivityAttributes: ActivityAttributes {
             switch self {
             case .processing: return "正在识别"
             case .posted: return "已入账"
-            case .review: return "待补全"
+            case .review: return "已添加流水"
             case .failed: return "识别失败"
             }
         }

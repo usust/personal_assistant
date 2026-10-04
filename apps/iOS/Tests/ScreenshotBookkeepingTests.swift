@@ -71,19 +71,19 @@ import Foundation
         try store.deleteScreenshot(sameImage.id)
         job.state = "processing"; try store.updateScreenshot(job)
         rejects { try store.deleteScreenshot(job.id) }
-        // 模拟进程中断：重开数据库后同一 UUID 恢复失败任务并保留图片。
+        // 模拟进程中断：重开数据库后同一 UUID 恢复失败任务且不保留图片。
         let recovered = try FinanceLocalStore(url: directory.appendingPathComponent("ledger.sqlite"))
         try recovered.recoverScreenshots()
         let interrupted = try recovered.screenshotBook().jobs[0]
-        precondition(interrupted.id == job.id && interrupted.state == "failed" && interrupted.image != nil)
-        // 系统上传仍负责的任务在进程恢复时保持处理中；丢失后台任务则保存明确失败原因及原图片。
+        precondition(interrupted.id == job.id && interrupted.state == "failed" && interrupted.image == nil)
+        // 系统上传仍负责的任务在进程恢复时保持处理中；丢失后台任务则保存明确失败原因且不保存原图片。
         var backgroundJob = interrupted; backgroundJob.state = "processing"
         try recovered.updateScreenshot(backgroundJob)
         try recovered.recoverScreenshots(excluding: [job.id])
         try check(try recovered.screenshotBook().jobs[0].state == "processing")
         try recovered.failScreenshot(job.id, spaceKey: recovered.activeKey, message: "后台识别已中断，请重试")
         try check(try recovered.screenshotBook().jobs[0].message == "后台识别已中断，请重试")
-        try check(try recovered.screenshotBook().jobs[0].image != nil)
+        try check(try recovered.screenshotBook().jobs[0].image == nil)
         job.extraction = extraction()
         // AI 建议直接匹配已有分类。
         try check(try store.prepareScreenshot(job).categoryID == category)
@@ -246,6 +246,7 @@ extension ScreenshotBookkeepingTests {
         missing = try store.prepareScreenshot(missing)
         let balance = store.rows("accounts")[0]["balance"] as? String
         missing = try store.includeIncompleteScreenshot(missing)
+        precondition(missing.image == nil && store.screenshotImages[missing.id] == nil)
         let id = missing.transactionID
         missing = try store.includeIncompleteScreenshot(missing)
         precondition(id == missing.transactionID)
@@ -254,9 +255,8 @@ extension ScreenshotBookkeepingTests {
         _ = try JSONDecoder().decode([FinanceTransaction].self, from: JSONSerialization.data(withJSONObject: rows))
         try check(try store.transactions([:], paginated: false).count == 1)
         precondition(store.rows("accounts")[0]["balance"] as? String == balance)
-        missing.extraction?.amount = "10.00"
-        missing = try store.prepareScreenshot(missing)
-        _ = try store.postScreenshot(missing, manual: false)
+        try store.saveScreenshotTransaction(missing.id, body: ["type": "expense", "accountId": account, "amount": "10.00", "transactionDate": "2026-09-29", "transactionTime": "12:30", "counterparty": "午餐店", "description": "修改后的备注", "fee": "0.00"])
+        precondition(store.rows("accounts")[0]["balance"] as? String == "69.50")
         try check(try store.incompleteScreenshotTransactions().isEmpty)
         precondition(store.rows("transactions").count == 2)
     }
@@ -313,10 +313,12 @@ extension ScreenshotBookkeepingTests {
         do { _ = try await store.recognizeScreenshot(first.id, api: api, isCurrent: { true }); preconditionFailure("超时应失败") } catch { }
         try check(try store.screenshotBook().jobs[0].state == "failed")
         precondition(store.rows("transactions").isEmpty)
-        // 请求回调返回固定成功信封；稳定任务重试只记一次。
+        // 失败后图片已清除，必须重新选图；新任务识别成功后重放不重复记账。
         ScreenshotTestProtocol.response = { _ in (200, envelope) }
-        _ = try await store.recognizeScreenshot(first.id, api: api, isCurrent: { true })
-        _ = try await store.recognizeScreenshot(first.id, api: api, isCurrent: { true })
+        precondition(store.screenshotImages[first.id] == nil)
+        let retry = try store.enqueueScreenshot(Data("network1".utf8))
+        _ = try await store.recognizeScreenshot(retry.id, api: api, isCurrent: { true })
+        _ = try await store.recognizeScreenshot(retry.id, api: api, isCurrent: { true })
         precondition(store.rows("transactions").count == 1)
         // 相同图片及订单再次导入必须重新识别并自动增加一笔，不要求重复确认。
         var repeatedCalls = 0
@@ -345,14 +347,15 @@ extension ScreenshotBookkeepingTests {
         do { _ = try await store.recognizeScreenshot(second.id, api: api, isCurrent: { true }); preconditionFailure("关闭后不应外发") } catch { }
         precondition(calls == 0)
         book = try store.screenshotBook(); book.settings.enabled = true; book.settings.consentID = "new-consent"; try store.saveScreenshotBook(book)
-        // 请求回调在响应前退出原空间，返回成功；图片仅保留原空间且新空间没有交易。
+        // 请求回调在响应前退出原空间，返回成功；图片清除且新空间没有交易。
+        let third = try store.enqueueScreenshot(Data("network3".utf8))
         ScreenshotTestProtocol.response = { _ in try store.useGuest(); return (200, envelope) }
-        do { _ = try await store.recognizeScreenshot(second.id, api: api, isCurrent: { true }); preconditionFailure("切换空间后不应接收结果") } catch { }
+        do { _ = try await store.recognizeScreenshot(third.id, api: api, isCurrent: { true }); preconditionFailure("切换空间后不应接收结果") } catch { }
         precondition(store.activeKey == "guest" && store.rows("transactions").isEmpty)
         try check(try store.screenshotBook().jobs.isEmpty)
         let original = store.spaces[originalKey]!["screenshotBookkeeping"]!
         let saved = try JSONDecoder().decode(ScreenshotBook.self, from: JSONSerialization.data(withJSONObject: original))
-        precondition(saved.jobs.first { $0.id == second.id }?.state == "failed" && saved.jobs.first { $0.id == second.id }?.image != nil)
+        precondition(saved.jobs.first { $0.id == second.id }?.state == "failed" && saved.jobs.first { $0.id == second.id }?.image == nil)
         // 系统后台回调同样只写原空间错误；当前游客空间没有截图或流水，不切回旧账号。
         try store.failScreenshot(second.id, spaceKey: originalKey, message: "账号已变化，请重新处理")
         precondition(store.activeKey == "guest" && store.rows("transactions").isEmpty)
