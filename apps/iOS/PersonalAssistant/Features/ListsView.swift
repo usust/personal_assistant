@@ -7,17 +7,19 @@ struct ListsView: View {
     @State private var edited: TaskList?
     @State private var deleted: TaskList?
     @State private var error: String?
+    /// 构建清单界面；参数：无；返回值：原生视图；操作回调受共享写保护约束。
     var body: some View {
         List {
             if let error { InlineError(message: error) }
+            if let notice = store.taskNotice { InlineError(message: notice); Button("刷新任务") { Task { await store.refreshTaskWrite(confirmedWrite: false) } } }
             if store.lists.isEmpty { ContentUnavailableView("创建你的第一个清单", systemImage: "folder.badge.plus", description: Text("例如：生活、工作、阅读。")) }
             ForEach(store.lists) { list in
                 Button { edited = list } label: {
                     TaskListPreview(name: list.name, remark: list.remark, icon: list.icon, color: list.color)
-                }.swipeActions { Button("删除", role: .destructive) { deleted = list } }
+                }.disabled(store.taskWriteBusy || store.taskWriteBlocked).swipeActions { Button("删除", role: .destructive) { deleted = list }.disabled(store.taskWriteBusy || store.taskWriteBlocked) }
             }
         }.navigationTitle("我的清单").navigationBarTitleDisplayMode(.inline)
-            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("完成") { dismiss() } }; ToolbarItem(placement: .primaryAction) { Button("新建清单", systemImage: "plus") { creating = true } } }
+            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("完成") { dismiss() } }; ToolbarItem(placement: .primaryAction) { Button("新建清单", systemImage: "plus") { creating = true }.disabled(store.taskWriteBusy || store.taskWriteBlocked) } }
             .sheet(isPresented: $creating) { ListEditor(list: nil) }
             .sheet(item: $edited) { ListEditor(list: $0) }
             .alert("删除清单？", isPresented: Binding(get: { deleted != nil }, set: { if !$0 { deleted = nil } })) {
@@ -27,8 +29,10 @@ struct ListsView: View {
     }
     /// 删除清单及任务；参数：list 为已确认清单；返回值：无；级联删除已确认清单，失败显示错误。
     private func remove(_ list: TaskList) async {
-        do { try await store.api.mutate("/task-lists/\(list.id)", method: "DELETE"); store.lists.removeAll { $0.id == list.id }; store.tasks.removeAll { $0.listId == list.id }; deleted = nil }
-        catch { self.error = error.localizedDescription }
+        let generation = store.sessionID
+        // 写回调输入无、输出无；只提交一次排序或删除请求，副作用由共享写保护约束。
+        do { try await store.writeTask { try await store.api.mutate("/task-lists/\(list.id)", method: "DELETE") }; store.lists.removeAll { $0.id == list.id }; store.tasks.removeAll { $0.listId == list.id }; deleted = nil; await store.refreshTaskWrite() }
+        catch { guard !(error is CancellationError), generation == store.sessionID else { return }; self.error = error.localizedDescription }
     }
 }
 struct ListEditor: View {
@@ -39,11 +43,15 @@ struct ListEditor: View {
     @State private var remark = ""
     @State private var color = "#14B8A6"
     @State private var icon = "Folder"
+    @State private var uncertainCreation = false
     @State private var busy = false
     @State private var error: String?
+    /// 构建清单界面；参数：无；返回值：原生视图；操作回调受共享写保护约束。
     var body: some View {
         NavigationStack {
             Form {
+                if uncertainCreation { InlineError(message: "创建结果未确认。请关闭表单并刷新清单，确认后再创建。") }
+                else if let error { InlineError(message: error) }
                 if list == nil {
                     Section {
                         TaskListPreview(name: name.isEmpty ? "清单名称" : name, remark: remark, icon: icon, color: color, centered: true)
@@ -72,9 +80,9 @@ struct ListEditor: View {
                         }
                     }
                 }
-                if let error { InlineError(message: error) }
+            if !uncertainCreation, error == nil, let notice = store.taskNotice { InlineError(message: notice); Button("刷新任务") { Task { await store.refreshTaskWrite(confirmedWrite: false) } } }
             }.navigationTitle(list == nil ? "新建清单" : "编辑清单").navigationBarTitleDisplayMode(.inline)
-                .toolbar { SaveToolbar(busy: busy, valid: !name.trimmingCharacters(in: .whitespaces).isEmpty && name.count <= 128) { Task { await save() } } }
+                .toolbar { SaveToolbar(busy: busy, valid: !name.trimmingCharacters(in: .whitespaces).isEmpty && name.unicodeScalars.count <= 128 && remark.unicodeScalars.count <= 2000 && !uncertainCreation && !store.taskWriteBusy && !store.taskWriteBlocked) { Task { await save() } } }
                 .interactiveDismissDisabled(busy)
                 .task { name = list?.name ?? ""; remark = list?.remark ?? ""; color = list?.color ?? "#14B8A6"; icon = list?.icon ?? "Folder" }
         }
@@ -108,15 +116,19 @@ struct ListEditor: View {
     }
     /// 保存清单；参数：无；返回值：无；编辑只发送变化的白名单字段，创建与编辑均保存跨端共用图标键。
     private func save() async {
+        let generation = store.sessionID
         busy = true; defer { busy = false }
         do {
             let edited: [String: Any] = ["name": name.trimmingCharacters(in: .whitespaces), "remark": remark, "color": color, "icon": icon]
             if let list {
                 let fields = Values.patch(original: ["name": list.name, "remark": list.remark, "color": list.color, "icon": list.icon], edited: edited)
-                if !fields.isEmpty { try await store.api.mutate("/task-lists/\(list.id)", method: "PATCH", body: fields) }
-            } else { try await store.api.mutate("/task-lists", body: edited) }
-            dismiss(); await store.refreshAfterMutation(.tasks)
-        } catch { self.error = error.localizedDescription }
+                // 清单编辑回调输入无、输出服务器清单实体；仅发送变化白名单字段。
+                if !fields.isEmpty { let saved: TaskList = try await store.writeTask { try await store.api.request("/task-lists/\(list.id)", method: "PATCH", body: fields) }; if let index = store.lists.firstIndex(where: { $0.id == saved.id }) { store.lists[index] = saved } }
+            } else {
+                // 创建回调输入无、输出服务器清单实体；POST结果不明时不重试。
+                let saved: TaskList = try await store.writeTask { try await store.api.request("/task-lists", method: "POST", body: edited) }; store.lists.append(saved) }
+            dismiss(); await store.refreshTaskWrite()
+        } catch { guard !(error is CancellationError), generation == store.sessionID else { return }; self.error = error.localizedDescription; if list == nil && store.taskWriteBlocked { uncertainCreation = true } }
     }
 }
 
@@ -128,6 +140,7 @@ private struct TaskListPreview: View {
     let color: String
     var centered = false
     /// 构建清单行；参数：无；返回值：名称与备注跟随 centered 对齐的视图，无副作用。
+    /// 构建清单界面；参数：无；返回值：原生视图；操作回调受共享写保护约束。
     var body: some View {
         HStack(spacing: 12) {
             SymbolTile(symbol: TaskListAppearance.symbol(icon), color: .listColor(color))
@@ -149,6 +162,7 @@ struct TaskFloatingField: View {
     var multiline = false
     @FocusState private var focused: Bool
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// 构建清单界面；参数：无；返回值：原生视图；操作回调受共享写保护约束。
     var body: some View {
         let raised = focused || !text.isEmpty
         ZStack(alignment: .topLeading) {

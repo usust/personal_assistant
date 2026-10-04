@@ -186,6 +186,18 @@ nonisolated enum Values {
               let value = Decimal(string: raw), abs(value) <= Decimal(1_000_000_000_000) else { return false }
         return !positive || value > 0
     }
+    /// 判断未完成任务是否逾期；参数：task 为任务，all 为进度汇总节点，now 为可注入当前时刻；返回值：截止已过去且未归档未完成时 true；空截止时分按本地 23:59，非法日期不判逾期。
+    static func taskIsOverdue(_ task: AssistantTask, all: [AssistantTask], now: Date = .now) -> Bool {
+        guard !task.archived, !task.endDate.isEmpty, progress(task, all: all).fraction < 1 else { return false }
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.calendar = Calendar(identifier: .gregorian)
+        formatter.timeZone = .current
+        formatter.dateFormat = "yyyy-MM-dd HH:mm"
+        formatter.isLenient = false
+        guard let deadline = formatter.date(from: task.endDate + " " + (task.endTime.isEmpty ? "23:59" : task.endTime)) else { return false }
+        return now > deadline
+    }
     /// 编码本地日历日期；参数：date 为日期；返回值：固定公历 yyyy-MM-dd，不使用 UTC 偏移转换；无副作用。
     static func day(_ date: Date = .now) -> String {
         let formatter = DateFormatter()

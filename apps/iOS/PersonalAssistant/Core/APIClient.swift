@@ -109,9 +109,9 @@ final class APIClient {
         return try JSONDecoder().decode(Envelope<T>.self, from: data).data
     }
 
-    /// 执行无需读取响应的写操作；参数：path、method 为固定端点，body 为校验后的白名单字典；返回值：无；HTTP 失败抛错，不自动重试写入。
-    func mutate(_ path: String, method: String = "POST", body: [String: Any] = [:]) async throws {
-        _ = try await routedData(path, method: method, body: body)
+    /// 执行无需读取响应的写操作；参数：path、method 为固定端点，body 为校验后的白名单字典，query 为结构化查询；返回值：无；HTTP 失败抛错，不自动重试写入。
+    func mutate(_ path: String, method: String = "POST", body: [String: Any] = [:], query: [URLQueryItem] = []) async throws {
+        _ = try await routedData(path, method: method, body: body, query: query)
     }
 
     /// 优先分发财务请求到本机；参数：path/method/body/query 为原请求；返回值：信封字节；账本打开失败时阻止财务写入，其他模块保持网络访问。

@@ -1,0 +1,32 @@
+# 任务模块独立验收
+
+仅使用 Debug `--task-ui-scenario` 的虚构内存样本，不登录、不读取钥匙串、不写真实服务器。项目命名沿用独立 runner 的 LoanSwipeTests；业务应用工程无需测试依赖。
+
+先构建并安装当前 Debug 应用，指定 Xcode：
+
+```sh
+export DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer
+xcodebuild -project apps/iOS/PersonalAssistant.xcodeproj -scheme PersonalAssistant \
+  -sdk iphonesimulator -configuration Debug -derivedDataPath /tmp/pa-ios-build \
+  CODE_SIGNING_ALLOWED=NO ARCHS=arm64 build
+xcrun simctl install <UUID> /tmp/pa-ios-build/Build/Products/Debug-iphonesimulator/PersonalAssistant.app
+mkdir -p /private/tmp/task-module-after
+xcodebuild -project apps/iOS/Tests/UITests/TaskModule/LoanSwipe.xcodeproj \
+  -scheme LoanSwipeTests -destination 'platform=iOS Simulator,id=<UUID>' \
+  -derivedDataPath /tmp/task-ui-build -resultBundlePath /tmp/task-ui.xcresult \
+  -parallel-testing-enabled NO test
+```
+
+结果目录须不存在。截图作为 xcresult 附件永久保留，并写入 `/private/tmp/task-module-after`。并行多个设备会覆盖同名临时截图，须逐设备复制归档。
+
+`testDateTimeOrdering` 明确跳过：当前 XCTest 原生开关外层节点定位未稳定，未完成同日时分逆序 UI 验证；不得计作通过。
+
+## 真实 AppStore 读取竞态
+
+```sh
+python3 apps/iOS/Tests/UITests/TaskModule/run-race.py
+```
+
+使用仓库实际 AppStore、APIClient、Models 与财务核心依赖编译；没有复制状态机。隔离 URLProtocol 控制 GET 的完成顺序；仅 CreditReminders 替身避免通知副作用。`--preview` 使 AppStore 初始化不打开账本、不读取钥匙串；此 harness 没有调用登录、退出或 TokenVault 写接口。
+
+覆盖写前旧 GET 不覆盖成功实体/不解锁、写期间开始读取立即 Cancellation且不发网络请求、写后完整读取才解锁。修复前实际触发进度覆盖断言，修复后通过。此处不证明真实 401、换账号、通知或财务隔离端到端行为。

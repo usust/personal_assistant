@@ -45,6 +45,22 @@ final class StubProtocol: URLProtocol, @unchecked Sendable {
     }
     /// 执行业务和传输回归；参数：无；返回值：无；验证机构兼容、精度、PATCH、进度、查询、错误与 401 行为，不连接实际 API。
     @MainActor static func main() async throws {
+        // 本地日历截止边界：当天时分必须参与逾期判断，空时分使用 23:59。
+        var deadlineTask = task(980)
+        deadlineTask.endDate = "2026-10-04"; deadlineTask.endTime = "10:30"
+        let deadlineFormatter = DateFormatter()
+        deadlineFormatter.locale = Locale(identifier: "en_US_POSIX"); deadlineFormatter.calendar = Calendar(identifier: .gregorian)
+        deadlineFormatter.timeZone = .current; deadlineFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+        check(!Values.taskIsOverdue(deadlineTask, all: [deadlineTask], now: deadlineFormatter.date(from: "2026-10-04 10:30:00")!), "截止相等未逾期")
+        check(Values.taskIsOverdue(deadlineTask, all: [deadlineTask], now: deadlineFormatter.date(from: "2026-10-04 10:30:01")!), "当天截止后逾期")
+        check(!Values.taskIsOverdue(deadlineTask, all: [deadlineTask], now: deadlineFormatter.date(from: "2026-10-04 09:00:00")!), "当天截止前未逾期")
+        deadlineTask.endTime = ""
+        check(!Values.taskIsOverdue(deadlineTask, all: [deadlineTask], now: deadlineFormatter.date(from: "2026-10-04 23:58:59")!), "空截止时间默认23:59前未逾期")
+        check(Values.taskIsOverdue(deadlineTask, all: [deadlineTask], now: deadlineFormatter.date(from: "2026-10-05 00:00:00")!), "次日超过空截止时间")
+        deadlineTask.archived = true
+        check(!Values.taskIsOverdue(deadlineTask, all: [deadlineTask], now: deadlineFormatter.date(from: "2026-10-05 00:00:00")!), "归档任务不标逾期")
+        deadlineTask.archived = false; deadlineTask.progressCompleted = deadlineTask.progressTotal
+        check(!Values.taskIsOverdue(deadlineTask, all: [deadlineTask], now: deadlineFormatter.date(from: "2026-10-05 00:00:00")!), "完成任务不标逾期")
         check(AmountKeypad.calculate("0.1", operation: "+", rhs: "0.2") == "0.3", "优惠计算保持十进制精度")
         check(AmountKeypad.calculate("10", operation: "÷", rhs: "3") == "3.33", "优惠除法按分舍入")
         check(AmountKeypad.calculate("2.55", operation: "×", rhs: "3") == "7.65", "优惠乘法金额正确")
@@ -244,6 +260,15 @@ final class StubProtocol: URLProtocol, @unchecked Sendable {
         let profile: Profile = try await api.request("/users/me", query: [URLQueryItem(name: "keyword", value: "早餐 & 咖啡")])
         check(profile.id == 1 && !profile.isAdmin, "认证头、查询编码与业务解包")
         // PATCH 断言回调：输入为请求；输出为成功信封；确保 false 使用 JSON 布尔值。
+        // 删除请求契约回调输入真实URLRequest、输出成功信封；断言cascade未被客户端查询规范化丢弃。
+        StubProtocol.handler = { request in
+            let url = URLComponents(url: request.url!, resolvingAgainstBaseURL: false)!
+            precondition(request.httpMethod == "DELETE" && url.path == "/api/tasks/980")
+            precondition(url.queryItems == [URLQueryItem(name: "cascade", value: "true")])
+            return (200, Data(#"{"data":null}"#.utf8))
+        }
+        try await api.mutate("/tasks/980", method: "DELETE", query: [URLQueryItem(name: "cascade", value: "true")])
+        check(true, "任务级联删除保留真实cascade查询")
         StubProtocol.handler = { request in
             let body = try body(request)
             precondition(request.httpMethod == "PATCH" && body.count == 1 && body["includeInNetWorth"] as? Bool == false)

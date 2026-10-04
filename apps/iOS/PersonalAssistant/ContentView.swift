@@ -11,7 +11,7 @@ struct ContentView: View {
             else if let error = store.localStorageError { ContentUnavailableView("无法打开本机账本", systemImage: "externaldrive.badge.exclamationmark", description: Text(error)) }
             else {
                 TabView(selection: $selectedTab) {
-                    if store.profile != nil {
+                    if store.profile != nil && (store.api.token != nil || store.isPreview) {
                         Tab("今日", systemImage: "sun.max", value: "today") { NavigationStack { TodayView() } }
                         Tab("任务", systemImage: "checklist", value: "tasks") { NavigationStack { TasksView() } }
                     }

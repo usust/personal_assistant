@@ -12,11 +12,11 @@
 
 ```sh
 DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild \
-  -project apps/iOS/PersonalAssistant/PersonalAssistant.xcodeproj \
+  -project apps/iOS/PersonalAssistant.xcodeproj \
   -scheme PersonalAssistant -sdk iphonesimulator -configuration Debug \
   -derivedDataPath /tmp/pa-ios-build CODE_SIGNING_ALLOWED=NO ARCHS=arm64 build
 
-apps/iOS/PersonalAssistant/Tests/run.sh
+apps/iOS/Tests/run.sh
 ```
 
 ## 功能与真实 API
@@ -114,3 +114,7 @@ Debug 可使用 `--preview --tab finance --transaction-ui` 直接打开只读记
 “财务 → 右上角菜单 → 图片记账”处理待确认记录；“设置 → 图片记账”选择视觉 AI、同意图片外发。“设置 → AI 配置”支持新增及编辑本人配置，保存后同步到后端，空密钥保留原值。设置页提供已签名的快捷指令文件，系统先“截屏”，再调用个人助理“识别截图并记账”；背面轻点绑定由系统管理。动作在应用进程后台分析，保留当前页面，实时活动在灵动岛及锁屏显示识别、入账、待确认或失败状态，点击后才打开处理记录。自动处理微信/支付宝人民币支出，缺字段或账户/分类匹配不明确时进入待确认；每次截图允许同图同订单重复入账，同一任务回调仍保持幂等。需同步更新后端以提供 `/ai/screenshot`。完整步骤、数据保留和真机验证边界见 [截图记账说明](../../../docs/design/ios-screenshot-bookkeeping.md)。
 
 相册入口：在“图片记账”点击“从相册选择图片”，选中一张支付图片后直接识别并记账，无需快捷指令。取消选图不会上传，未完成视觉 AI 配置与外发同意时入口不可用。
+
+## 任务模块隔离验收
+
+Debug 参数 `--task-ui-scenario normal|empty|load-error|write-error|refresh-error|lost-response --tab tasks` 接管全部网络请求，使用内存样本，支持可写核心流程。`write-error` 明确业务拒绝，`refresh-error` 写成功后前两次任务读取失败，第三次恢复；`lost-response` 首次写成功后丢失响应；追加场景 `lost-response-read-error` 首次写丢响应且前两次任务读取失败，第三次恢复；不自动重试。退出进程即清空；Release 不包含此协议。原 `--preview` 仍只读。样本验证不等同真实服务器联调。

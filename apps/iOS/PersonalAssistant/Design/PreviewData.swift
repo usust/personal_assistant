@@ -100,4 +100,100 @@ nonisolated final class PreviewProtocol: URLProtocol, @unchecked Sendable {
         }
     }
 }
+/// Debug 专用可写内存任务服务；所有请求均被接管，永不访问真实服务器。
+nonisolated final class TaskScenarioProtocol: URLProtocol, @unchecked Sendable {
+    private static let lock = NSLock()
+    nonisolated(unsafe) private static var rows = PreviewProtocol.payload("/api/tasks") as! [[String: Any]]
+    nonisolated(unsafe) private static var lists = PreviewProtocol.payload("/api/task-lists") as! [[String: Any]]
+    nonisolated(unsafe) private static var wrote = false
+    nonisolated(unsafe) private static var initialized = false
+    nonisolated(unsafe) private static var refreshFailuresRemaining = 0
+    nonisolated(unsafe) private static var responseLost = false
+    /// 接管隔离服务请求；参数：request 为请求；返回值：true；无副作用。
+    override class func canInit(with request: URLRequest) -> Bool { true }
+    /// 保留隔离请求；参数：request 为请求；返回值：原请求；无副作用。
+    override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
+    /// 结束内存响应；参数：无；返回值：无；没有后台资源。
+    override func stopLoading() {}
+    /// 响应内存任务场景；参数：无；返回值：无；串行锁保护样本，写入失败和响应丢失均不自动重试。
+    override func startLoading() {
+        Self.lock.lock(); defer { Self.lock.unlock() }
+        let arguments = ProcessInfo.processInfo.arguments
+        let index = arguments.firstIndex(of: "--task-ui-scenario")
+        // 参数转换回调输入参数索引、输出场景名称；边界检查避免缺少参数时越界，不产生网络副作用。
+        let scenario = index.flatMap { arguments.indices.contains($0 + 1) ? arguments[$0 + 1] : nil } ?? "normal"
+        if !Self.initialized {
+            Self.initialized = true
+            if scenario == "empty" { Self.rows = []; Self.lists = [] }
+        }
+        let path = request.url!.path
+        let method = request.httpMethod ?? "GET"
+        let isModule = path.hasPrefix("/api/tasks") || path.hasPrefix("/api/task-lists")
+        var status = 200
+        var result: Any = PreviewProtocol.payload(path)
+        var bodyData = request.httpBody ?? Data()
+        if let stream = request.httpBodyStream {
+            stream.open(); defer { stream.close() }
+            var bytes = [UInt8](repeating: 0, count: 4096)
+            while stream.hasBytesAvailable { let count = stream.read(&bytes, maxLength: bytes.count); if count <= 0 { break }; bodyData.append(contentsOf: bytes.prefix(count)) }
+        }
+        let body = (try? JSONSerialization.jsonObject(with: bodyData)) as? [String: Any] ?? [:]
+        if isModule && method == "GET" {
+            if scenario == "load-error" { status = 503 }
+            else if ["refresh-error", "lost-response-read-error"].contains(scenario) && path == "/api/tasks" && Self.refreshFailuresRemaining > 0 { status = 503; Self.refreshFailuresRemaining -= 1 }
+            result = path == "/api/tasks" ? Self.rows : Self.lists
+        } else if isModule {
+            if scenario == "write-error" { status = 400 }
+            else {
+                Self.wrote = true
+                if scenario == "refresh-error" || (scenario == "lost-response-read-error" && !Self.responseLost) { Self.refreshFailuresRemaining = 2 }
+                // 清单写入保持任务级联删除和服务端实体响应的最小契约。
+                if path.hasPrefix("/api/task-lists") {
+                    let id = Int(path.split(separator: "/").last ?? "")
+                    if method == "DELETE", let id { Self.lists.removeAll { $0["id"] as? Int == id }; Self.rows.removeAll { $0["listId"] as? Int == id }; result = NSNull() }
+                    // 合并回调输入旧值与新值、输出新值；仅更新模拟清单草稿请求提交字段。
+                    else if let id, let offset = Self.lists.firstIndex(where: { $0["id"] as? Int == id }) { Self.lists[offset].merge(body) { _, new in new }; result = Self.lists[offset] }
+                    else { var list = body; list["id"] = (Self.lists.compactMap { $0["id"] as? Int }.max() ?? 0) + 1; Self.lists.append(list); result = list }
+                } else if path == "/api/tasks/reorder" {
+                    for (order, id) in (body["taskIds"] as? [Int] ?? []).enumerated() { if let offset = Self.rows.firstIndex(where: { $0["id"] as? Int == id }) { Self.rows[offset]["sortOrder"] = order } }; result = NSNull()
+                } else {
+                    let components = path.split(separator: "/")
+                    let id = components.count > 2 ? Int(components[2]) : nil
+                    // 样本删除按父级闭包递归清理，便于验收真实页面的级联行为。
+                    if method == "DELETE", let id {
+                        var removed: Set<Int> = [id]
+                        var count = 0
+                        repeat { count = removed.count; for row in Self.rows { if removed.contains(row["parentId"] as? Int ?? 0), let child = row["id"] as? Int { removed.insert(child) } } } while count != removed.count
+                        Self.rows.removeAll { removed.contains($0["id"] as? Int ?? 0) }; result = NSNull()
+                    } else if let id, let offset = Self.rows.firstIndex(where: { $0["id"] as? Int == id }) {
+                        if path.hasSuffix("/progress") {
+                            let value = (Self.rows[offset]["progressCompleted"] as? NSNumber)?.doubleValue ?? 0
+                            let step = (Self.rows[offset]["progressStep"] as? NSNumber)?.doubleValue ?? 1
+                            let target = (Self.rows[offset]["progressTotal"] as? NSNumber)?.doubleValue ?? 1
+                            let requested = value + (body["operation"] as? String == "decrement" ? -step : step)
+                            Self.rows[offset]["progressCompleted"] = max(0, min(target, requested))
+                        // 合并回调输入旧值和请求新值、输出新值；不变字段保留，仅用于隔离样本。
+                        } else { Self.rows[offset].merge(body) { _, new in new } }
+                        result = Self.rows[offset]
+                    } else {
+                        let next = (Self.rows.compactMap { $0["id"] as? Int }.max() ?? 0) + 1
+                        var row = PreviewProtocol.task(next, body["title"] as? String ?? "任务")
+                        // 新建合并回调输入样本默认值和草稿值、输出草稿值；随后把进度字符串转换为响应数值。
+                        row.merge(body) { _, new in new }; Self.rows.append(row); result = row
+                    }
+                    // 请求草稿的进度字符串转换成响应数值，保持模型解码契约。
+                    for offset in Self.rows.indices { for key in ["progressTotal", "progressCompleted", "progressStep"] { if let raw = Self.rows[offset][key] as? String { Self.rows[offset][key] = Double(raw) ?? 0 } } }
+                    if let dictionary = result as? [String: Any], let id = dictionary["id"] as? Int { result = Self.rows.first { $0["id"] as? Int == id } ?? dictionary }
+                }
+                if ["lost-response", "lost-response-read-error"].contains(scenario) && !Self.responseLost { Self.responseLost = true; client?.urlProtocol(self, didFailWithError: URLError(.networkConnectionLost)); return }
+            }
+        }
+        let envelope: [String: Any] = status == 200 ? ["data": result] : ["message": status == 400 ? "示例业务拒绝，请调整后重试。" : "示例加载失败。"]
+        do {
+            let data = try JSONSerialization.data(withJSONObject: envelope)
+            client?.urlProtocol(self, didReceive: HTTPURLResponse(url: request.url!, statusCode: status, httpVersion: nil, headerFields: nil)!, cacheStoragePolicy: .notAllowed)
+            client?.urlProtocol(self, didLoad: data); client?.urlProtocolDidFinishLoading(self)
+        } catch { client?.urlProtocol(self, didFailWithError: error) }
+    }
+}
 #endif

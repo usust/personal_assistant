@@ -18,6 +18,11 @@ final class AppStore {
     var restoring = true
     var sessionError: String?
     var syncWarning: String?
+    private var taskRevision = 0
+    private var taskReadSequence = 0
+    var taskWriteBusy = false
+    var taskWriteBlocked = false
+    var taskNotice: String?
     var tasks: [AssistantTask] = []
     var lists: [TaskList] = []
     var overview: FinanceOverview?
@@ -33,9 +38,9 @@ final class AppStore {
     /// 建立应用会话；参数：无；返回值：状态容器；读取服务器偏好、钥匙串和本机账本，恢复中断的截图任务，不发请求。
     init() {
         #if DEBUG
-        if ProcessInfo.processInfo.arguments.contains("--preview") {
+        if ProcessInfo.processInfo.arguments.contains("--preview") || ProcessInfo.processInfo.arguments.contains("--task-ui-scenario") {
             let configuration = URLSessionConfiguration.ephemeral
-            configuration.protocolClasses = [PreviewProtocol.self]
+            configuration.protocolClasses = ProcessInfo.processInfo.arguments.contains("--task-ui-scenario") ? [TaskScenarioProtocol.self] : [PreviewProtocol.self]
             api = APIClient(baseURL: "https://preview.invalid/api", session: URLSession(configuration: configuration))
             isPreview = true
             return
@@ -68,6 +73,7 @@ final class AppStore {
         // 认证失效回调无输入和返回；暂停云同步但保留当前本机账本及待上传操作。
         api.onUnauthorized = { [weak self] in
             guard let self else { return }
+            self.sessionID = UUID(); self.resetTaskWrites(); self.tasks = []; self.lists = []
             self.api.token = nil; self.identityVerified = false
             TokenVault.delete(self.api.baseURL)
             self.finance?.syncError = "登录已过期"; self.sessionError = "登录已过期，请重新登录。"
@@ -112,7 +118,7 @@ final class AppStore {
             profile = user; identityVerified = true
             scheduleSync()
             sessionError = nil
-            sessionID = UUID()
+            sessionID = UUID(); resetTaskWrites(); tasks = []; lists = []
         } catch { api.token = nil; identityVerified = false; TokenVault.delete(api.baseURL); throw error }
     }
     /// 退出登录；参数：无；返回值：无；原账号本机账本和队列保留，切到独立游客空间，清除凭证与非财务内存并使旧请求失效。
@@ -125,17 +131,74 @@ final class AppStore {
         profile = nil
         syncWarning = nil
         tasks = []; lists = []; accounts = []; categories = []; configs = []; messages = []; actions = []
+        resetTaskWrites()
         overview = nil; chatConfigID = 0; chatSending = false; sessionID = UUID()
     }
-    /// 刷新任务与清单；参数：无；返回值：无；整体成功后更新，失败保留旧数据；跨会话结果不提交。
+    /// 刷新任务与清单；参数：无；返回值：无；整体成功后更新，失败保留旧数据；会话、写入代数或读取序号变化及写入期间的响应均抛 CancellationError，不提交或解除保护。
     func loadTasks() async throws {
+        // 写请求尚未结束时，读取快照不能确认最终结果；提前取消，不推进读取序号或发起网络请求。
+        guard !taskWriteBusy else { throw CancellationError() }
         let generation = sessionID
+        let revision = taskRevision
+        taskReadSequence += 1
+        let sequence = taskReadSequence
         async let taskResult: [AssistantTask] = api.request("/tasks")
         async let listResult: [TaskList] = api.request("/task-lists")
-        let (newTasks, newLists) = try await (taskResult, listResult)
-        guard generation == sessionID else { throw CancellationError() }
+        let newTasks: [AssistantTask], newLists: [TaskList]
+        do { (newTasks, newLists) = try await (taskResult, listResult) }
+        catch {
+            guard generation == sessionID, revision == taskRevision, sequence == taskReadSequence, !taskWriteBusy else { throw CancellationError() }
+            throw error
+        }
+        guard generation == sessionID, revision == taskRevision, sequence == taskReadSequence, !taskWriteBusy else { throw CancellationError() }
+        // 排序回调输入两个服务端节点，返回稳定先后关系；只在完整同会话快照成功后解除写保护。
         tasks = newTasks.sorted { $0.sortOrder == $1.sortOrder ? $0.id < $1.id : $0.sortOrder < $1.sortOrder }
         lists = newLists
+        taskWriteBlocked = false; taskNotice = nil
+    }
+    /// 重置任务写保护；参数：无；返回值：无；仅会话切换调用，使旧会话不影响新账号。
+    private func resetTaskWrites() { taskRevision += 1; taskReadSequence += 1; taskWriteBusy = false; taskWriteBlocked = false; taskNotice = nil }
+    /// 执行任务模块单次写入；类型 T 为响应值；参数：operation 为不自动重试的写请求；返回值：服务器确认结果；跨会话丢弃，结果不明锁定所有任务写入口，明确业务拒绝允许修正。
+    func writeTask<T>(_ operation: () async throws -> T) async throws -> T {
+        guard !taskWriteBusy, !taskWriteBlocked else { throw APIError(status: 409, message: "请先刷新任务，确认上次操作结果。") }
+        let generation = sessionID
+        taskRevision += 1
+        taskWriteBusy = true
+        defer { if generation == sessionID { taskWriteBusy = false } }
+        do {
+            let result = try await operation()
+            guard generation == sessionID else { throw CancellationError() }
+            taskWriteBlocked = true
+            return result
+        } catch {
+            guard generation == sessionID else { throw CancellationError() }
+            // 拒绝分类回调输入HTTP业务错误、输出是否明确拒绝；5xx、解码和传输错误保守视为结果未知。
+            let rejected = (error as? APIError).map { [400, 401, 403, 404, 409, 422].contains($0.status) } ?? false
+            if !rejected {
+                taskWriteBlocked = true
+                taskNotice = "操作结果未确认，请刷新后检查任务，避免重复提交。"
+            }
+            throw error
+        }
+    }
+    /// 合并已确认任务；参数：task 为服务器成功响应；返回值：无；保留其他节点，随后读取失败不撤销成功实体。
+    func upsertTask(_ task: AssistantTask) {
+        if let index = tasks.firstIndex(where: { $0.id == task.id }) { tasks[index] = task } else { tasks.append(task) }
+    }
+    /// 刷新任务模块；参数：confirmedWrite 表示本次调用紧跟服务器确认的成功写入，手动重试必须为 false；返回值：无；过期读不改提示，普通重试保留未确认状态。
+    func refreshTaskWrite(confirmedWrite: Bool = true) async {
+        let generation = sessionID
+        let revision = taskRevision
+        do { try await loadTasks() }
+        catch {
+            guard !(error is CancellationError), generation == sessionID, revision == taskRevision else { return }
+            if confirmedWrite {
+                taskWriteBlocked = true
+                taskNotice = "已保存，最新数据加载失败。请刷新后继续。"
+            } else if taskNotice == nil {
+                taskNotice = "最新数据加载失败，请重试。"
+            }
+        }
     }
     /// 从本机读取财务摘要及表单选项并续排通知；参数：无；返回值：无；预览仍用模拟 API，本机失败抛错且不覆盖旧数据。
     func loadFinance() async throws {
