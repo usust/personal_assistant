@@ -174,4 +174,16 @@ import XCTest
     func testDateTimeOrdering() throws {
         throw XCTSkip("原生开关外层可访问节点定位未稳定，未完成同日时分逆序验收；不将源码校验当作运行通过。")
     }
+    /// 验证辅助字号元信息与复用入口；参数无；返回无，仅截图与读取可访问树；字体/外观由专用模拟器配置。
+    func testAccessibleMetadataLayout() {
+        let app=launch();XCTAssertTrue(app.staticTexts["为新的一周留点空间"].waitForExistence(timeout:5))
+        capture(app,"iteration2-list-initial")
+        app.swipeUp();capture(app,"iteration2-list-scrolled")
+        let row=app.buttons.matching(NSPredicate(format:"label CONTAINS %@", "为新的一周留点空间")).firstMatch
+        XCTAssertTrue(row.label.contains("高优先级"));XCTAssertTrue(row.label.contains("2026"));XCTAssertTrue(row.label.contains("40%"))
+        row.tap();app.swipeUp();capture(app,"iteration2-detail")
+        app.terminate();app.launchArguments=["--task-ui-scenario","normal","--tab","today"];app.launch()
+        XCTAssertTrue(app.staticTexts["今日专注"].waitForExistence(timeout:10));app.swipeUp();capture(app,"iteration2-today")
+    }
+
 }

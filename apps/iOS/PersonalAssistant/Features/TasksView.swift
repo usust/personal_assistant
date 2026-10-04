@@ -67,11 +67,12 @@ struct TasksView: View {
 }
 struct TaskRow: View {
     @Environment(AppStore.self) private var store
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     let task: AssistantTask
     private var progress: TaskProgress { Values.progress(task, all: store.tasks) }
     /// 构建任务界面；参数：无；返回值：原生视图；状态回调只更新草稿或启动单次明确操作。
     var body: some View {
-        HStack(spacing: 14) {
+        HStack(alignment: .top, spacing: 14) {
             ZStack {
                 Circle().stroke(.teal.opacity(0.13), lineWidth: 3)
                 Circle().trim(from: 0, to: progress.fraction).stroke(.teal, style: StrokeStyle(lineWidth: 3, lineCap: .round)).rotationEffect(.degrees(-90))
@@ -81,14 +82,23 @@ struct TaskRow: View {
                 Text(task.title).font(.body.weight(.medium)).foregroundStyle(task.archived ? .secondary : .primary)
                 if let list = store.lists.first(where: { $0.id == task.listId }) { Text(list.name).font(.caption).foregroundStyle(.secondary) }
                 if let parent = store.tasks.first(where: { $0.id == task.parentId }) { Label(parent.title, systemImage: "arrow.turn.down.right").font(.caption).foregroundStyle(.secondary) }
-                HStack {
-                    if task.priority == "high" { Label("高优先级", systemImage: "flag.fill").foregroundStyle(.orange) }
-                    if !task.endDate.isEmpty { Text(taskDate(task.endDate, time: task.endTime)).foregroundStyle(Values.taskIsOverdue(task, all: store.tasks) ? .red : .secondary) }
-                    Text("\(Int(progress.fraction * 100))%")
-                }.font(.caption).foregroundStyle(.secondary)
+                // 辅助字号需要完整保留日期与状态；纵向排列避免元信息竞争横向空间，普通字号沿用原横向层次。
+                if dynamicTypeSize.isAccessibilitySize {
+                    VStack(alignment: .leading, spacing: 6) { metadata }
+                        .font(.caption).foregroundStyle(.secondary)
+                } else {
+                    HStack { metadata }.font(.caption).foregroundStyle(.secondary)
+                }
             }
         }.padding(.vertical, 6).accessibilityElement(children: .combine)
     }
+    /// 构建共用任务元信息；参数：无；返回值：优先级、完整截止日期时分和百分比视图；两种字号布局共用同一业务表达，无副作用。
+    @ViewBuilder private var metadata: some View {
+        if task.priority == "high" { Label("高优先级", systemImage: "flag.fill").foregroundStyle(.orange) }
+        if !task.endDate.isEmpty { Text(taskDate(task.endDate, time: task.endTime)).foregroundStyle(Values.taskIsOverdue(task, all: store.tasks) ? .red : .secondary) }
+        Text("\(Int(progress.fraction * 100))%")
+    }
+
 }
 struct TaskDetailView: View {
     @Environment(AppStore.self) private var store
