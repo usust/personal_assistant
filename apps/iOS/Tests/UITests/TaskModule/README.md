@@ -19,7 +19,7 @@ xcodebuild -project apps/iOS/Tests/UITests/TaskModule/LoanSwipe.xcodeproj \
 
 结果目录须不存在。截图作为 xcresult 附件永久保留，并写入 `/private/tmp/task-module-after`。并行多个设备会覆盖同名临时截图，须逐设备复制归档。
 
-`testDateTimeOrdering` 明确跳过：当前 XCTest 原生开关外层节点定位未稳定，未完成同日时分逆序 UI 验证；不得计作通过。
+`testDateTimeOrdering` 已于 Iteration6 实际通过：Toggle 子 Switch 节点、Time Picker 滚轮验证同日逆序拒绝、合法保存与关闭日期清空时分。既有跳过记录保留为历史，最新证据见 Documentation/TaskModule/Iteration6。
 
 ## 真实 AppStore 读取竞态
 

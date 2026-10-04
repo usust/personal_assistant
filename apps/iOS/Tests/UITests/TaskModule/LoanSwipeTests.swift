@@ -170,9 +170,39 @@ import XCTest
         for _ in 0..<6 { if item.exists && item.frame.midY > 150 && item.frame.midY < app.frame.height - 150 { item.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)).tap();return }; if item.exists && item.frame.midY < 150 { app.swipeDown() } else { app.swipeUp() } }
         XCTFail("开关不可达："+label)
     }
-    /// 日期时间端到端验收尚未完成；参数无；返回无，显式跳过，原生控件定位记录见验收文档。
+    /// 切换实际原生开关子节点；参数为应用与标签；返回无，按元素几何有界滚动。
+    func nativeToggle(_ app:XCUIApplication,_ label:String) {
+        let item=app.switches[label].firstMatch
+        for _ in 0..<8 {
+            if item.exists && item.frame.midY > 170 && item.frame.midY < app.frame.height-160 { item.descendants(matching:.switch).firstMatch.tap();return }
+            let up = item.frame.midY >= app.frame.height-160
+            app.coordinate(withNormalizedOffset:CGVector(dx:0.5,dy:up ? 0.65:0.40)).press(forDuration:0.05,thenDragTo:app.coordinate(withNormalizedOffset:CGVector(dx:0.5,dy:up ? 0.40:0.65)))
+        }
+        XCTFail("原生开关未到可见范围："+label)
+    }
+    /// 验证同日逆序、正确保存和清空日期；参数无；返回无，仅操作虚构样本。
     func testDateTimeOrdering() throws {
-        throw XCTSkip("原生开关外层可访问节点定位未稳定，未完成同日时分逆序验收；不将源码校验当作运行通过。")
+        let app=launch();app.staticTexts["整理本月订阅与开销"].tap();app.buttons["编辑"].tap()
+        nativeToggle(app,"指定开始时间")
+        app.buttons["Time Picker"].firstMatch.tap()
+        app.pickerWheels.element(boundBy:0).adjust(toPickerWheelValue:"18")
+        app.navigationBars["编辑任务"].tap()
+        nativeToggle(app,"指定截止时间")
+        capture(app,"iteration6-reversed-time")
+        XCTAssertFalse(app.buttons["保存"].isEnabled)
+        nativeToggle(app,"指定开始时间")
+        XCTAssertTrue(app.buttons["保存"].isEnabled)
+        app.buttons["保存"].tap()
+        XCTAssertTrue(app.navigationBars["任务详情"].waitForExistence(timeout:5))
+        capture(app,"iteration6-date-saved")
+        app.buttons["编辑"].tap();nativeToggle(app,"设置开始日期");nativeToggle(app,"设置截止日期")
+        app.buttons["保存"].tap();app.buttons["编辑"].tap()
+        XCTAssertEqual(app.switches["设置开始日期"].firstMatch.value as? String,"0")
+        XCTAssertEqual(app.switches["设置截止日期"].firstMatch.value as? String,"0")
+        nativeToggle(app,"设置开始日期");nativeToggle(app,"设置截止日期")
+        XCTAssertEqual(app.switches["指定开始时间"].firstMatch.value as? String,"0")
+        XCTAssertEqual(app.switches["指定截止时间"].firstMatch.value as? String,"0")
+        capture(app,"iteration6-cleared-dates-reopened")
     }
     /// 验证辅助字号元信息与复用入口；参数无；返回无，仅截图与读取可访问树；字体/外观由专用模拟器配置。
     func testAccessibleMetadataLayout() {

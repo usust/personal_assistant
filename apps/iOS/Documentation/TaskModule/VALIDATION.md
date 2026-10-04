@@ -45,3 +45,8 @@
 ## Iteration5 空态写入口
 
 空清单正常新建、blocked禁用与刷新恢复、无清单管理入口实际UI通过。busy瞬间组合未验，见 [Iteration5/VALIDATION.md](Iteration5/VALIDATION.md)。
+
+
+## Iteration6 日期验收补齐
+
+原生控件定位已修复，testDateTimeOrdering 不再跳过。同日18:00开始/09:00截止拒绝保存、合法范围保存、关闭日期保存并重开后日期及时间清空实际通过。详细证据见 [Iteration6/VALIDATION.md](Iteration6/VALIDATION.md)。此前未验标记属于历史阶段。
