@@ -1,0 +1,5 @@
+PASS login start preserves nav and finance, clears AI, blocks cloud
+401 outcome: APIError:身份校验拒绝 navPreserved: true financePreserved: true
+PASS B success rotates navigation with empty A history
+PASS old A task/config responses cancelled
+PASS current 401 clears cloud and preserves finance; credential gate separately checked

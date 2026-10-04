@@ -11,13 +11,15 @@ struct ContentView: View {
             else if let error = store.localStorageError { ContentUnavailableView("无法打开本机账本", systemImage: "externaldrive.badge.exclamationmark", description: Text(error)) }
             else {
                 TabView(selection: $selectedTab) {
-                    if store.profile != nil && (store.api.token != nil || store.isPreview) {
+                    if store.canUseCloud {
                         Tab("今日", systemImage: "sun.max", value: "today") { NavigationStack { TodayView() } }
                         Tab("任务", systemImage: "checklist", value: "tasks") { NavigationStack { TasksView() } }
                     }
                     Tab("财务", systemImage: "chart.pie", value: "finance") { NavigationStack { FinanceView() } }
                     if store.profile != nil {
                         Tab("健康", systemImage: "heart", value: "health") { NavigationStack { HealthView() } }
+                    }
+                    if store.canUseCloud {
                         Tab("助手", systemImage: "sparkles", value: "chat") { NavigationStack { ChatView() } }
                     }
                     Tab("用户", systemImage: "person.crop.circle", value: "user") { NavigationStack { UserAccountView() } }

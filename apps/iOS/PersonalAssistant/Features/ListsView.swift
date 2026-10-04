@@ -29,10 +29,10 @@ struct ListsView: View {
     }
     /// 删除清单及任务；参数：list 为已确认清单；返回值：无；级联删除已确认清单，失败显示错误。
     private func remove(_ list: TaskList) async {
-        let generation = store.sessionID
+        let generation = store.cloudSessionID
         // 写回调输入无、输出无；只提交一次排序或删除请求，副作用由共享写保护约束。
         do { try await store.writeTask { try await store.api.mutate("/task-lists/\(list.id)", method: "DELETE") }; store.lists.removeAll { $0.id == list.id }; store.tasks.removeAll { $0.listId == list.id }; deleted = nil; await store.refreshTaskWrite() }
-        catch { guard !(error is CancellationError), generation == store.sessionID else { return }; self.error = error.localizedDescription }
+        catch { guard !(error is CancellationError), generation == store.cloudSessionID else { return }; self.error = error.localizedDescription }
     }
 }
 struct ListEditor: View {
@@ -116,8 +116,8 @@ struct ListEditor: View {
     }
     /// 保存清单；参数：无；返回值：无；编辑只发送变化的白名单字段，创建与编辑均保存跨端共用图标键。
     private func save() async {
-        let generation = store.sessionID
-        busy = true; defer { busy = false }
+        let generation = store.cloudSessionID
+        busy = true; defer { if generation == store.cloudSessionID { busy = false } }
         do {
             let edited: [String: Any] = ["name": name.trimmingCharacters(in: .whitespaces), "remark": remark, "color": color, "icon": icon]
             if let list {
@@ -128,7 +128,7 @@ struct ListEditor: View {
                 // 创建回调输入无、输出服务器清单实体；POST结果不明时不重试。
                 let saved: TaskList = try await store.writeTask { try await store.api.request("/task-lists", method: "POST", body: edited) }; store.lists.append(saved) }
             dismiss(); await store.refreshTaskWrite()
-        } catch { guard !(error is CancellationError), generation == store.sessionID else { return }; self.error = error.localizedDescription; if list == nil && store.taskWriteBlocked { uncertainCreation = true } }
+        } catch { guard !(error is CancellationError), generation == store.cloudSessionID else { return }; self.error = error.localizedDescription; if list == nil && store.taskWriteBlocked { uncertainCreation = true } }
     }
 }
 

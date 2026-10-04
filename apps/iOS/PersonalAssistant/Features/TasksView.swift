@@ -56,14 +56,14 @@ struct TasksView: View {
         // 顺序转换回调输入原节点、输出完整排序ID；仅替换当前可见节点，保留隐藏子节点位置。
         let ids = store.tasks.map { movedIDs.contains($0.id) ? iterator.next()!.id : $0.id }
         guard ids.count <= 1000 else { error = "任务超过 1000 个，当前服务端不支持一次排序这么多任务。"; return }
-        let generation = store.sessionID
-        loading = true; defer { loading = false }
+        let generation = store.cloudSessionID
+        loading = true; defer { if generation == store.cloudSessionID { loading = false } }
         // 写回调输入无、输出无；只提交一次排序或删除请求，副作用由共享写保护约束。
         do { try await store.writeTask { try await store.api.mutate("/tasks/reorder", method: "PUT", body: ["taskIds": ids]) }; error = nil; await store.refreshTaskWrite() }
-        catch { guard !(error is CancellationError), generation == store.sessionID else { return }; self.error = error.localizedDescription }
+        catch { guard !(error is CancellationError), generation == store.cloudSessionID else { return }; self.error = error.localizedDescription }
     }
     /// 刷新任务页；参数：无；返回值：无；错误保留原列表，支持重试。
-    private func reload() async { let generation = store.sessionID; loading = true; defer { loading = false }; do { try await store.loadTasks(); error = nil } catch { guard !(error is CancellationError), generation == store.sessionID else { return }; self.error = error.localizedDescription } }
+    private func reload() async { let generation = store.cloudSessionID; loading = true; defer { if generation == store.cloudSessionID { loading = false } }; do { try await store.loadTasks(); error = nil } catch { guard !(error is CancellationError), generation == store.cloudSessionID else { return }; self.error = error.localizedDescription } }
 }
 struct TaskRow: View {
     @Environment(AppStore.self) private var store
@@ -161,24 +161,24 @@ struct TaskDetailView: View {
     }
     /// 更改叶任务进度；参数：operation 为 increment/decrement；返回值：无；后端检查溢出和归档，成功刷新。
     private func progress(_ operation: String) async {
-        let generation = store.sessionID
-        busy = true; defer { busy = false }
+        let generation = store.cloudSessionID
+        busy = true; defer { if generation == store.cloudSessionID { busy = false } }
         // 写回调输入无、输出服务器任务实体；仅一次 PATCH，成功实体先合并，读失败不重发。
         do { let saved: AssistantTask = try await store.writeTask { try await store.api.request("/tasks/\(taskID)/progress", method: "PATCH", body: ["operation": operation, "allowExceedTotal": true]) }; store.upsertTask(saved); error = nil; await store.refreshTaskWrite() }
-        catch { guard !(error is CancellationError), generation == store.sessionID else { return }; self.error = error.localizedDescription }
+        catch { guard !(error is CancellationError), generation == store.cloudSessionID else { return }; self.error = error.localizedDescription }
     }
     /// 设置归档状态；参数：task 为原任务；返回值：无；仅发送 archived 字段，支持 false。
     private func archive(_ task: AssistantTask) async {
-        let generation = store.sessionID
-        busy = true; defer { busy = false }
+        let generation = store.cloudSessionID
+        busy = true; defer { if generation == store.cloudSessionID { busy = false } }
         // 写回调输入无、输出服务器任务实体；仅一次 PATCH，成功实体先合并，读失败不重发。
         do { let saved: AssistantTask = try await store.writeTask { try await store.api.request("/tasks/\(taskID)", method: "PATCH", body: ["archived": !task.archived]) }; store.upsertTask(saved); error = nil; await store.refreshTaskWrite() }
-        catch { guard !(error is CancellationError), generation == store.sessionID else { return }; self.error = error.localizedDescription }
+        catch { guard !(error is CancellationError), generation == store.cloudSessionID else { return }; self.error = error.localizedDescription }
     }
     /// 确认后级联删除；参数：无；返回值：无；删除成功关闭页面，刷新失败不诱导重复删除。
     private func remove() async {
-        let generation = store.sessionID
-        busy = true; defer { busy = false }
+        let generation = store.cloudSessionID
+        busy = true; defer { if generation == store.cloudSessionID { busy = false } }
         do {
             // 删除回调输入无、输出无；结构化 cascade 查询保留在真实请求URL中。
             try await store.writeTask { try await store.api.mutate("/tasks/\(taskID)", method: "DELETE", query: [URLQueryItem(name: "cascade", value: "true")]) }
@@ -194,7 +194,7 @@ struct TaskDetailView: View {
             store.tasks.removeAll { removed.contains($0.id) }
             dismiss()
             await store.refreshTaskWrite()
-        } catch { guard !(error is CancellationError), generation == store.sessionID else { return }; self.error = error.localizedDescription }
+        } catch { guard !(error is CancellationError), generation == store.cloudSessionID else { return }; self.error = error.localizedDescription }
     }
 }
 
@@ -304,8 +304,8 @@ struct TaskEditor: View {
     /// 保存白名单字段；参数：无；返回值：无；创建附带清单/父节点，编辑只提交变化字段；失败保留输入，成功关闭。
     private func save() async {
         guard valid else { error = validationError; return }
-        let generation = store.sessionID
-        busy = true; defer { busy = false }
+        let generation = store.cloudSessionID
+        busy = true; defer { if generation == store.cloudSessionID { busy = false } }
         do {
             // 共享写保护覆盖所有详情和表单，服务端成功实体先合并，再独立刷新。
             if let task {
@@ -318,7 +318,7 @@ struct TaskEditor: View {
                 let saved: AssistantTask = try await store.writeTask { try await store.api.request("/tasks", method: "POST", body: body) }; store.upsertTask(saved)
             }
             dismiss(); await store.refreshTaskWrite()
-        } catch { guard !(error is CancellationError), generation == store.sessionID else { return }; UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil); self.error = error.localizedDescription; if task == nil && store.taskWriteBlocked { uncertainCreation = true } }
+        } catch { guard !(error is CancellationError), generation == store.cloudSessionID else { return }; UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil); self.error = error.localizedDescription; if task == nil && store.taskWriteBlocked { uncertainCreation = true } }
     }
 }
 

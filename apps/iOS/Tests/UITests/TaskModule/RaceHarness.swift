@@ -45,14 +45,14 @@ nonisolated final class TaskScenarioProtocol: PreviewProtocol, @unchecked Sendab
     @MainActor static func waitRead() async { while PreviewProtocol.count < 2 { await Task.yield() } }
     /// 验收过期读与写期间启动读；参数无；返回无，失败退出非零；真实 AppStore/APIClient 加隔离传输。
     @MainActor static func main() async throws {
-        let store = AppStore();store.tasks=[row(2)]
+        let store = AppStore();store.profile=Profile(id:1,account:"验收",nickname:"验收",role:"user");store.tasks=[row(2)]
         let before = Task { try await store.loadTasks() };await waitRead()
         let saved = try await store.writeTask { row(3) };store.upsertTask(saved)
         PreviewProtocol.release(row(2))
         do { try await before.value; fatalError("旧读不应成功") } catch is CancellationError { print("PASS old read rejected") }
         precondition(store.tasks[0].progressCompleted == 3 && store.taskWriteBlocked)
         // 精确将 GET 启动置于 mutation await 期间，随后先结束写再释放旧GET。
-        let second = AppStore();second.tasks=[row(2)]
+        let second = AppStore();second.profile=Profile(id:1,account:"验收",nickname:"验收",role:"user");second.tasks=[row(2)]
         var finish: CheckedContinuation<AssistantTask, Never>?
         let writing = Task { try await second.writeTask { await withCheckedContinuation { finish=$0 } } }
         while finish == nil { await Task.yield() }

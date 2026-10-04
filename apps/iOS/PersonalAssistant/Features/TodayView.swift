@@ -65,41 +65,43 @@ struct TodayView: View {
             }.padding(20).frame(maxWidth: 820).frame(maxWidth: .infinity)
         }.background(Color(uiColor: .systemGroupedBackground)).navigationTitle("今日").navigationBarTitleDisplayMode(.inline)
             // 会话回调输入前后会话标识、输出无；旧读取和 defer 作废，避免旧账号反馈进入新会话。
-            .onChange(of: store.sessionID) { _, _ in
+            .onChange(of: store.cloudSessionID) { _, _ in
                 taskReadSequence += 1; reloadSequence += 1
                 taskLoading = true; taskLoaded = false; taskError = nil; financeError = nil
             }
-            .task(id: store.sessionID) { await reload() }.refreshable { await reload() }.sheet(isPresented: $creating) { TaskEditor(task: nil, parent: nil) }
+            .task(id: store.cloudSessionID) { await reload() }.refreshable { await reload() }.sheet(isPresented: $creating) { TaskEditor(task: nil, parent: nil) }
     }
     /// 独立读取任务卡；参数：无；返回值：无；只有同会话最新完整快照成功才确认为已加载，取消静默，失败保留缓存。
     private func reloadTasks() async {
-        let generation = store.sessionID
+        guard store.canUseCloud else { return }
+        let generation = store.cloudSessionID
         taskReadSequence += 1
         let sequence = taskReadSequence
         taskLoading = true
-        defer { if generation == store.sessionID && sequence == taskReadSequence { taskLoading = false } }
+        defer { if generation == store.cloudSessionID && sequence == taskReadSequence { taskLoading = false } }
         do {
             try await store.loadTasks()
-            guard generation == store.sessionID, sequence == taskReadSequence, !Task.isCancelled else { return }
+            guard generation == store.cloudSessionID, sequence == taskReadSequence, !Task.isCancelled else { return }
             taskLoaded = true; taskError = nil
         } catch {
-            guard !(error is CancellationError), generation == store.sessionID, sequence == taskReadSequence, !Task.isCancelled else { return }
+            guard !(error is CancellationError), generation == store.cloudSessionID, sequence == taskReadSequence, !Task.isCancelled else { return }
             taskError = error.localizedDescription
         }
     }
     /// 按原顺序刷新首页模块；参数：无；返回值：无；任务失败仍读财务，旧会话或过期首页读取不继续财务，财务错误单独显示。
     private func reload() async {
-        let generation = store.sessionID
+        guard store.canUseCloud else { return }
+        let generation = store.cloudSessionID
         reloadSequence += 1
         let sequence = reloadSequence
         await reloadTasks()
-        guard generation == store.sessionID, sequence == reloadSequence, !Task.isCancelled else { return }
+        guard generation == store.cloudSessionID, sequence == reloadSequence, !Task.isCancelled else { return }
         do {
             try await store.loadFinance()
-            guard generation == store.sessionID, sequence == reloadSequence, !Task.isCancelled else { return }
+            guard generation == store.cloudSessionID, sequence == reloadSequence, !Task.isCancelled else { return }
             financeError = nil
         } catch {
-            guard !(error is CancellationError), generation == store.sessionID, sequence == reloadSequence, !Task.isCancelled else { return }
+            guard !(error is CancellationError), generation == store.cloudSessionID, sequence == reloadSequence, !Task.isCancelled else { return }
             financeError = error.localizedDescription
         }
     }
