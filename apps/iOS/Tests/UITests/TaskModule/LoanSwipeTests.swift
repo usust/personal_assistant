@@ -186,4 +186,69 @@ import XCTest
         XCTAssertTrue(app.staticTexts["今日专注"].waitForExistence(timeout:10));app.swipeUp();capture(app,"iteration2-today")
     }
 
+    /// 启动今日专项场景；参数为固定场景名；返回隔离内存应用，不发真实请求。
+    func launchToday(_ scenario:String) -> XCUIApplication {
+        continueAfterFailure=false
+        let app=XCUIApplication(bundleIdentifier:"personalassistant.lylab.vip.PersonalAssistant")
+        app.launchArguments=["--task-ui-scenario",scenario,"--tab","today"];app.launch()
+        XCTAssertTrue(app.navigationBars["今日"].waitForExistence(timeout:15));return app
+    }
+    /// 验证任务首次失败不假空且财务正常；参数无；返回无，重试只读任务。
+    func testTodayTaskErrorFinanceSuccess() {
+        let app=launchToday("today-task-error")
+        XCTAssertTrue(app.staticTexts["错误：任务：示例加载失败。"].waitForExistence(timeout:5))
+        XCTAssertFalse(app.staticTexts["今天的安排，由你定义。"].exists)
+        XCTAssertFalse(app.buttons["先创建一个清单"].exists)
+        XCTAssertTrue(app.staticTexts["财务一瞥"].exists)
+        XCTAssertFalse(app.buttons["添加任务"].isEnabled)
+        capture(app,"today-task-error")
+        button(app,"刷新任务").tap()
+        XCTAssertTrue(app.staticTexts["错误：任务：示例加载失败。"].exists)
+        XCTAssertTrue(app.staticTexts["财务一瞥"].exists)
+    }
+    /// 验证财务失败与任务分离；参数无；返回无，任务可操作，财务错误不混同任务错误。
+    func testTodayFinanceErrorTasksSuccess() {
+        let app=launchToday("today-finance-error")
+        XCTAssertTrue(app.staticTexts["整理本月订阅与开销"].waitForExistence(timeout:5))
+        XCTAssertTrue(app.staticTexts["错误：财务：示例加载失败。"].exists)
+        XCTAssertFalse(app.staticTexts["错误：任务：示例加载失败。"].exists)
+        XCTAssertTrue(app.buttons["添加任务"].isEnabled)
+        capture(app,"today-finance-error")
+    }
+    /// 验证已确认空任务与无清单不同入口；参数无；返回无，不将加载失败当作可创建状态。
+    func testTodayEmptyStates() {
+        let app=launchToday("today-empty-list")
+        XCTAssertTrue(app.staticTexts["今天的安排，由你定义。"].waitForExistence(timeout:5))
+        XCTAssertTrue(app.buttons["添加任务"].isEnabled)
+        XCTAssertFalse(app.buttons["先创建一个清单"].exists);capture(app,"today-empty-tasks")
+        app.terminate();let empty=launchToday("empty")
+        XCTAssertTrue(empty.buttons["先创建一个清单"].waitForExistence(timeout:5))
+        XCTAssertFalse(empty.buttons["添加任务"].isEnabled);capture(empty,"today-empty-lists")
+        empty.buttons["先创建一个清单"].tap()
+        XCTAssertTrue(empty.navigationBars["我的清单"].waitForExistence(timeout:5))
+    }
+    /// 验证详情写后刷新失败回今日保持旧任务与共享锁；参数无；返回无，完整重读后解除。
+    func testTodaySharedProtectionAndCache() {
+        let app=launchToday("refresh-error")
+        app.staticTexts["整理本月订阅与开销"].tap()
+        button(app,"增加").tap();back(app)
+        XCTAssertTrue(app.staticTexts["整理本月订阅与开销"].exists)
+        XCTAssertFalse(app.buttons["添加任务"].isEnabled)
+        XCTAssertEqual(app.staticTexts.matching(identifier:"错误：已保存，最新数据加载失败。请刷新后继续。").count,1)
+        capture(app,"today-cache-write-protection")
+        button(app,"刷新任务").tap()
+        XCTAssertTrue(app.buttons["添加任务"].isEnabled)
+        XCTAssertFalse(app.staticTexts["错误：已保存，最新数据加载失败。请刷新后继续。"].exists)
+        capture(app,"today-cache-recovered")
+    }
+
+    /// 检查今日任务错误大字号布局；参数无；返回无，外部配置深色最大字号后只读检查。
+    func testTodayErrorLayout() {
+        let app=launchToday("today-task-error")
+        XCTAssertTrue(app.staticTexts["错误：任务：示例加载失败。"].waitForExistence(timeout:5))
+        _ = button(app,"刷新任务")
+        capture(app,"today-error-accessible")
+        XCTAssertTrue(app.buttons["刷新任务"].isEnabled)
+    }
+
 }

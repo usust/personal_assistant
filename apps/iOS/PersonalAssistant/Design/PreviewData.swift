@@ -103,6 +103,9 @@ nonisolated final class PreviewProtocol: URLProtocol, @unchecked Sendable {
 /// Debug 专用可写内存任务服务；所有请求均被接管，永不访问真实服务器。
 nonisolated final class TaskScenarioProtocol: URLProtocol, @unchecked Sendable {
     private static let lock = NSLock()
+    private let completionLock = NSLock()
+    private var stopped = false
+    nonisolated(unsafe) private static var initialTaskDelayed = false
     nonisolated(unsafe) private static var rows = PreviewProtocol.payload("/api/tasks") as! [[String: Any]]
     nonisolated(unsafe) private static var lists = PreviewProtocol.payload("/api/task-lists") as! [[String: Any]]
     nonisolated(unsafe) private static var wrote = false
@@ -113,8 +116,8 @@ nonisolated final class TaskScenarioProtocol: URLProtocol, @unchecked Sendable {
     override class func canInit(with request: URLRequest) -> Bool { true }
     /// 保留隔离请求；参数：request 为请求；返回值：原请求；无副作用。
     override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
-    /// 结束内存响应；参数：无；返回值：无；没有后台资源。
-    override func stopLoading() {}
+    /// 取消内存响应；参数：无；返回值：无；标记延迟读取取消，回调不再发送数据。
+    override func stopLoading() { completionLock.lock(); stopped = true; completionLock.unlock() }
     /// 响应内存任务场景；参数：无；返回值：无；串行锁保护样本，写入失败和响应丢失均不自动重试。
     override func startLoading() {
         Self.lock.lock(); defer { Self.lock.unlock() }
@@ -125,9 +128,12 @@ nonisolated final class TaskScenarioProtocol: URLProtocol, @unchecked Sendable {
         if !Self.initialized {
             Self.initialized = true
             if scenario == "empty" { Self.rows = []; Self.lists = [] }
+            else if scenario == "today-empty-list" { Self.rows = [] }
         }
         let path = request.url!.path
         let method = request.httpMethod ?? "GET"
+        let delayInitialTask = scenario == "today-slow" && path == "/api/tasks" && method == "GET" && !Self.initialTaskDelayed
+        if delayInitialTask { Self.initialTaskDelayed = true }
         let isModule = path.hasPrefix("/api/tasks") || path.hasPrefix("/api/task-lists")
         var status = 200
         var result: Any = PreviewProtocol.payload(path)
@@ -138,8 +144,9 @@ nonisolated final class TaskScenarioProtocol: URLProtocol, @unchecked Sendable {
             while stream.hasBytesAvailable { let count = stream.read(&bytes, maxLength: bytes.count); if count <= 0 { break }; bodyData.append(contentsOf: bytes.prefix(count)) }
         }
         let body = (try? JSONSerialization.jsonObject(with: bodyData)) as? [String: Any] ?? [:]
+        if scenario == "today-finance-error" && path.hasPrefix("/api/finance/") { status = 503 }
         if isModule && method == "GET" {
-            if scenario == "load-error" { status = 503 }
+            if scenario == "load-error" || scenario == "today-task-error" { status = 503 }
             else if ["refresh-error", "lost-response-read-error"].contains(scenario) && path == "/api/tasks" && Self.refreshFailuresRemaining > 0 { status = 503; Self.refreshFailuresRemaining -= 1 }
             result = path == "/api/tasks" ? Self.rows : Self.lists
         } else if isModule {
@@ -191,9 +198,19 @@ nonisolated final class TaskScenarioProtocol: URLProtocol, @unchecked Sendable {
         let envelope: [String: Any] = status == 200 ? ["data": result] : ["message": status == 400 ? "示例业务拒绝，请调整后重试。" : "示例加载失败。"]
         do {
             let data = try JSONSerialization.data(withJSONObject: envelope)
-            client?.urlProtocol(self, didReceive: HTTPURLResponse(url: request.url!, statusCode: status, httpVersion: nil, headerFields: nil)!, cacheStoragePolicy: .notAllowed)
-            client?.urlProtocol(self, didLoad: data); client?.urlProtocolDidFinishLoading(self)
+            if delayInitialTask {
+                // 延迟回调输入无、输出无；只延迟首次任务读取三秒，锁外发送，财务和清单不被延迟。
+                DispatchQueue.global().asyncAfter(deadline: .now() + 3) { [self] in finish(status: status, data: data) }
+            } else { finish(status: status, data: data) }
         } catch { client?.urlProtocol(self, didFailWithError: error) }
     }
+    /// 发送隔离场景响应；参数：status 为HTTP状态，data 为模拟信封；返回值：无；已取消请求不再发送，始终不联网。
+    private func finish(status: Int, data: Data) {
+        completionLock.lock(); let cancelled = stopped; completionLock.unlock()
+        guard !cancelled else { return }
+        client?.urlProtocol(self, didReceive: HTTPURLResponse(url: request.url!, statusCode: status, httpVersion: nil, headerFields: nil)!, cacheStoragePolicy: .notAllowed)
+        client?.urlProtocol(self, didLoad: data); client?.urlProtocolDidFinishLoading(self)
+    }
+
 }
 #endif
