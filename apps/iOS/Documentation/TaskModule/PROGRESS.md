@@ -88,3 +88,5 @@ Goal续轮实际排序补验：独立原生Reorder手柄真实drag把空main5移
 Goal续轮后端契约补验：runtime独立新增HTTP Handler→Service→隔离SQLite及AI Executor→真实Schema/Service测试；默认/未知icon与仅title保留、非法父与有child类型转换、字段白名单、含归档后代整树move及GET持久结果通过。指定router/task包无缓存全跑通过，现有事务回滚同时通过；project_audit独立只读评审认可，无阻塞。仅测试与证据，业务未改；trusted身份非JWT/在线模型/真实部署，详见V4-BackendContract。验收者停止写入，参考目录未动。当前无新证据充分的产品缺陷；保留外部条件与适用边界验证，不为持续目标制造修改。
 
 Goal续轮范围审计：上一轮为已完成测试/提交的实际进展，本轮读取当前v4明确要求、方案、待办和验收，独立审计无新明确遗漏/缺陷。保存BACKLOG等待范围，不启动新执行者。局部和隔离环境验收不替代外部端到端；Goal不记录全量完成，也不自行暂停。
+
+Goal续轮减少动态效果补验：独立runtime在iPhone18Pro/iOS27真实Settings读0→1，浮动名称空/聚焦/有值可读，图标及日期子页返回草稿保持，应用检查通过；跨App首次cleanup未关闭已明确记录，独立恢复实际读0通过。root核对截图/AX，系统键盘首次滑动输入教学遮罩属于系统，未误判应用布局；未逐帧验证动画时长、未验VO/全矩阵。源码animation(nil)仅静态依据。V4-ReduceMotion记录，唯测试证据无业务修改，验收者停止。

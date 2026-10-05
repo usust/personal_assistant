@@ -393,4 +393,48 @@ import XCTest
         back(app);capture(app,"reorder-after-reentry")
     }
 
+    /// 探测系统减少动态效果设置；参数无；返回无，只打开专用模拟器设置并保存AX。
+    func testReduceMotionSettingsProbe() {
+        let settings=XCUIApplication(bundleIdentifier:"com.apple.Preferences");settings.launch();capture(settings,"reduce-motion-settings-root")
+        let accessibility=settings.staticTexts["Accessibility"].firstMatch
+        for _ in 0..<6 { if accessibility.exists && accessibility.isHittable { break };settings.swipeUp() }
+        accessibility.tap();capture(settings,"reduce-motion-accessibility")
+        settings.staticTexts["Motion"].firstMatch.tap();capture(settings,"reduce-motion-motion-settings")
+    }
+
+    /// 在真实系统减少动态效果开启后验证浮动字段与草稿；参数无；返回无，结束恢复原系统开关。
+    func testV4ReduceMotionDraft() {
+        let settings=XCUIApplication(bundleIdentifier:"com.apple.Preferences");settings.launch()
+        if !settings.switches["Reduce Motion"].exists {
+            let accessibility=settings.staticTexts["Accessibility"].firstMatch
+            for _ in 0..<6 { if accessibility.exists && accessibility.isHittable {break};settings.swipeUp() }
+            accessibility.tap();settings.staticTexts["Motion"].tap()
+        }
+        let motion=settings.switches["Reduce Motion"].firstMatch
+        XCTAssertEqual(motion.value as? String,"0");motion.descendants(matching:.switch).firstMatch.tap();XCTAssertEqual(motion.value as? String,"1");capture(settings,"motion-enabled")
+        // 恢复回调无输入输出；仅关掉本测试开启的专用模拟器偏好，不改其他设置。
+        defer { settings.launch();if !settings.switches["Reduce Motion"].exists {let access=settings.staticTexts["Accessibility"].firstMatch;for _ in 0..<6 {if access.exists && access.isHittable {break};settings.swipeUp()};access.tap();settings.staticTexts["Motion"].tap()};let restore=settings.switches["Reduce Motion"].firstMatch;XCTAssertTrue(restore.waitForExistence(timeout:5));if restore.value as? String == "1" {restore.coordinate(withNormalizedOffset:CGVector(dx:0.9,dy:0.5)).tap()};XCTAssertEqual(restore.value as? String,"0");capture(settings,"motion-restored") }
+        let app=launch("v4");app.staticTexts["工作"].tap();app.buttons["新建任务"].tap();capture(app,"motion-label-empty")
+        let name=app.textFields["名称"].firstMatch;name.tap();capture(app,"motion-label-focused");name.typeText("减少动态效果草稿")
+        app.buttons["类型、具体任务"].tap();app.buttons["主任务"].tap();app.buttons["图标"].tap();app.buttons["目标"].tap();app.buttons["完成"].tap()
+        XCTAssertEqual(name.value as? String,"减少动态效果草稿");capture(app,"motion-icon-draft-return")
+        app.buttons.matching(NSPredicate(format:"label BEGINSWITH %@","开始、")).firstMatch.tap();nativeToggle(app,"设置日期");back(app)
+        XCTAssertEqual(name.value as? String,"减少动态效果草稿")
+        app.buttons["图标"].tap();XCTAssertTrue(app.buttons["目标"].isSelected);app.buttons["完成"].tap();capture(app,"motion-date-draft-return")
+        app.buttons["取消"].tap()
+    }
+
+    /// 恢复本验收开启的系统偏好；参数无；返回无，独立确认设置关闭，不涉及应用业务。
+    func testRestoreReduceMotion() {
+        let settings=XCUIApplication(bundleIdentifier:"com.apple.Preferences");settings.launch()
+        if !settings.switches["Reduce Motion"].exists {
+            let accessibility=settings.staticTexts["Accessibility"].firstMatch
+            for _ in 0..<6 { if accessibility.exists && accessibility.isHittable {break};settings.swipeUp() }
+            accessibility.tap();settings.staticTexts["Motion"].tap()
+        }
+        let motion=settings.switches["Reduce Motion"].firstMatch
+        XCTAssertTrue(motion.waitForExistence(timeout:5));if motion.value as? String == "1" {motion.coordinate(withNormalizedOffset:CGVector(dx:0.9,dy:0.5)).tap()}
+        XCTAssertEqual(motion.value as? String,"0");capture(settings,"motion-restored")
+    }
+
 }

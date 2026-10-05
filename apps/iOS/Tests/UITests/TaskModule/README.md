@@ -44,3 +44,6 @@ python3 apps/iOS/Tests/UITests/TaskModule/run-race.py
 
 
 真实UI排序：only-testing:LoanSwipeTests/LoanSwipeTests/testV4ActualReorder，以AX Reorder手柄实际frame归一化坐标长按拖动；v4空main移root前并刷新重进确认，证据V4-Reorder。
+
+
+减少动态效果：testV4ReduceMotionDraft打开真实Settings英语Accessibility/Motion，读开关1后运行任务草稿；testRestoreReduceMotion可独立确保关闭。只验证状态/可读性，不把截图当动画时间序列。

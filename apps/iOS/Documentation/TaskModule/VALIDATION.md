@@ -80,3 +80,8 @@ iPad Pro11M5/iOS27默认浅色竖屏六页、空main实际运行与目视通过�
 ## v4 后端契约补验
 
 真实Gin/Service/隔离SQLite任务HTTP与实际AI Executor图标/父级/owner契约、整树含归档GET读回通过；可信测试身份不等于JWT，见 [V4-BackendContract/VALIDATION.md](V4-BackendContract/VALIDATION.md)。
+
+
+## v4 减少动态效果补验
+
+真实系统Reduce Motion开启下浮动字段、输入与icon/date草稿检查通过，最终设置读回关闭；未逐帧测动画。见 [V4-ReduceMotion/VALIDATION.md](V4-ReduceMotion/VALIDATION.md)。
