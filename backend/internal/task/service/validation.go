@@ -14,7 +14,7 @@ import (
 	domain "personal_assistant_server/internal/task/model"
 )
 
-var taskFields = map[string]string{"icon": "icon", "title": "title", "remark": "remark", "listId": "list_id", "parentId": "parent_id", "taskType": "task_type", "priority": "priority", "startDate": "start_date", "startTime": "start_time", "endDate": "end_date", "endTime": "end_time", "archived": "archived", "progressTotal": "progress_total", "progressCompleted": "progress_completed", "progressStep": "progress_step", "progressUnit": "progress_unit"}
+var taskFields = map[string]string{"icon": "icon", "title": "title", "remark": "remark", "listId": "list_id", "parentId": "parent_id", "taskType": "task_type", "priority": "priority", "startDate": "start_date", "startTime": "start_time", "endDate": "end_date", "endTime": "end_time", "archived": "archived", "autoArchive": "auto_archive", "progressTotal": "progress_total", "progressCompleted": "progress_completed", "progressStep": "progress_step", "progressUnit": "progress_unit"}
 
 var listFields = map[string]string{"name": "name", "remark": "remark", "color": "color", "icon": "icon"}
 

@@ -189,3 +189,40 @@ func TestTaskTreeAssignment(t *testing.T) {
 	}
 	run(t, s, "task.update", root.ID, map[string]any{"taskType": "main"})
 }
+
+// TestAutoArchive 验证空主任务、默认关闭、显式关闭及叶节点完成后的祖先自动归档；参数：t 为测试上下文；返回值：无，失败终止测试，使用隔离数据库。
+func TestAutoArchive(t *testing.T) {
+	s := fixture(t)
+	list := run(t, s, "task_list.create", 0, map[string]any{"name": "自动归档"}).(domain.List)
+	root := run(t, s, "task.create", 0, map[string]any{"title": "主任务", "listId": list.ID, "autoArchive": true}).(domain.Task)
+	if root.Archived {
+		t.Fatal("空主任务不应归档")
+	}
+	child := run(t, s, "task.create", 0, map[string]any{"title": "任务", "listId": list.ID, "parentId": root.ID, "taskType": "subtask", "progressTotal": 1, "autoArchive": true}).(domain.Task)
+	child = run(t, s, "task.update", child.ID, map[string]any{"autoArchive": false}).(domain.Task)
+	if child.AutoArchive {
+		t.Fatal("显式 false 未保存")
+	}
+	out, err := s.Execute(context.Background(), capability.Actor{UserID: 1}, "task.progress", Input{ID: child.ID, Operation: "increment"}, "http")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if out.(domain.Task).Archived {
+		t.Fatal("关闭开关的任务不应归档")
+	}
+	var saved domain.Task
+	if err := s.db.First(&saved, root.ID).Error; err != nil {
+		t.Fatal(err)
+	}
+	if !saved.Archived {
+		t.Fatal("完成的主任务未自动归档")
+	}
+	child = run(t, s, "task.update", child.ID, map[string]any{"autoArchive": true}).(domain.Task)
+	if !child.Archived {
+		t.Fatal("完成的任务开启后未归档")
+	}
+	ordinary := run(t, s, "task.create", 0, map[string]any{"title": "默认关闭", "listId": list.ID, "taskType": "subtask", "progressTotal": 1, "progressCompleted": 1}).(domain.Task)
+	if ordinary.Archived || ordinary.AutoArchive {
+		t.Fatal("默认不应自动归档")
+	}
+}

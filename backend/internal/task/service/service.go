@@ -89,6 +89,17 @@ func (s *Service) Execute(ctx context.Context, actor capability.Actor, op string
 		if err != nil {
 			return err
 		}
+		// 自动归档与任务写入共用用户锁事务，祖先汇总包括归档叶节点，任何失败回滚本次变更。
+		if op == "task.create" || op == "task.update" || op == "task.progress" {
+			archived, archiveErr := archiveCompletedTasks(tx, actor.UserID)
+			if archiveErr != nil {
+				return archiveErr
+			}
+			if row, ok := result.(domain.Task); ok && archived[row.ID] {
+				row.Archived = true
+				result = row
+			}
+		}
 		id := in.ID
 		switch row := result.(type) {
 		case domain.Task:

@@ -31,6 +31,7 @@ nonisolated struct AssistantTask: Codable, Identifiable, Hashable {
     var endDate: String
     var endTime: String
     var archived: Bool
+    var autoArchive: Bool? = nil
     var sortOrder: Int
     var progressTotal: Double
     var progressCompleted: Double

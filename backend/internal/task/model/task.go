@@ -20,6 +20,7 @@ type Task struct {
 	StartTime         string    `json:"startTime" gorm:"size:5"`
 	EndDate           string    `json:"endDate" gorm:"size:10"`
 	EndTime           string    `json:"endTime" gorm:"size:5"`
+	AutoArchive       bool      `json:"autoArchive" gorm:"not null;default:false"`
 	Archived          bool      `json:"archived"`
 	SortOrder         int       `json:"sortOrder"`
 	ProgressTotal     float64   `json:"progressTotal" gorm:"type:decimal(14,2)"`

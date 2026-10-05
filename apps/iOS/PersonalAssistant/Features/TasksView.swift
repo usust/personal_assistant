@@ -201,14 +201,11 @@ struct TaskCollectionView: View {
                     }
                     .buttonStyle(.plain)
                     .accessibilityHint(search.isEmpty && hasChildren ? (expanded.contains(row.task.id) ? "收起下级" : "展开下级") : "查看详情")
-                    .contextMenu {
-                        // 菜单回调参数无、返回无；保留父节点详情入口，避免整行展开交互遮蔽查看和编辑功能。
-                        Button("查看详情", systemImage: "info.circle") { openedTaskID = row.task.id }
-                    }
+                    // 长按交给原生列表拖拽排序，详情入口保留在侧滑操作中，避免菜单抢占拖拽手势。
                     // 每层预留 20 点连线区，内容使用完整宽度；搜索结果不缩进，避免缺失祖先时暗示错误层级。
                     .padding(.leading, CGFloat(row.depth) * 20)
-                    // 在连线绘制前增加上下留白，让相邻任务有间隔，同时使竖向层级线覆盖留白、保持连续。
-                    .padding(.vertical, 9)
+                    // 任务之间仅保留 1 点外部留白，内部信息通过 TaskRow 自身间距舒展排列。
+                    .padding(.vertical, 1)
                     .overlay(alignment: .leading) {
                         if row.depth > 0 {
                             TaskTreeGuides(continuations: row.guides)
@@ -234,7 +231,7 @@ struct TaskCollectionView: View {
                 // 拖动回调输入源索引和插入位置、输出无；仅在同父序列中写入排序，不改变任务归属。
                 .onMove { source, destination in Task { await reorder(source, to: destination) } }
             }
-            // 使用缩进和树形虚线区分任务关系，不再显示行间及分组横线。
+            // 不绘制行间或分组分隔线，仅保留缩进和树形虚线表达层级。
             .listSectionSeparator(.hidden)
         }.environment(\.editMode, $editMode).listStyle(.plain).navigationTitle(list?.name ?? title).navigationBarTitleDisplayMode(.inline).toolbar(isRoot ? .visible : .hidden, for: .tabBar)
             .toolbar { collectionToolbar }
@@ -466,9 +463,6 @@ private struct TaskTruncatedTitle: View {
     /// 构建单行标题；参数：无；返回值：测量字体一致的标题视图，辅助功能读取全文；无副作用。
     var body: some View {
         HStack(spacing: 6) {
-            Text(fittedTitle)
-                .font(.system(size: fontSize, weight: .medium))
-                .fixedSize(horizontal: true, vertical: false)
             if let badge {
                 Text(badge)
                     .font(.system(size: badgeFontSize, weight: .medium))
@@ -477,11 +471,14 @@ private struct TaskTruncatedTitle: View {
                     .background((badge == "主任务" ? Color.teal : Color.secondary).opacity(0.1), in: Capsule())
                     .fixedSize()
             }
+            Text(fittedTitle)
+                .font(.system(size: fontSize, weight: .medium))
+                .fixedSize(horizontal: true, vertical: false)
         }
             .frame(width: max(0, width), alignment: .leading)
             .clipped()
             .accessibilityElement(children: .ignore)
-            .accessibilityLabel(title + (badge.map { "，" + $0 } ?? ""))
+            .accessibilityLabel((badge.map { $0 + "，" } ?? "") + title)
     }
 
     /// 求可容纳的最长字符前缀；参数：无；返回值：全文或尾部带省略号的文本，不拆分组合字符；无副作用。
@@ -528,11 +525,11 @@ struct TaskRow: View {
     /// 任务树使用紧凑间距，其他页面保留原有任务行布局。
     var compact = false
     private var progress: TaskProgress { Values.progress(task, all: store.tasks) }
-    private var container: Bool { task.taskType == "main" || store.tasks.contains { $0.parentId == task.id } }
-    /// 构建数量优先的任务行；参数：无；返回值：所有任务均显示百分比及进度条，按 compact 选择间距、按 showsContext 显示路径，辅助字号纵排元信息；无业务写入。
+    /// 构建任务行；参数：无；返回值：标题、融合数量和百分比的进度条及元信息，按 compact 选择间距、按 showsContext 显示路径；无业务写入。
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
-            VStack(alignment: .leading, spacing: 5) {
+            // 按类型标签和标题、等级状态、融合进度条、日期的顺序排列。
+            VStack(alignment: .leading, spacing: compact ? 7 : 5) {
                 // 紧凑列表标题单行尾部省略，辅助功能仍读取完整标题；其他入口保留原有换行，详情页不受影响。
                 if compact {
                     // 用单行占位确定动态字号高度，再给标题明确的内容宽度，避免布局协商提前截断；右边界与进度条一致。
@@ -544,42 +541,107 @@ struct TaskRow: View {
                                 TaskTruncatedTitle(title: task.title, width: geometry.size.width, badge: task.taskType == "main" ? "主任务" : "任务")
                             }
                         }
-                    // 标题独占首行，第二行左侧为无单位数量、右侧为百分比，让长标题和进度信息互不挤占。
-                    HStack {
-                        Text(taskQuantity(progress, includesUnit: false))
-                        Spacer(minLength: 8)
-                        Text(taskPercent(progress))
-                    }.font(.caption).foregroundStyle(.secondary)
-                }
-                else if dynamicTypeSize.isAccessibilitySize { taskTitle; if !(container && progress.total == 0) { Text(taskQuantity(progress)).font(.caption).foregroundStyle(.secondary) } }
-                else { HStack { taskTitle; Spacer(minLength: 6); if !(container && progress.total == 0) { Text(taskQuantity(progress)).font(.caption).foregroundStyle(.secondary).fixedSize() } } }
-                // 普通任务使用自身量化进度，容器使用叶节点汇总；零总量由统一进度模型安全显示为 0%，保持行样式一致。
-                if !compact { Text(taskPercent(progress)).font(.caption).foregroundStyle(.secondary) }
-                ProgressView(value: progress.fraction).tint(.teal).accessibilityHidden(true)
+                } else { taskTitle }
+                statusMetadata
+                // 普通任务与主任务都复用统一汇总结果，零总量安全显示为 0%。
+                integratedProgress
+                // 元信息紧跟进度条，按可用宽度换行；空日期不占位，保持任务树紧凑。
+                metadata.font(.caption).foregroundStyle(.secondary)
                 if showsContext { Text(taskPath(task, tasks: store.tasks, lists: store.lists)).font(.caption).foregroundStyle(.secondary) }
-                // 仅在存在优先级或日期时保留元信息区域，避免空布局占据紧凑任务行高度。
-                if task.priority == "high" || !task.endDate.isEmpty {
-                    if dynamicTypeSize.isAccessibilitySize { VStack(alignment: .leading, spacing: compact ? 3 : 5) { metadata }.font(.caption).foregroundStyle(.secondary) }
-                    else { HStack { metadata }.font(.caption).foregroundStyle(.secondary) }
-                }
             }
         }.padding(.vertical, compact ? 6 : 7).foregroundStyle(task.archived ? .secondary : .primary).accessibilityElement(children: .combine)
+    }
+    /// 构建融合进度条；参数：无；返回值：条内左侧数量、右侧百分比，浅色填充按进度延伸，内容确定高度并支持动态字号；无副作用。
+    private var integratedProgress: some View {
+        HStack(spacing: 8) {
+            Text(taskQuantity(progress, includesUnit: !compact))
+            Spacer(minLength: 4)
+            Text(taskPercent(progress))
+        }
+        .font(.caption2.weight(.medium))
+        .monospacedDigit()
+        .foregroundStyle(.primary)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 5)
+        .background {
+            // 几何回调输入文字布局后的实际尺寸，返回按进度比例填充的背景；背景不参与高度协商，避免撑高列表。
+            GeometryReader { geometry in
+                ZStack(alignment: .leading) {
+                    Color(uiColor: .tertiarySystemFill)
+                    Color.teal.opacity(0.28)
+                        .frame(width: geometry.size.width * progress.fraction)
+                }
+            }
+        }
+        .clipShape(RoundedRectangle(cornerRadius: 6))
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("进度 " + taskQuantity(progress) + "，" + taskPercent(progress))
     }
     /// 构建任务标题；参数：无；返回值：紧凑列表单行省略的标题视图，辅助功能保留全文，无副作用。
     private var taskTitle: some View {
         HStack(alignment: .firstTextBaseline, spacing: 6) {
+            TaskTypeBadge(taskType: task.taskType)
             Text(task.title)
             .font(.body.weight(.medium))
             .lineLimit(compact ? 1 : nil)
             .truncationMode(.tail)
             .accessibilityLabel(task.title)
-            TaskTypeBadge(taskType: task.taskType)
         }
     }
-    /// 构建辅助元信息；参数：无；返回值：必要优先级及完整日期时分；两种字号共用，不截断日期。
-    @ViewBuilder private var metadata: some View {
-        if task.priority == "high" { Label("高优先级", systemImage: "flag").foregroundStyle(.orange) }
-        if !task.endDate.isEmpty { Text(taskDate(task.endDate, time: task.endTime)).foregroundStyle(Values.taskIsOverdue(task, all: store.tasks) ? .red : .secondary) }
+    /// 构建标题下方的状态行；参数：无；返回值：紧急程度及完成状态，使用紧凑图文并排；无副作用。
+    private var statusMetadata: some View {
+        HStack(spacing: 12) {
+            priorityLabel
+            completionLabel
+        }
+        .font(.caption2.weight(.medium))
+    }
+    /// 构建进度条下方的日期信息；参数：无；返回值：已设置日期，按内容高度换行，空日期不占位；无副作用。
+    private var metadata: some View {
+        // 明确图文布局及内容高度，避免列表默认样式撑高任务行。
+        dateRange.font(.caption2).monospacedDigit()
+            .fixedSize(horizontal: false, vertical: true)
+    }
+    /// 构建紧急程度标签；参数：无；返回值：紧邻旗帜的中文等级，高为红、中为橙、低为蓝，图文同色；无副作用。
+    private var priorityLabel: some View {
+        HStack(spacing: 4) {
+            Image(systemName: "flag.fill")
+            Text(task.priority == "high" ? "高" : task.priority == "low" ? "低" : "中")
+        }
+        .foregroundStyle(task.priority == "high" ? Color.red : task.priority == "low" ? Color.blue : Color.orange)
+        .fixedSize()
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("紧急程度：" + (task.priority == "high" ? "高" : task.priority == "low" ? "低" : "中"))
+    }
+    /// 构建完成状态标签；参数：无；返回值：与汇总进度一致的已完成、进行中或未开始短标签，零总量为未开始；无副作用。
+    private var completionLabel: some View {
+        HStack(spacing: 4) {
+            Image(systemName: progress.fraction >= 1 ? "checkmark.circle.fill" : progress.completed > 0 ? "circle.lefthalf.filled" : "circle")
+            Text(progress.fraction >= 1 ? "已完成" : progress.completed > 0 ? "进行中" : "未开始")
+        }
+        .foregroundStyle(progress.fraction >= 1 ? Color.teal : Color.secondary)
+    }
+    /// 构建日期范围内容；参数：无；返回值：已设置的起止日期各占紧凑一行，以图标区分开始和结束，逾期结束日期标红；无副作用。
+    @ViewBuilder private var dateRange: some View {
+        if !task.startDate.isEmpty {
+            HStack(alignment: .firstTextBaseline, spacing: 4) {
+                Image(systemName: "calendar")
+                Text(taskRowDate(task.startDate, time: task.startTime))
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("开始：" + taskDate(task.startDate, time: task.startTime))
+        }
+        if !task.endDate.isEmpty {
+            HStack(alignment: .firstTextBaseline, spacing: 4) {
+                Image(systemName: "calendar.badge.clock")
+                Text(taskRowDate(task.endDate, time: task.endTime))
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .foregroundStyle(Values.taskIsOverdue(task, all: store.tasks) ? Color.red : Color.secondary)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("结束：" + taskDate(task.endDate, time: task.endTime))
+        }
     }
 }
 struct TaskDetailView: View {
@@ -779,6 +841,7 @@ struct TaskEditor: View {
     @State private var listID = 0
     @State private var parentID = 0
     @State private var icon = "Folder"
+    @State private var autoArchive = false
     @State private var priority = "medium"
     @State private var taskType = "subtask"
     @State private var total = "1"
@@ -797,7 +860,7 @@ struct TaskEditor: View {
     @State private var error: String?
     /// 生成提交字段白名单；参数：无；返回值：归属和当前类型字段，主任务不提交隐藏进度；未提交字段保留原值。
     private var fields: [String: Any] {
-        var result: [String: Any] = ["title": title.trimmingCharacters(in: .whitespacesAndNewlines), "remark": remark, "priority": priority, "taskType": taskType,
+        var result: [String: Any] = ["title": title.trimmingCharacters(in: .whitespacesAndNewlines), "remark": remark, "priority": priority, "taskType": taskType, "autoArchive": autoArchive,
          "startDate": hasStart ? Values.day(start) : "", "endDate": hasEnd ? Values.day(end) : "",
          "startTime": hasStart ? startTime : "", "endTime": hasEnd ? endTime : "", "listId": listID, "parentId": parentID == 0 ? NSNull() : parentID]
         if taskType == "main" { result["icon"] = icon }
@@ -873,6 +936,7 @@ struct TaskEditor: View {
                     TaskFloatingField(title: "单位", text: $unit)
                 } }
                 Section { Picker("优先级", selection: $priority) { Text("高").tag("high"); Text("中").tag("medium"); Text("低").tag("low") } }
+                Section { Toggle("完成后自动归档", isOn: $autoArchive) }
                 if !title.isEmpty, let validationError { InlineError(message: validationError) }
             }.navigationTitle(task == nil ? "新建任务" : taskType == "main" ? "编辑主任务" : "编辑任务").navigationBarTitleDisplayMode(.inline)
                 .toolbar { SaveToolbar(busy: busy, valid: valid) { Task { await save() } } }
@@ -893,6 +957,7 @@ struct TaskEditor: View {
         listID = task?.listId ?? parent?.listId ?? (store.lists.contains(where: { $0.id == preferredListID }) ? preferredListID : store.lists.first?.id ?? 0)
         parentID = task?.parentId ?? parent?.id ?? 0
         if let task {
+            autoArchive = task.autoArchive ?? false
             icon = task.icon ?? "Folder"
             title = task.title; remark = task.remark; priority = task.priority; taskType = task.taskType
             total = String(task.progressTotal); completed = String(task.progressCompleted); step = String(task.progressStep); unit = task.progressUnit
@@ -925,6 +990,11 @@ struct TaskEditor: View {
 /// 本地化任务日期；参数：day 为服务端 yyyy-MM-dd，time 为可选 HH:mm；返回值：本地日期及原时分；无副作用。
 private func taskDate(_ day: String, time: String) -> String {
     Values.date(day).formatted(date: .abbreviated, time: .omitted) + (time.isEmpty ? "" : " " + time)
+}
+
+/// 格式化任务行日期；参数：day 为服务端 yyyy-MM-dd，time 为可选 HH:mm；返回值：数字年月日及已设置的时分，避免系统英文月份占用宽度；无副作用。
+private func taskRowDate(_ day: String, time: String) -> String {
+    day.replacingOccurrences(of: "-", with: "/") + (time.isEmpty ? "" : " " + time)
 }
 
 /// 格式化任务数量；参数：progress 为任务进度，includesUnit 控制是否附加非空单位，默认附加；返回值：最多两位小数的完成数量 / 总数量文本；无副作用。
