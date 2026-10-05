@@ -65,3 +65,8 @@
 ## v4 未知图标兼容补验
 
 现有unknown样本主动转main、普通名称保存刷新后Folder与所有已知图标仍未选中，证明未覆写为已知键；rawkey逐字HTTP未获取。见 [V4-Compatibility/VALIDATION.md](V4-Compatibility/VALIDATION.md)。
+
+
+## v4 iPad 默认布局补验
+
+iPad Pro11M5/iOS27默认浅色竖屏六页、空main实际运行与目视通过。sidebar展开/横屏/分屏/深色大字未验，见 [V4-iPad/VALIDATION.md](V4-iPad/VALIDATION.md)。
