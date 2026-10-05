@@ -1,0 +1,165 @@
+Command line invocation:
+    /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild -project apps/iOS/Tests/UITests/TaskModule/LoanSwipe.xcodeproj -scheme LoanSwipeTests -destination "platform=iOS Simulator,id=A2FF4A60-1F0F-4EB0-B686-F82A55FD4BA0" -derivedDataPath /tmp/task-ui-build -resultBundlePath /tmp/task-badge-light-max.xcresult -parallel-testing-enabled NO "-only-testing:LoanSwipeTests/LoanSwipeTests/testV4IconBadge" test
+
+Writing result bundle at path:
+	/tmp/task-badge-light-max.xcresult
+
+ComputePackagePrebuildTargetDependencyGraph
+
+Prepare packages
+
+CreateBuildRequest
+
+SendProjectDescription
+
+CreateBuildOperation
+
+ComputeTargetDependencyGraph
+note: Building targets in dependency order
+note: Target dependency graph (1 target)
+    Target 'LoanSwipeTests' in project 'LoanSwipe' (no dependencies)
+
+GatherProvisioningInputs
+
+CreateBuildDescription
+
+ClangStatCache /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang-stat-cache /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.0.sdk /tmp/task-ui-build/SDKStatCaches.noindex/iphonesimulator27.0-24A430-e829b21a6f8c9b70876ba0858053c0448dc58220667be655e1bcc261a7455254.sdkstatcache
+    cd /Users/lyu/Documents/CODE/personal-assistant/apps/iOS/Tests/UITests/TaskModule/LoanSwipe.xcodeproj
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang-stat-cache /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.0.sdk -o /tmp/task-ui-build/SDKStatCaches.noindex/iphonesimulator27.0-24A430-e829b21a6f8c9b70876ba0858053c0448dc58220667be655e1bcc261a7455254.sdkstatcache
+
+PruneExplicitPrecompiledModules /tmp/task-ui-build/SDKExplicitPrecompiledModules
+
+PruneExplicitPrecompiledModules /tmp/task-ui-build/Build/Intermediates.noindex/ExplicitPrecompiledModules
+
+PruneExplicitPrecompiledModules /tmp/task-ui-build/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules
+
+warning: Traditional headermap style is no longer supported; please migrate to using separate headermaps and set 'ALWAYS_SEARCH_USER_PATHS' to NO. (in target 'LoanSwipeTests' from project 'LoanSwipe')
+2026-10-05 11:01:54.364162+0800 LoanSwipeTests-Runner[11288:129692] [Default] Running tests...
+    t =      nans Interface orientation changed to Portrait
+Test Suite 'Selected tests' started at 2026-10-05 11:01:56.652.
+Test Suite 'LoanSwipeTests.xctest' started at 2026-10-05 11:01:56.652.
+Test Suite 'LoanSwipeTests' started at 2026-10-05 11:01:56.652.
+Test Case '-[LoanSwipeTests.LoanSwipeTests testV4IconBadge]' started.
+    t =     0.00s Start Test at 2026-10-05 11:01:56.654
+    t =     0.02s Set Up
+    t =     0.02s Open personalassistant.lylab.vip.PersonalAssistant
+    t =     0.02s     Launch personalassistant.lylab.vip.PersonalAssistant
+    t =     0.03s         Terminate personalassistant.lylab.vip.PersonalAssistant:11201
+objc[11288]: Class UIAccessibilityLoaderWebShared is implemented in both /Library/Developer/CoreSimulator/Volumes/iOS_24A434/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 27.0.simruntime/Contents/Resources/RuntimeRoot/System/Library/AccessibilityBundles/WebKit.axbundle/WebKit (0x104fcc398) and /Library/Developer/CoreSimulator/Volumes/iOS_24A434/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 27.0.simruntime/Contents/Resources/RuntimeRoot/System/Library/AccessibilityBundles/WebCore.axbundle/WebCore (0x107f3c310). This may cause spurious casting failures and mysterious crashes. One of the duplicates must be removed or renamed.
+    t =     1.13s         Setting up automation session
+    t =     2.96s         Wait for personalassistant.lylab.vip.PersonalAssistant to idle
+    t =     4.95s Waiting 15.0s for "任务" NavigationBar to exist
+    t =     6.03s     Checking `Expect predicate `existsNoRetry == 1` for object "任务" NavigationBar`
+    t =     6.03s         Checking existence of `"任务" NavigationBar`
+    t =     6.19s Tap "工作" StaticText
+    t =     6.19s     Wait for personalassistant.lylab.vip.PersonalAssistant to idle
+    t =     6.19s     Find the "工作" StaticText
+    t =     6.24s     Check for interrupting elements affecting "工作" StaticText
+    t =     6.27s     Synthesize event
+    t =     6.57s     Wait for personalassistant.lylab.vip.PersonalAssistant to idle
+    t =     7.01s Tap "设计准备" StaticText
+    t =     7.01s     Wait for personalassistant.lylab.vip.PersonalAssistant to idle
+    t =     7.03s     Find the "设计准备" StaticText
+    t =     7.10s     Check for interrupting elements affecting "设计准备" StaticText
+    t =     7.15s     Synthesize event
+    t =     7.45s     Wait for personalassistant.lylab.vip.PersonalAssistant to idle
+    t =     7.82s Tap "编辑" Button
+    t =     7.82s     Wait for personalassistant.lylab.vip.PersonalAssistant to idle
+    t =     7.84s     Find the "编辑" Button
+    t =     7.89s     Check for interrupting elements affecting "编辑" Button
+    t =     7.93s     Synthesize event
+    t =     8.23s     Wait for personalassistant.lylab.vip.PersonalAssistant to idle
+    t =     8.78s Tap "图标" Button
+    t =     8.78s     Wait for personalassistant.lylab.vip.PersonalAssistant to idle
+    t =     8.79s     Find the "图标" Button
+    t =     8.87s     Check for interrupting elements affecting "图标" Button
+    t =     8.92s     Synthesize event
+    t =     9.20s     Wait for personalassistant.lylab.vip.PersonalAssistant to idle
+    t =     9.59s Find the "分层计划" Button
+    t =     9.67s Find the Application 'personalassistant.lylab.vip.PersonalAssistant'
+    t =     9.80s Added attachment named 'v4-badge-selected'
+    t =     9.80s Requesting snapshot of accessibility hierarchy for app with pid 11306
+    t =    10.11s Requesting snapshot of accessibility hierarchy for app with pid 11306
+    t =    10.19s Tap "目标" Button
+    t =    10.19s     Wait for personalassistant.lylab.vip.PersonalAssistant to idle
+    t =    10.20s     Find the "目标" Button
+    t =    10.25s     Check for interrupting elements affecting "target" Button
+    t =    10.29s     Synthesize event
+    t =    10.58s     Wait for personalassistant.lylab.vip.PersonalAssistant to idle
+    t =    10.59s Find the "目标" Button
+    t =    10.64s Find the "分层计划" Button
+    t =    10.69s Tap SearchField (First Match)
+    t =    10.69s     Wait for personalassistant.lylab.vip.PersonalAssistant to idle
+    t =    10.69s     Find the SearchField (First Match)
+    t =    10.73s     Check for interrupting elements affecting "搜索图标" SearchField
+    t =    10.77s     Synthesize event
+    t =    11.07s     Wait for personalassistant.lylab.vip.PersonalAssistant to idle
+    t =    11.94s Type '发布' into "搜索图标" SearchField
+    t =    11.94s     Wait for personalassistant.lylab.vip.PersonalAssistant to idle
+    t =    11.95s     Find the "搜索图标" SearchField
+    t =    12.02s     Check for interrupting elements affecting "搜索图标" SearchField
+    t =    12.07s     Synthesize event
+    t =    12.31s     Wait for personalassistant.lylab.vip.PersonalAssistant to idle
+    t =    12.32s Waiting 5.0s for "发布" Button to exist
+    t =    13.39s     Checking `Expect predicate `existsNoRetry == 1` for object "发布" Button`
+    t =    13.39s         Checking existence of `"发布" Button`
+    t =    13.45s Tap "发布" Button
+    t =    13.45s     Wait for personalassistant.lylab.vip.PersonalAssistant to idle
+    t =    13.46s     Find the "发布" Button
+    t =    13.51s     Check for interrupting elements affecting "paperplane" Button
+    t =    13.55s     Synthesize event
+    t =    13.85s     Wait for personalassistant.lylab.vip.PersonalAssistant to idle
+    t =    13.86s Find the "发布" Button
+    t =    13.92s Find the Application 'personalassistant.lylab.vip.PersonalAssistant'
+    t =    14.05s Added attachment named 'v4-badge-search-selected'
+    t =    14.05s Requesting snapshot of accessibility hierarchy for app with pid 11306
+    t =    14.38s Requesting snapshot of accessibility hierarchy for app with pid 11306
+    t =    14.46s Tap "close" Button
+    t =    14.46s     Wait for personalassistant.lylab.vip.PersonalAssistant to idle
+    t =    14.47s     Find the "close" Button
+    t =    14.52s     Check for interrupting elements affecting "close" Button
+    t =    14.56s     Synthesize event
+    t =    14.86s     Wait for personalassistant.lylab.vip.PersonalAssistant to idle
+    t =    15.40s Tap "完成" Button
+    t =    15.40s     Wait for personalassistant.lylab.vip.PersonalAssistant to idle
+    t =    15.41s     Find the "完成" Button
+    t =    15.46s     Check for interrupting elements affecting "完成" Button
+    t =    15.51s     Synthesize event
+    t =    15.81s     Wait for personalassistant.lylab.vip.PersonalAssistant to idle
+    t =    16.14s Tap "取消" Button
+    t =    16.14s     Wait for personalassistant.lylab.vip.PersonalAssistant to idle
+    t =    16.15s     Find the "取消" Button
+    t =    16.21s     Check for interrupting elements affecting "取消" Button
+    t =    16.26s     Synthesize event
+    t =    16.57s     Wait for personalassistant.lylab.vip.PersonalAssistant to idle
+    t =    16.95s Tap "编辑" Button
+    t =    16.95s     Wait for personalassistant.lylab.vip.PersonalAssistant to idle
+    t =    16.95s     Find the "编辑" Button
+    t =    16.99s     Check for interrupting elements affecting "编辑" Button
+    t =    17.02s     Synthesize event
+    t =    17.33s     Wait for personalassistant.lylab.vip.PersonalAssistant to idle
+    t =    17.76s Tap "图标" Button
+    t =    17.76s     Wait for personalassistant.lylab.vip.PersonalAssistant to idle
+    t =    17.77s     Find the "图标" Button
+    t =    17.84s     Check for interrupting elements affecting "图标" Button
+    t =    17.89s     Synthesize event
+    t =    18.20s     Wait for personalassistant.lylab.vip.PersonalAssistant to idle
+    t =    18.52s Find the "分层计划" Button
+    t =    18.58s Tear Down
+Test Case '-[LoanSwipeTests.LoanSwipeTests testV4IconBadge]' passed (18.904 seconds).
+Test Suite 'LoanSwipeTests' passed at 2026-10-05 11:02:15.559.
+	 Executed 1 test, with 0 failures (0 unexpected) in 18.904 (18.907) seconds
+Test Suite 'LoanSwipeTests.xctest' passed at 2026-10-05 11:02:15.561.
+	 Executed 1 test, with 0 failures (0 unexpected) in 18.904 (18.908) seconds
+Test Suite 'Selected tests' passed at 2026-10-05 11:02:15.561.
+	 Executed 1 test, with 0 failures (0 unexpected) in 18.904 (18.910) seconds
+2026-10-05 11:02:15.884 xcodebuild[11274:129410] [MT] IDETestOperationsObserverDebug: 22.601 elapsed -- Testing started completed.
+2026-10-05 11:02:15.884 xcodebuild[11274:129410] [MT] IDETestOperationsObserverDebug: 0.000 sec, +0.000 sec -- start
+2026-10-05 11:02:15.884 xcodebuild[11274:129410] [MT] IDETestOperationsObserverDebug: 22.601 sec, +22.601 sec -- end
+
+Test session results, code coverage, and logs:
+	/tmp/task-badge-light-max.xcresult
+
+** TEST SUCCEEDED **
+
+Testing started

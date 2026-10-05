@@ -498,7 +498,8 @@ private struct TaskIconPicker: View {
                         Image(systemName: option.symbol).font(.system(size: 20)).frame(maxWidth: .infinity, minHeight: 48)
                             .foregroundStyle(selection == option.key ? Color.teal : Color.primary)
                             .background(selection == option.key ? Color.teal.opacity(0.12) : Color(uiColor: .secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 12))
-                            .overlay(alignment: .topTrailing) { if selection == option.key { Image(systemName: "checkmark.circle.fill").font(.caption).foregroundStyle(.teal).accessibilityHidden(true) } }
+                            // 选中角标是非文本装饰，不随辅助字号放大；固定尺寸并角落内缩，避免遮盖主图标，读屏由isSelected表达。
+                            .overlay(alignment: .topTrailing) { if selection == option.key { Image(systemName: "checkmark.circle.fill").font(.system(size: 12)).frame(width: 14, height: 14).foregroundStyle(.teal).padding(3).accessibilityHidden(true) } }
                     }.buttonStyle(.plain).accessibilityLabel(option.label).accessibilityAddTraits(selection == option.key ? .isSelected : [])
                 }
             }.padding(16)

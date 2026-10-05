@@ -35,3 +35,6 @@ python3 apps/iOS/Tests/UITests/TaskModule/run-race.py
 ## v4 当前验收入口
 
 清单根导航重构后，历史UI测试保留原阶段证据，不支持直接全runner宣称v4通过。使用 only-testing 的 testV4Pages、testV4IconAndMove、testV4DateDraft、testV4SortAndProtection。启动v4虚构场景；六页面标准与紧凑dark-max、草稿及归属见 Documentation/TaskModule/V4。run-move.py编译真实Store与生产排序函数验证整树缓存及hidden-slot；只替换传输与通知，未知移动不推断。
+
+
+角标专项：only-testing:LoanSwipeTests/LoanSwipeTests/testV4IconBadge，iPhone17e依次设置appearance light/dark、content_size large/accessibility-extra-extra-extra-large。实际selected trait不代替VoiceOver操作验收。

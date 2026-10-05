@@ -351,4 +351,15 @@ import XCTest
         failure.buttons["刷新任务"].tap();if !failure.buttons["新建任务"].isEnabled { failure.buttons["刷新任务"].tap() };XCTAssertTrue(failure.buttons["新建任务"].isEnabled);capture(failure,"v4-shared-recovered")
     }
 
+    /// 验证选中角标与可访问选择trait；参数无；返回无，外观字号由专用模拟器配置，不模拟真实VoiceOver。
+    func testV4IconBadge() {
+        let app=launch("v4");app.staticTexts["工作"].tap();app.staticTexts["设计准备"].tap();app.buttons["编辑"].tap();app.buttons["图标"].tap()
+        XCTAssertTrue(app.buttons["分层计划"].isSelected);capture(app,"v4-badge-selected")
+        app.buttons["目标"].tap();XCTAssertTrue(app.buttons["目标"].isSelected);XCTAssertFalse(app.buttons["分层计划"].isSelected)
+        let search=app.searchFields.firstMatch;search.tap();search.typeText("发布")
+        XCTAssertTrue(app.buttons["发布"].waitForExistence(timeout:5));app.buttons["发布"].tap();XCTAssertTrue(app.buttons["发布"].isSelected)
+        capture(app,"v4-badge-search-selected");app.buttons["close"].tap();app.buttons["完成"].tap();app.buttons["取消"].tap()
+        app.buttons["编辑"].tap();app.buttons["图标"].tap();XCTAssertTrue(app.buttons["分层计划"].isSelected)
+    }
+
 }

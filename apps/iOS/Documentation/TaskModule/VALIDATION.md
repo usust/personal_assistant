@@ -55,3 +55,8 @@
 ## v4 清单树改版
 
 最终六页、图标草稿/持久、push日期、整树mock归属、legacy、共享保护、紧凑深色最大字号、真实Store竞态及缓存、Release/Web构建运行通过。范围与未验项见 [V4/VALIDATION.md](V4/VALIDATION.md)。
+
+
+## v4 选中角标辅助字号
+
+紧凑iPhone17e浅深、默认/最大辅助字号四组选中角标与选择搜索取消实际通过；AX selected trait核对，实际VoiceOver未验。见 [V4-IconBadge/VALIDATION.md](V4-IconBadge/VALIDATION.md)。

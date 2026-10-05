@@ -74,3 +74,7 @@ v4修复1执行者完成五项并停止：AppStore.upsertTask复用纯Values hel
 v4修复1独立静态通过，runtime六页及真实Store move/race、Release/Web production构建通过；actual UI发现子页返回重跑populate覆盖草稿，Target保存恢复Layers及逆序日期save未禁用(P1)。独立静态确认Form.task生命周期根因，runtime暂停项目写入，进入最后修复轮2：每editor仅首load，子页返回保draft/original；实际树截图工具栏EditButton挤inline标题，收menu排序；详情摘要内分隔隐藏保持字段分隔。两轮额度后若仍失败不记录完成。
 
 v4最终独立验收结束，修复2草稿生命周期与视觉已实跑通过。六页、图标保存取消、逆序日期/清空、整树mock归属、共享保护与恢复、真实Store move/竞态、Release/Web build、iPhone17e深色最大字号通过。详见V4/VALIDATION.md，UI拖动排序/iPad/VoiceOver/真实后端等未验明确保留，不作全量通过。所有执行/验收代理停止修改；参考原型目录未动。当前无新已证实业务阻塞，保存本轮；未明确选择整树归档，现行单节点规则保留。
+
+v4后续独立小轮：Goal续轮核对源码与CompactDarkMax/v4-icon-picker.png，选中角标caption随辅助字号放大为圆盘遮挡主图标。project_audit独立评审确认，只固定非文字角标12pt及frame/角落内缩，文字/点击范围/六列/数据/读屏选中状态不变；task_implementation唯一修改。主任务tile图标风险未有本轮遮挡证据，不扩范围。
+
+图标角标小轮完成：固定非文本12pt，Debug构建通过，独立iPhone17e默认/最大字号浅深四组截图与AX及选择/search/cancel通过，触点56.3×48pt、角标12×12pt，actual VO未验，证据V4-IconBadge。root已目视最大字号Layers完整可见，执行者/验收者停止修改。
