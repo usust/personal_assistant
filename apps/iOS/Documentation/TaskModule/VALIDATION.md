@@ -60,3 +60,8 @@
 ## v4 选中角标辅助字号
 
 紧凑iPhone17e浅深、默认/最大辅助字号四组选中角标与选择搜索取消实际通过；AX selected trait核对，实际VoiceOver未验。见 [V4-IconBadge/VALIDATION.md](V4-IconBadge/VALIDATION.md)。
+
+
+## v4 未知图标兼容补验
+
+现有unknown样本主动转main、普通名称保存刷新后Folder与所有已知图标仍未选中，证明未覆写为已知键；rawkey逐字HTTP未获取。见 [V4-Compatibility/VALIDATION.md](V4-Compatibility/VALIDATION.md)。

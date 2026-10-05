@@ -78,3 +78,5 @@ v4最终独立验收结束，修复2草稿生命周期与视觉已实跑通过�
 v4后续独立小轮：Goal续轮核对源码与CompactDarkMax/v4-icon-picker.png，选中角标caption随辅助字号放大为圆盘遮挡主图标。project_audit独立评审确认，只固定非文字角标12pt及frame/角落内缩，文字/点击范围/六列/数据/读屏选中状态不变；task_implementation唯一修改。主任务tile图标风险未有本轮遮挡证据，不扩范围。
 
 图标角标小轮完成：固定非文本12pt，Debug构建通过，独立iPhone17e默认/最大字号浅深四组截图与AX及选择/search/cancel通过，触点56.3×48pt、角标12×12pt，actual VO未验，证据V4-IconBadge。root已目视最大字号Layers完整可见，执行者/验收者停止修改。
+
+Goal续轮补未知icon兼容：独立iPhone17e/UI用现有legacy unknown样本显式改main保存刷新，普通改名称保存刷新后仍无已知选项Selected，未覆写Folder；单项通过。V4-Compatibility记录rawkey逐字HTTP未捕获，不虚报网络逐字保留；源码最小patch仅静态依据。无生产修改、无新hook/场景，验收者已停止。

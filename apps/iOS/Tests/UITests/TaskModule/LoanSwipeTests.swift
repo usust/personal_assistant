@@ -362,4 +362,19 @@ import XCTest
         app.buttons["编辑"].tap();app.buttons["图标"].tap();XCTAssertTrue(app.buttons["分层计划"].isSelected)
     }
 
+    /// 验证未知图标编辑不变成已知默认键；参数无；返回无，实际选择trait区别原始未知与Folder回退显示。
+    func testV4UnknownIconCompatibility() {
+        let app=launch("v4");app.staticTexts["工作"].tap();app.staticTexts["历史任务容器"].tap();app.buttons["编辑"].tap()
+        app.buttons["类型、具体任务"].tap();app.buttons["主任务"].tap();app.buttons["保存"].tap()
+        XCTAssertTrue(app.navigationBars["主任务详情"].waitForExistence(timeout:5));app.buttons["编辑"].tap();app.buttons["图标"].tap()
+        XCTAssertFalse(app.buttons["文件夹"].isSelected)
+        XCTAssertEqual(app.buttons.allElementsBoundByIndex.filter { $0.isHittable && $0.isSelected }.count,0)
+        capture(app,"unknown-icon-after-main-conversion");app.buttons["完成"].tap()
+        let field=app.textFields["名称"].firstMatch;field.tap();field.typeText("兼容检查")
+        app.buttons["保存"].tap();app.buttons["编辑"].tap();app.buttons["图标"].tap()
+        XCTAssertFalse(app.buttons["文件夹"].isSelected)
+        XCTAssertEqual(app.buttons.allElementsBoundByIndex.filter { $0.isHittable && $0.isSelected }.count,0)
+        capture(app,"unknown-icon-after-title-save")
+    }
+
 }

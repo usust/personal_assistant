@@ -38,3 +38,6 @@ python3 apps/iOS/Tests/UITests/TaskModule/run-race.py
 
 
 角标专项：only-testing:LoanSwipeTests/LoanSwipeTests/testV4IconBadge，iPhone17e依次设置appearance light/dark、content_size large/accessibility-extra-extra-extra-large。实际selected trait不代替VoiceOver操作验收。
+
+
+未知图标兼容：only-testing:LoanSwipeTests/LoanSwipeTests/testV4UnknownIconCompatibility。现有legacy unknown样本主动改main再普通名称保存，检查回退Folder未Selected、实际图标选项无Selected；不能仅靠显示glyph宣称rawkey保留。范围见V4-Compatibility/VALIDATION。
