@@ -377,4 +377,20 @@ import XCTest
         capture(app,"unknown-icon-after-title-save")
     }
 
+    /// 通过实际排序手柄拖动同父根并刷新确认；参数无；返回无，仅内存场景，不猜测屏幕坐标。
+    func testV4ActualReorder() {
+        let app=launch("v4");app.staticTexts["工作"].tap();app.buttons["收起下级"].firstMatch.tap()
+        app.buttons["更多"].tap();app.buttons["排序"].tap();capture(app,"reorder-before")
+        let source=app.buttons.matching(NSPredicate(format:"label BEGINSWITH %@","Reorder 下一阶段")).firstMatch
+        let target=app.buttons.matching(NSPredicate(format:"label BEGINSWITH %@","Reorder 产品发布")).firstMatch
+        XCTAssertTrue(source.exists && target.exists);source.coordinate(withNormalizedOffset:CGVector(dx:0.5,dy:0.5)).press(forDuration:0.8,thenDragTo:target.coordinate(withNormalizedOffset:CGVector(dx:0.5,dy:0.1)))
+        app.buttons["更多"].tap();app.buttons["完成排序"].tap()
+        XCTAssertLessThan(app.staticTexts["下一阶段"].frame.minY,app.staticTexts["产品发布"].frame.minY);capture(app,"reorder-after-drag")
+        app.swipeDown();back(app);app.staticTexts["工作"].tap()
+        XCTAssertLessThan(app.staticTexts["下一阶段"].frame.minY,app.staticTexts["产品发布"].frame.minY)
+        XCTAssertTrue(app.staticTexts["设计准备"].exists && app.staticTexts["阅读设计规范"].exists && app.staticTexts["确认评审时间"].exists)
+        app.staticTexts["设计准备"].tap();XCTAssertTrue(app.staticTexts.matching(NSPredicate(format:"label CONTAINS %@","6 / 11")).firstMatch.exists);capture(app,"reorder-subtree-retained")
+        back(app);capture(app,"reorder-after-reentry")
+    }
+
 }

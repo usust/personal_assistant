@@ -82,3 +82,5 @@ v4后续独立小轮：Goal续轮核对源码与CompactDarkMax/v4-icon-picker.pn
 Goal续轮补未知icon兼容：独立iPhone17e/UI用现有legacy unknown样本显式改main保存刷新，普通改名称保存刷新后仍无已知选项Selected，未覆写Folder；单项通过。V4-Compatibility记录rawkey逐字HTTP未捕获，不虚报网络逐字保留；源码最小patch仅静态依据。无生产修改、无新hook/场景，验收者已停止。
 
 Goal续轮iPad新版布局补验：独立iPad Pro11(M5)/iOS27默认浅色竖屏834×1210pt六页及空main运行通过，主体无遮断/不可达；原生顶部Tab在push隐藏，系统sidebar开关保留、编辑居中sheet、底toolbar宽屏分布。V4-iPad证据；横屏/分屏/sidebar展开/dark-max未验。无生产或测试修改，验收者停止，用户原型目录保留。
+
+Goal续轮实际排序补验：独立原生Reorder手柄真实drag把空main5移root1前；完成排序、下拉刷新、返回root重入后仍5在1前，2/3/4可达与6/11保留，单项通过。V4-Reorder记录实际frame/手势/截图AX日志。无业务改动，其他拖动矩阵与真实服务器未验，验收者停止。

@@ -41,3 +41,6 @@ python3 apps/iOS/Tests/UITests/TaskModule/run-race.py
 
 
 未知图标兼容：only-testing:LoanSwipeTests/LoanSwipeTests/testV4UnknownIconCompatibility。现有legacy unknown样本主动改main再普通名称保存，检查回退Folder未Selected、实际图标选项无Selected；不能仅靠显示glyph宣称rawkey保留。范围见V4-Compatibility/VALIDATION。
+
+
+真实UI排序：only-testing:LoanSwipeTests/LoanSwipeTests/testV4ActualReorder，以AX Reorder手柄实际frame归一化坐标长按拖动；v4空main移root前并刷新重进确认，证据V4-Reorder。

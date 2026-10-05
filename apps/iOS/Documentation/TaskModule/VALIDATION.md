@@ -70,3 +70,8 @@
 ## v4 iPad 默认布局补验
 
 iPad Pro11M5/iOS27默认浅色竖屏六页、空main实际运行与目视通过。sidebar展开/横屏/分屏/深色大字未验，见 [V4-iPad/VALIDATION.md](V4-iPad/VALIDATION.md)。
+
+
+## v4 实际UI排序补验
+
+原生Reorder手柄把空main移至产品发布前，刷新与重进顺序保留，子树可达/6/11保留实际通过；单根样本不代表全矩阵，见 [V4-Reorder/VALIDATION.md](V4-Reorder/VALIDATION.md)。
