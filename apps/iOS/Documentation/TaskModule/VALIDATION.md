@@ -75,3 +75,8 @@ iPad Pro11M5/iOS27默认浅色竖屏六页、空main实际运行与目视通过�
 ## v4 实际UI排序补验
 
 原生Reorder手柄把空main移至产品发布前，刷新与重进顺序保留，子树可达/6/11保留实际通过；单根样本不代表全矩阵，见 [V4-Reorder/VALIDATION.md](V4-Reorder/VALIDATION.md)。
+
+
+## v4 后端契约补验
+
+真实Gin/Service/隔离SQLite任务HTTP与实际AI Executor图标/父级/owner契约、整树含归档GET读回通过；可信测试身份不等于JWT，见 [V4-BackendContract/VALIDATION.md](V4-BackendContract/VALIDATION.md)。

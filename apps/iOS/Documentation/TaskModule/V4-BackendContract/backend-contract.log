@@ -1,0 +1,109 @@
+=== RUN   TestBusinessRoutesMatchOpenAPI
+[GIN-debug] [WARNING] Creating an Engine instance with the Logger and Recovery middleware already attached.
+
+[GIN-debug] [WARNING] Running in "debug" mode. Switch to "release" mode in production.
+ - using env:	export GIN_MODE=release
+ - using code:	gin.SetMode(gin.ReleaseMode)
+
+[GIN-debug] GET    /api/health               --> personal_assistant_server/internal/router.health (3 handlers)
+[GIN-debug] GET    /api/auth/captcha         --> personal_assistant_server/internal/auth/handler.(*Handler).CreateCaptcha-fm (3 handlers)
+[GIN-debug] POST   /api/auth/login           --> personal_assistant_server/internal/auth/handler.(*Handler).Login-fm (3 handlers)
+[GIN-debug] POST   /api/users/register       --> personal_assistant_server/internal/user/handler.(*Handler).Register-fm (3 handlers)
+[GIN-debug] GET    /api/users                --> personal_assistant_server/internal/user/handler.(*Handler).List-fm (3 handlers)
+[GIN-debug] GET    /api/users/me             --> personal_assistant_server/internal/user/handler.(*Handler).Current-fm (4 handlers)
+[GIN-debug] PATCH  /api/users/:id            --> personal_assistant_server/internal/user/handler.(*Handler).Update-fm (4 handlers)
+[GIN-debug] DELETE /api/users/:id            --> personal_assistant_server/internal/user/handler.(*Handler).Delete-fm (4 handlers)
+[GIN-debug] POST   /api/ai/chat              --> personal_assistant_server/internal/ai/handler.(*Handler).Chat-fm (4 handlers)
+[GIN-debug] POST   /api/ai/screenshot        --> personal_assistant_server/internal/ai/handler.(*Handler).Screenshot-fm (4 handlers)
+[GIN-debug] GET    /api/setting/ai/providers --> personal_assistant_server/internal/aiconfig/handler.(*Handler).Providers-fm (4 handlers)
+[GIN-debug] POST   /api/setting/ai/models    --> personal_assistant_server/internal/aiconfig/handler.(*Handler).Models-fm (4 handlers)
+[GIN-debug] GET    /api/setting/ai/provider_config --> personal_assistant_server/internal/aiconfig/handler.(*Handler).List-fm (4 handlers)
+[GIN-debug] POST   /api/setting/ai/provider_config/create --> personal_assistant_server/internal/aiconfig/handler.(*Handler).Create-fm (4 handlers)
+[GIN-debug] PATCH  /api/setting/ai/provider_config/:id --> personal_assistant_server/internal/aiconfig/handler.(*Handler).Update-fm (4 handlers)
+[GIN-debug] DELETE /api/setting/ai/provider_config/:id --> personal_assistant_server/internal/aiconfig/handler.(*Handler).Delete-fm (4 handlers)
+[GIN-debug] GET    /api/tasks                --> personal_assistant_server/internal/task/handler.(*Handler).Handle.func1 (4 handlers)
+[GIN-debug] POST   /api/tasks                --> personal_assistant_server/internal/task/handler.(*Handler).Handle.func1 (4 handlers)
+[GIN-debug] PATCH  /api/tasks/:id            --> personal_assistant_server/internal/task/handler.(*Handler).Handle.func1 (4 handlers)
+[GIN-debug] DELETE /api/tasks/:id            --> personal_assistant_server/internal/task/handler.(*Handler).Handle.func1 (4 handlers)
+[GIN-debug] PATCH  /api/tasks/:id/progress   --> personal_assistant_server/internal/task/handler.(*Handler).Handle.func1 (4 handlers)
+[GIN-debug] PUT    /api/tasks/reorder        --> personal_assistant_server/internal/task/handler.(*Handler).Handle.func1 (4 handlers)
+[GIN-debug] GET    /api/tasks/events         --> personal_assistant_server/internal/task/handler.(*Handler).Handle.func1 (4 handlers)
+[GIN-debug] GET    /api/task-lists           --> personal_assistant_server/internal/task/handler.(*Handler).Handle.func1 (4 handlers)
+[GIN-debug] GET    /api/task-lists/:id       --> personal_assistant_server/internal/task/handler.(*Handler).Handle.func1 (4 handlers)
+[GIN-debug] POST   /api/task-lists           --> personal_assistant_server/internal/task/handler.(*Handler).Handle.func1 (4 handlers)
+[GIN-debug] PATCH  /api/task-lists/:id       --> personal_assistant_server/internal/task/handler.(*Handler).Handle.func1 (4 handlers)
+[GIN-debug] DELETE /api/task-lists/:id       --> personal_assistant_server/internal/task/handler.(*Handler).Handle.func1 (4 handlers)
+[GIN-debug] GET    /api/finance/sync/snapshot --> personal_assistant_server/internal/finance/handler.(*Handler).SyncSnapshot-fm (4 handlers)
+[GIN-debug] POST   /api/finance/sync/commands --> personal_assistant_server/internal/finance/handler.(*Handler).SyncCommand-fm (4 handlers)
+[GIN-debug] GET    /api/finance/presets      --> personal_assistant_server/internal/finance/handler.(*Handler).Handle.func1 (4 handlers)
+[GIN-debug] POST   /api/finance/presets      --> personal_assistant_server/internal/finance/handler.(*Handler).Handle.func1 (4 handlers)
+[GIN-debug] PATCH  /api/finance/presets/:id  --> personal_assistant_server/internal/finance/handler.(*Handler).Handle.func1 (4 handlers)
+[GIN-debug] DELETE /api/finance/presets/:id  --> personal_assistant_server/internal/finance/handler.(*Handler).Handle.func1 (4 handlers)
+[GIN-debug] POST   /api/finance/recurring/materialize --> personal_assistant_server/internal/finance/handler.(*Handler).Handle.func1 (4 handlers)
+[GIN-debug] GET    /api/finance/accounts/:id/statements --> personal_assistant_server/internal/finance/handler.(*Handler).Handle.func1 (4 handlers)
+[GIN-debug] GET    /api/finance/accounts/:id/statement --> personal_assistant_server/internal/finance/handler.(*Handler).Handle.func1 (4 handlers)
+[GIN-debug] GET    /api/finance/accounts     --> personal_assistant_server/internal/finance/handler.(*Handler).Handle.func1 (4 handlers)
+[GIN-debug] POST   /api/finance/accounts     --> personal_assistant_server/internal/finance/handler.(*Handler).Handle.func1 (4 handlers)
+[GIN-debug] PATCH  /api/finance/accounts/:id --> personal_assistant_server/internal/finance/handler.(*Handler).Handle.func1 (4 handlers)
+[GIN-debug] GET    /api/finance/accounts/:id/impact --> personal_assistant_server/internal/finance/handler.(*Handler).Handle.func1 (4 handlers)
+[GIN-debug] DELETE /api/finance/accounts/:id --> personal_assistant_server/internal/finance/handler.(*Handler).Handle.func1 (4 handlers)
+[GIN-debug] GET    /api/finance/categories   --> personal_assistant_server/internal/finance/handler.(*Handler).Handle.func1 (4 handlers)
+[GIN-debug] POST   /api/finance/categories   --> personal_assistant_server/internal/finance/handler.(*Handler).Handle.func1 (4 handlers)
+[GIN-debug] POST   /api/finance/transactions/:id/refund --> personal_assistant_server/internal/finance/handler.(*Handler).Handle.func1 (4 handlers)
+[GIN-debug] DELETE /api/finance/transactions/:id --> personal_assistant_server/internal/finance/handler.(*Handler).Handle.func1 (4 handlers)
+[GIN-debug] GET    /api/finance/transactions/:id --> personal_assistant_server/internal/finance/handler.(*Handler).Handle.func1 (4 handlers)
+[GIN-debug] GET    /api/finance/transactions --> personal_assistant_server/internal/finance/handler.(*Handler).Handle.func1 (4 handlers)
+[GIN-debug] POST   /api/finance/transactions --> personal_assistant_server/internal/finance/handler.(*Handler).Handle.func1 (4 handlers)
+[GIN-debug] PATCH  /api/finance/transactions/:id --> personal_assistant_server/internal/finance/handler.(*Handler).Handle.func1 (4 handlers)
+[GIN-debug] POST   /api/finance/transactions/:id/confirm --> personal_assistant_server/internal/finance/handler.(*Handler).Handle.func1 (4 handlers)
+[GIN-debug] POST   /api/finance/transactions/:id/void --> personal_assistant_server/internal/finance/handler.(*Handler).Handle.func1 (4 handlers)
+[GIN-debug] GET    /api/finance/transactions-summary --> personal_assistant_server/internal/finance/handler.(*Handler).Handle.func1 (4 handlers)
+[GIN-debug] GET    /api/finance/installments --> personal_assistant_server/internal/finance/handler.(*Handler).Handle.func1 (4 handlers)
+[GIN-debug] PATCH  /api/finance/installments/:id --> personal_assistant_server/internal/finance/handler.(*Handler).Handle.func1 (4 handlers)
+[GIN-debug] DELETE /api/finance/installments/:id --> personal_assistant_server/internal/finance/handler.(*Handler).Handle.func1 (4 handlers)
+[GIN-debug] POST   /api/finance/installments/:id/finish --> personal_assistant_server/internal/finance/handler.(*Handler).Handle.func1 (4 handlers)
+[GIN-debug] GET    /api/finance/transactions/:id/installment --> personal_assistant_server/internal/finance/handler.(*Handler).Handle.func1 (4 handlers)
+[GIN-debug] POST   /api/finance/transactions/:id/installment-preview --> personal_assistant_server/internal/finance/handler.(*Handler).Handle.func1 (4 handlers)
+[GIN-debug] POST   /api/finance/transactions/:id/installment --> personal_assistant_server/internal/finance/handler.(*Handler).Handle.func1 (4 handlers)
+[GIN-debug] POST   /api/finance/loan-preview --> personal_assistant_server/internal/finance/handler.(*Handler).Handle.func1 (4 handlers)
+[GIN-debug] GET    /api/finance/accounts/:id/loan-plan --> personal_assistant_server/internal/finance/handler.(*Handler).Handle.func1 (4 handlers)
+[GIN-debug] POST   /api/finance/accounts/:id/loan-adjustment-preview --> personal_assistant_server/internal/finance/handler.(*Handler).Handle.func1 (4 handlers)
+[GIN-debug] POST   /api/finance/accounts/:id/loan-adjustments --> personal_assistant_server/internal/finance/handler.(*Handler).Handle.func1 (4 handlers)
+[GIN-debug] GET    /api/finance/overview     --> personal_assistant_server/internal/finance/handler.(*Handler).Handle.func1 (4 handlers)
+[GIN-debug] GET    /api/finance/events       --> personal_assistant_server/internal/finance/handler.(*Handler).Handle.func1 (4 handlers)
+[GIN-debug] GET    /api/health-management    --> personal_assistant_server/internal/health/handler.(*Handler).Read-fm (4 handlers)
+[GIN-debug] POST   /api/health-management/sync --> personal_assistant_server/internal/health/handler.(*Handler).Sync-fm (4 handlers)
+[GIN-debug] POST   /api/health-management/reports --> personal_assistant_server/internal/health/handler.(*Handler).Analyze-fm (4 handlers)
+[GIN-debug] DELETE /api/health-management    --> personal_assistant_server/internal/health/handler.(*Handler).Clear-fm (4 handlers)
+--- PASS: TestBusinessRoutesMatchOpenAPI (0.00s)
+PASS
+ok  	personal_assistant_server/internal/router	0.334s
+?   	personal_assistant_server/internal/task	[no test files]
+=== RUN   TestAITools
+--- PASS: TestAITools (0.01s)
+=== RUN   TestAIIconContract
+--- PASS: TestAIIconContract (0.01s)
+PASS
+ok  	personal_assistant_server/internal/task/capability	0.456s
+=== RUN   TestHTTPEnvelope
+[GIN-debug] [WARNING] Running in "debug" mode. Switch to "release" mode in production.
+ - using env:	export GIN_MODE=release
+ - using code:	gin.SetMode(gin.ReleaseMode)
+
+[GIN-debug] POST   /lists                    --> personal_assistant_server/internal/task/handler.(*Handler).Handle.func1 (2 handlers)
+[GIN-debug] PATCH  /lists/:id                --> personal_assistant_server/internal/task/handler.(*Handler).Handle.func1 (2 handlers)
+[GIN-debug] DELETE /lists/:id                --> personal_assistant_server/internal/task/handler.(*Handler).Handle.func1 (2 handlers)
+[GIN-debug] POST   /tasks                    --> personal_assistant_server/internal/task/handler.(*Handler).Handle.func1 (2 handlers)
+[GIN-debug] PATCH  /tasks/:id                --> personal_assistant_server/internal/task/handler.(*Handler).Handle.func1 (2 handlers)
+[GIN-debug] GET    /tasks                    --> personal_assistant_server/internal/task/handler.(*Handler).Handle.func1 (2 handlers)
+--- PASS: TestHTTPEnvelope (0.02s)
+PASS
+ok  	personal_assistant_server/internal/task/handler	0.545s
+?   	personal_assistant_server/internal/task/model	[no test files]
+?   	personal_assistant_server/internal/task/repository	[no test files]
+=== RUN   TestTaskRules
+--- PASS: TestTaskRules (0.01s)
+=== RUN   TestTaskTreeAssignment
+--- PASS: TestTaskTreeAssignment (0.01s)
+PASS
+ok  	personal_assistant_server/internal/task/service	0.314s

@@ -91,3 +91,62 @@ func run(t *testing.T, s *service.Service, op string, id uint64, changes any) an
 	}
 	return out
 }
+
+// TestAIIconContract 验证真实Executor图标持久化与父级权限；参数：t为测试上下文；返回值：无，仅隔离SQLite，不调用真实模型。
+func TestAIIconContract(t *testing.T) {
+	s := fixture(t)
+	executor := capability.NewExecutor(capability.NewRegistry(Definitions(s)...))
+	ctx := context.Background()
+	// 对公开Schema解码而非复制schema，保证模型能实际获知icon字段。
+	for _, def := range executor.Definitions() {
+		if def.Name != "task.create" && def.Name != "task.update" {
+			continue
+		}
+		var schema map[string]any
+		if err := json.Unmarshal(def.InputSchema, &schema); err != nil {
+			t.Fatal(err)
+		}
+		properties := schema["properties"].(map[string]any)
+		changes := properties["changes"].(map[string]any)["properties"].(map[string]any)
+		icon := changes["icon"].(map[string]any)
+		if icon["type"] != "string" {
+			t.Fatal("schema未公开图标字段", def.Name)
+		}
+	}
+	// 调用辅助只序列化固定输入；参数：owner身份、op工具、in输入、expected预期错误；返回值：真实执行结果，失败终止测试。
+	invoke := func(owner uint64, op string, in any, expected error) any {
+		t.Helper()
+		raw, err := json.Marshal(in)
+		if err != nil {
+			t.Fatal(err)
+		}
+		out, err := executor.Invoke(ctx, capability.Actor{UserID: owner}, op, raw)
+		if expected == nil {
+			if err != nil {
+				t.Fatal(err)
+			}
+		} else if !errors.Is(err, expected) {
+			t.Fatalf("%s: %v", op, err)
+		}
+		return out
+	}
+	list := invoke(1, "task_list.create", map[string]any{"changes": map[string]any{"name": "AI契约"}}, nil).(domain.List)
+	root := invoke(1, "task.create", map[string]any{"changes": map[string]any{"title": "AI主", "listId": list.ID, "icon": "Rocket"}}, nil).(domain.Task)
+	if root.Icon != "Rocket" {
+		t.Fatal(root)
+	}
+	invoke(1, "task.update", map[string]any{"id": root.ID, "changes": map[string]any{"icon": "unknown-ai-key"}}, nil)
+	invoke(1, "task.update", map[string]any{"id": root.ID, "changes": map[string]any{"title": "AI改名"}}, nil)
+	leaf := invoke(1, "task.create", map[string]any{"changes": map[string]any{"title": "AI叶", "listId": list.ID, "taskType": "subtask", "parentId": root.ID}}, nil).(domain.Task)
+	invoke(1, "task.create", map[string]any{"changes": map[string]any{"title": "非法父", "listId": list.ID, "parentId": leaf.ID}}, service.ErrInvalid)
+	invoke(2, "task.update", map[string]any{"id": root.ID, "changes": map[string]any{"icon": "Target"}}, service.ErrNotFound)
+	rows := invoke(1, "task.list", map[string]any{}, nil).([]domain.Task)
+	if len(rows) != 2 {
+		t.Fatal(rows)
+	}
+	for _, row := range rows {
+		if row.ID == root.ID && (row.Icon != "unknown-ai-key" || row.Title != "AI改名") {
+			t.Fatal("持久化异常", row)
+		}
+	}
+}

@@ -48,6 +48,9 @@ func TestHTTPEnvelope(t *testing.T) {
 	r.POST("/lists", h.Handle("task_list.create"))
 	r.PATCH("/lists/:id", h.Handle("task_list.update"))
 	r.DELETE("/lists/:id", h.Handle("task_list.delete"))
+	r.POST("/tasks", h.Handle("task.create"))
+	r.PATCH("/tasks/:id", h.Handle("task.update"))
+	r.GET("/tasks", h.Handle("task.list"))
 	// 请求测试回调解析信封；参数：method/path/body 为固定请求，status 为预期状态；返回值：响应对象，异常令测试失败。
 	request := func(method, path, body string, status int) map[string]any {
 		t.Helper()
@@ -78,6 +81,39 @@ func TestHTTPEnvelope(t *testing.T) {
 	}
 	if request("PATCH", "/lists/1", `{"ownerId":2}`, 400)["data"] != nil {
 		t.Fatal("error data must be null")
+	}
+
+	// HTTP真实服务持久化契约，固定ID由本测试的独立数据库创建顺序确定。
+	request("POST", "/lists", `{"name":"目标"}`, 201)
+	root := request("POST", "/tasks", `{"title":"默认","listId":1}`, 201)["data"].(map[string]any)
+	if root["icon"] != "Folder" {
+		t.Fatal(root)
+	}
+	request("POST", "/tasks", `{"title":"未知","listId":1,"parentId":1,"icon":"unknown-preserved-key"}`, 201)
+	request("PATCH", "/tasks/2", `{"title":"仅改名称"}`, 200)
+	request("POST", "/tasks", `{"title":"嵌套","listId":1,"parentId":2}`, 201)
+	request("POST", "/tasks", `{"title":"归档叶","listId":1,"parentId":3,"taskType":"subtask","archived":true}`, 201)
+	request("POST", "/tasks", `{"title":"叶父","listId":1,"taskType":"subtask"}`, 201)
+	request("POST", "/tasks", `{"title":"非法下级","listId":1,"parentId":5}`, 400)
+	request("PATCH", "/tasks/2", `{"taskType":"subtask"}`, 400)
+	request("PATCH", "/tasks/2", `{"ownerId":2}`, 400)
+	request("PATCH", "/tasks/2", `{"listId":2,"parentId":null}`, 200)
+	found := map[int]map[string]any{}
+	for _, value := range request("GET", "/tasks", "", 200)["data"].([]any) {
+		row := value.(map[string]any)
+		found[int(row["id"].(float64))] = row
+	}
+	for _, id := range []int{2, 3, 4} {
+		if found[id]["listId"] != float64(2) {
+			t.Fatal("整树未持久化", found)
+		}
+	}
+	if found[2]["icon"] != "unknown-preserved-key" || found[2]["title"] != "仅改名称" || found[2]["parentId"] != nil || found[4]["archived"] != true || found[4]["parentId"] != float64(3) {
+		t.Fatal("GET原始图标或后代关系异常", found)
+	}
+	iconUpdated := request("PATCH", "/tasks/2", `{"icon":"Target"}`, 200)["data"].(map[string]any)
+	if iconUpdated["icon"] != "Target" {
+		t.Fatal(iconUpdated)
 	}
 	if request("DELETE", "/lists/1", "", 200)["data"] != nil {
 		t.Fatal("delete data must be null")
