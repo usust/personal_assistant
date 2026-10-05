@@ -50,9 +50,9 @@ func patch(raw json.RawMessage, allowed map[string]string, target any) (map[stri
 			// 将输入字段解析为数值。
 			n, err := strconv.ParseFloat(string(value), 64)
 			// 拒绝无法用于业务计算的数值。
-			if err != nil || math.IsNaN(n) || math.IsInf(n, 0) || n < 0 || n > 1e9 || math.Abs(n*100-math.Round(n*100)) > 0.00001 {
-				// 拒绝本次操作：进度必须为最多两位小数的非负数，且不超过十亿。
-				return nil, Invalid("进度必须为最多两位小数的非负数，且不超过十亿")
+			if err != nil || math.IsNaN(n) || math.IsInf(n, 0) || n < 0 || n > 1e9 || n != math.Trunc(n) {
+				// 拒绝本次操作：进度必须为自然数，且不超过十亿。
+				return nil, Invalid("进度必须为自然数，且不超过十亿")
 			}
 			input[key] = value
 		}

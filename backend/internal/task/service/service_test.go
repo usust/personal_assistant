@@ -61,22 +61,22 @@ func run(t *testing.T, s *Service, op string, id uint64, changes any) any {
 	return out
 }
 
-// TestTaskRules 验证隔离、精度、零值更新、循环校验、事务回滚及级联；参数：t 为测试上下文；返回值：无。
+// TestTaskRules 验证隔离、整数进度、零值更新、循环校验、事务回滚及级联；参数：t 为测试上下文；返回值：无。
 func TestTaskRules(t *testing.T) {
 	s := fixture(t)
 	ctx := context.Background()
 	actor := capability.Actor{UserID: 1}
 	list := run(t, s, "task_list.create", 0, map[string]any{"name": "工作"}).(domain.List)
 	root := run(t, s, "task.create", 0, map[string]any{"title": "项目", "listId": list.ID}).(domain.Task)
-	child := run(t, s, "task.create", 0, map[string]any{"title": "阅读", "remark": "原文", "listId": list.ID, "parentId": root.ID, "taskType": "subtask", "progressTotal": "1", "progressStep": "0.1"}).(domain.Task)
+	child := run(t, s, "task.create", 0, map[string]any{"title": "阅读", "remark": "原文", "listId": list.ID, "parentId": root.ID, "taskType": "subtask", "progressTotal": "10", "progressStep": "1"}).(domain.Task)
 	for range 3 {
 		if _, err := s.Execute(ctx, actor, "task.progress", Input{ID: child.ID, Operation: "increment"}, "http"); err != nil {
 			t.Fatal(err)
 		}
 	}
 	rows := run(t, s, "task.list", 0, nil).([]domain.Task)
-	if rows[1].ProgressCompleted != 0.3 {
-		t.Fatalf("精度丢失: %+v", rows[1])
+	if rows[1].ProgressCompleted != 3 {
+		t.Fatalf("整数进度错误: %+v", rows[1])
 	}
 	run(t, s, "task.update", child.ID, map[string]any{"archived": true})
 	updated := run(t, s, "task.update", child.ID, map[string]any{"archived": false, "remark": "", "progressCompleted": "0", "parentId": nil}).(domain.Task)
@@ -224,5 +224,53 @@ func TestAutoArchive(t *testing.T) {
 	ordinary := run(t, s, "task.create", 0, map[string]any{"title": "默认关闭", "listId": list.ID, "taskType": "subtask", "progressTotal": 1, "progressCompleted": 1}).(domain.Task)
 	if ordinary.Archived || ordinary.AutoArchive {
 		t.Fatal("默认不应自动归档")
+	}
+}
+
+// TestRestoreAutoArchivedTask 验证手动恢复同时关闭自动归档后保持活动状态；参数：t 为测试上下文；返回值：无，失败终止测试，使用隔离数据库。
+func TestRestoreAutoArchivedTask(t *testing.T) {
+	s := fixture(t)
+	list := run(t, s, "task_list.create", 0, map[string]any{"name": "恢复归档"}).(domain.List)
+	task := run(t, s, "task.create", 0, map[string]any{"title": "已完成任务", "listId": list.ID, "taskType": "subtask", "progressTotal": 1, "progressCompleted": 1, "autoArchive": true}).(domain.Task)
+	if !task.Archived {
+		t.Fatal("完成任务应自动归档")
+	}
+	restored := run(t, s, "task.update", task.ID, map[string]any{"archived": false, "autoArchive": false}).(domain.Task)
+	if restored.Archived || restored.AutoArchive {
+		t.Fatal("手动恢复应取消归档并关闭自动归档")
+	}
+	if restored.Title != task.Title || restored.ProgressCompleted != task.ProgressCompleted {
+		t.Fatal("恢复不应修改标题或进度")
+	}
+	// 无关任务写入仍会扫描自动归档候选，恢复后的任务必须保持活动状态。
+	run(t, s, "task.create", 0, map[string]any{"title": "其他任务", "listId": list.ID})
+	var saved domain.Task
+	if err := s.db.First(&saved, task.ID).Error; err != nil {
+		t.Fatal(err)
+	}
+	if saved.Archived || saved.AutoArchive {
+		t.Fatal("后续写入不应重新归档已手动恢复的任务")
+	}
+}
+
+// TestProgressNaturalNumbers 验证进度只接受自然数；参数：t 为测试上下文；返回值：无，失败终止测试，使用隔离数据库。
+func TestProgressNaturalNumbers(t *testing.T) {
+	s := fixture(t)
+	list := run(t, s, "task_list.create", 0, map[string]any{"name": "整数进度"}).(domain.List)
+	task := run(t, s, "task.create", 0, map[string]any{"title": "任务", "listId": list.ID, "taskType": "subtask", "progressTotal": 5, "progressCompleted": 0, "progressStep": 1}).(domain.Task)
+	for _, field := range []string{"progressTotal", "progressCompleted", "progressStep"} {
+		for _, value := range []any{1.5, "1.5", -1} {
+			changes, marshalErr := json.Marshal(map[string]any{field: value})
+			if marshalErr != nil {
+				t.Fatal(marshalErr)
+			}
+			if _, err := s.Execute(context.Background(), capability.Actor{UserID: 1}, "task.update", Input{ID: task.ID, Changes: changes}, "http"); err == nil {
+				t.Fatalf("%s 不应接受 %v", field, value)
+			}
+		}
+	}
+	saved := run(t, s, "task.update", task.ID, map[string]any{"progressCompleted": 0, "progressTotal": "6", "progressStep": "2"}).(domain.Task)
+	if saved.ProgressTotal != 6 || saved.ProgressStep != 2 || saved.ProgressCompleted != 0 {
+		t.Fatal("自然数或显式零值未保存")
 	}
 }
