@@ -6,6 +6,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"path/filepath"
 	"testing"
 
@@ -117,4 +118,74 @@ func TestTaskRules(t *testing.T) {
 	if len(run(t, s, "task.list", 0, nil).([]domain.Task)) != 0 {
 		t.Fatal("后代未级联删除")
 	}
+}
+
+// TestTaskTreeAssignment 验证图标兼容、整树清单迁移、非法父关系和写中回滚；参数：t为测试上下文；返回值：无；仅写隔离SQLite数据库。
+func TestTaskTreeAssignment(t *testing.T) {
+	s := fixture(t)
+	actor := capability.Actor{UserID: 1}
+	source := run(t, s, "task_list.create", 0, map[string]any{"name": "源"}).(domain.List)
+	target := run(t, s, "task_list.create", 0, map[string]any{"name": "目标"}).(domain.List)
+	root := run(t, s, "task.create", 0, map[string]any{"title": "根", "listId": source.ID, "icon": "custom-preserved"}).(domain.Task)
+	child := run(t, s, "task.create", 0, map[string]any{"title": "子容器", "listId": source.ID, "parentId": root.ID}).(domain.Task)
+	leaf := run(t, s, "task.create", 0, map[string]any{"title": "归档叶", "listId": source.ID, "parentId": child.ID, "taskType": "subtask", "archived": true}).(domain.Task)
+	run(t, s, "task.update", root.ID, map[string]any{"remark": "仅备注"})
+	rows := run(t, s, "task.list", 0, nil).([]domain.Task)
+	if rows[0].Icon != "custom-preserved" || rows[1].Icon != "Folder" {
+		t.Fatal("图标默认或未知键被覆盖")
+	}
+	// 无效目标和后代父级均应在写前拒绝，原始树不能部分移动。
+	for _, changes := range []map[string]any{{"listId": 999, "parentId": nil}, {"listId": target.ID, "parentId": child.ID}, {"taskType": "subtask"}} {
+		raw, _ := json.Marshal(changes)
+		if _, err := s.Execute(context.Background(), actor, "task.update", Input{ID: root.ID, Changes: raw}, "http"); err == nil {
+			t.Fatalf("非法更新未拒绝: %v", changes)
+		}
+	}
+	// SQLite触发器在后代更新时失败，证明根已经写入也会由服务事务全部回滚。
+	if err := s.db.Exec(fmt.Sprintf("CREATE TRIGGER fail_descendant_move BEFORE UPDATE OF list_id ON tasks_v2 WHEN OLD.id = %d BEGIN SELECT RAISE(ABORT, 'injected descendant failure'); END", leaf.ID)).Error; err != nil {
+		t.Fatal(err)
+	}
+	raw, _ := json.Marshal(map[string]any{"listId": target.ID, "parentId": nil, "title": "不应保留"})
+	if _, err := s.Execute(context.Background(), actor, "task.update", Input{ID: root.ID, Changes: raw}, "http"); err == nil {
+		t.Fatal("注入失败未传播")
+	}
+	rows = run(t, s, "task.list", 0, nil).([]domain.Task)
+	for _, row := range rows {
+		if row.ListID != source.ID {
+			t.Fatal("失败未回滚全树")
+		}
+	}
+	if rows[0].Title != "根" {
+		t.Fatal("根标题未回滚")
+	}
+	if err := s.db.Exec("DROP TRIGGER fail_descendant_move").Error; err != nil {
+		t.Fatal(err)
+	}
+	moved := run(t, s, "task.update", root.ID, map[string]any{"listId": target.ID, "parentId": nil}).(domain.Task)
+	if moved.ListID != target.ID || moved.ParentID != nil {
+		t.Fatal("根归属未更新")
+	}
+	rows = run(t, s, "task.list", 0, nil).([]domain.Task)
+	for _, row := range rows {
+		if row.ListID != target.ID {
+			t.Fatal("后代未整体移动")
+		}
+	}
+	if !rows[2].Archived || *rows[2].ParentID != child.ID {
+		t.Fatal("移动改变归档或层级")
+	}
+	// 模拟真实历史具体任务容器，不迁移；未变父关系的PATCH仍可写，新增下级和直接步进被拒绝。
+	if err := s.db.Model(&domain.Task{}).Where("id = ?", root.ID).Update("task_type", "subtask").Error; err != nil {
+		t.Fatal(err)
+	}
+	run(t, s, "task.update", child.ID, map[string]any{"title": "保留历史父关系"})
+	run(t, s, "task.update", root.ID, map[string]any{"remark": "兼容容器"})
+	raw, _ = json.Marshal(map[string]any{"title": "非法新叶", "listId": target.ID, "parentId": root.ID, "taskType": "subtask"})
+	if _, err := s.Execute(context.Background(), actor, "task.create", Input{Changes: raw}, "http"); !errors.Is(err, ErrInvalid) {
+		t.Fatalf("允许具体任务新增下级: %v", err)
+	}
+	if _, err := s.Execute(context.Background(), actor, "task.progress", Input{ID: root.ID, Operation: "increment"}, "http"); !errors.Is(err, ErrConflict) {
+		t.Fatalf("历史容器被直接步进: %v", err)
+	}
+	run(t, s, "task.update", root.ID, map[string]any{"taskType": "main"})
 }

@@ -50,3 +50,8 @@
 ## Iteration6 日期验收补齐
 
 原生控件定位已修复，testDateTimeOrdering 不再跳过。同日18:00开始/09:00截止拒绝保存、合法范围保存、关闭日期保存并重开后日期及时间清空实际通过。详细证据见 [Iteration6/VALIDATION.md](Iteration6/VALIDATION.md)。此前未验标记属于历史阶段。
+
+
+## v4 清单树改版
+
+最终六页、图标草稿/持久、push日期、整树mock归属、legacy、共享保护、紧凑深色最大字号、真实Store竞态及缓存、Release/Web构建运行通过。范围与未验项见 [V4/VALIDATION.md](V4/VALIDATION.md)。

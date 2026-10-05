@@ -1,0 +1,132 @@
+[
+  {
+    "key": "Checklist",
+    "symbol": "checklist",
+    "label": "任务"
+  },
+  {
+    "key": "Layers",
+    "symbol": "square.stack.3d.up",
+    "label": "分层计划"
+  },
+  {
+    "key": "Target",
+    "symbol": "target",
+    "label": "目标"
+  },
+  {
+    "key": "Flag",
+    "symbol": "flag",
+    "label": "重点"
+  },
+  {
+    "key": "Calendar",
+    "symbol": "calendar",
+    "label": "日程"
+  },
+  {
+    "key": "Briefcase",
+    "symbol": "briefcase",
+    "label": "工作"
+  },
+  {
+    "key": "Book",
+    "symbol": "book",
+    "label": "学习"
+  },
+  {
+    "key": "Graduation",
+    "symbol": "graduationcap",
+    "label": "成长"
+  },
+  {
+    "key": "Laptop",
+    "symbol": "laptopcomputer",
+    "label": "电脑"
+  },
+  {
+    "key": "Brush",
+    "symbol": "paintbrush",
+    "label": "创作"
+  },
+  {
+    "key": "Bulb",
+    "symbol": "lightbulb",
+    "label": "想法"
+  },
+  {
+    "key": "Wrench",
+    "symbol": "wrench",
+    "label": "工具"
+  },
+  {
+    "key": "Home",
+    "symbol": "house",
+    "label": "生活"
+  },
+  {
+    "key": "Cart",
+    "symbol": "cart",
+    "label": "购物"
+  },
+  {
+    "key": "Heart",
+    "symbol": "heart",
+    "label": "健康"
+  },
+  {
+    "key": "Leaf",
+    "symbol": "leaf",
+    "label": "植物"
+  },
+  {
+    "key": "Dining",
+    "symbol": "fork.knife",
+    "label": "饮食"
+  },
+  {
+    "key": "Coffee",
+    "symbol": "cup.and.saucer",
+    "label": "休闲"
+  },
+  {
+    "key": "Plane",
+    "symbol": "airplane",
+    "label": "旅行"
+  },
+  {
+    "key": "Bike",
+    "symbol": "bicycle",
+    "label": "骑行"
+  },
+  {
+    "key": "Music",
+    "symbol": "music.note",
+    "label": "音乐"
+  },
+  {
+    "key": "Camera",
+    "symbol": "camera",
+    "label": "摄影"
+  },
+  {
+    "key": "Gift",
+    "symbol": "gift",
+    "label": "礼物"
+  },
+  {
+    "key": "Sparkles",
+    "symbol": "sparkles",
+    "label": "灵感"
+  },
+  {
+    "key": "Rocket",
+    "symbol": "paperplane",
+    "label": "发布"
+  },
+  {
+    "key": "Folder",
+    "symbol": "folder",
+    "label": "文件夹"
+  }
+]

@@ -214,9 +214,9 @@ final class AppStore {
             throw error
         }
     }
-    /// 合并已确认任务；参数：task 为服务器成功响应；返回值：无；保留其他节点，随后读取失败不撤销成功实体。
+    /// 合并已确认任务；参数：task 为服务器成功响应；返回值：无；原子迁移旧快照后代的确认清单归属并更新根，读失败保持一致；仅在同云会话写成功后调用。
     func upsertTask(_ task: AssistantTask) {
-        if let index = tasks.firstIndex(where: { $0.id == task.id }) { tasks[index] = task } else { tasks.append(task) }
+        tasks = Values.tasksAfterConfirmedWrite(task, snapshot: tasks)
     }
     /// 刷新任务模块；参数：confirmedWrite 表示本次调用紧跟服务器确认的成功写入，手动重试必须为 false；返回值：无；过期读不改提示，普通重试保留未确认状态。
     func refreshTaskWrite(confirmedWrite: Bool = true) async {

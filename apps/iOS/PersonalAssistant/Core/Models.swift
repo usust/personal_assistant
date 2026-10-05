@@ -18,6 +18,7 @@ nonisolated struct TaskList: Codable, Identifiable, Hashable {
     var icon: String
 }
 nonisolated struct AssistantTask: Codable, Identifiable, Hashable {
+    var icon: String? = nil
     let id: Int
     var title: String
     var remark: String
@@ -35,6 +36,51 @@ nonisolated struct AssistantTask: Codable, Identifiable, Hashable {
     var progressCompleted: Double
     var progressStep: Double
     var progressUnit: String
+}
+/// 主任务图标单一目录记录；稳定key跨端保存，未知key只显示回退，不自动重写原值。
+nonisolated struct TaskIconOption: Codable, Identifiable {
+    let key: String
+    let symbol: String
+    let label: String
+    var id: String { key }
+}
+nonisolated enum TaskIcons {
+    // 与TaskIcons.json单一目录保持同序的完整内置回退；资源损坏或独立测试Bundle缺资源时不丢失选择能力。
+    static let fallbackOptions = [
+        TaskIconOption(key: "Checklist", symbol: "checklist", label: "任务"),
+        TaskIconOption(key: "Layers", symbol: "square.stack.3d.up", label: "分层计划"),
+        TaskIconOption(key: "Target", symbol: "target", label: "目标"),
+        TaskIconOption(key: "Flag", symbol: "flag", label: "重点"),
+        TaskIconOption(key: "Calendar", symbol: "calendar", label: "日程"),
+        TaskIconOption(key: "Briefcase", symbol: "briefcase", label: "工作"),
+        TaskIconOption(key: "Book", symbol: "book", label: "学习"),
+        TaskIconOption(key: "Graduation", symbol: "graduationcap", label: "成长"),
+        TaskIconOption(key: "Laptop", symbol: "laptopcomputer", label: "电脑"),
+        TaskIconOption(key: "Brush", symbol: "paintbrush", label: "创作"),
+        TaskIconOption(key: "Bulb", symbol: "lightbulb", label: "想法"),
+        TaskIconOption(key: "Wrench", symbol: "wrench", label: "工具"),
+        TaskIconOption(key: "Home", symbol: "house", label: "生活"),
+        TaskIconOption(key: "Cart", symbol: "cart", label: "购物"),
+        TaskIconOption(key: "Heart", symbol: "heart", label: "健康"),
+        TaskIconOption(key: "Leaf", symbol: "leaf", label: "植物"),
+        TaskIconOption(key: "Dining", symbol: "fork.knife", label: "饮食"),
+        TaskIconOption(key: "Coffee", symbol: "cup.and.saucer", label: "休闲"),
+        TaskIconOption(key: "Plane", symbol: "airplane", label: "旅行"),
+        TaskIconOption(key: "Bike", symbol: "bicycle", label: "骑行"),
+        TaskIconOption(key: "Music", symbol: "music.note", label: "音乐"),
+        TaskIconOption(key: "Camera", symbol: "camera", label: "摄影"),
+        TaskIconOption(key: "Gift", symbol: "gift", label: "礼物"),
+        TaskIconOption(key: "Sparkles", symbol: "sparkles", label: "灵感"),
+        TaskIconOption(key: "Rocket", symbol: "paperplane", label: "发布"),
+        TaskIconOption(key: "Folder", symbol: "folder", label: "文件夹")
+    ]
+    /// 读取共享图标目录；参数：无；返回值：内置目录，资源异常回退文件夹；不联网不写入。
+    static let options: [TaskIconOption] = {
+        guard let url = Bundle.main.url(forResource: "TaskIcons", withExtension: "json"), let data = try? Data(contentsOf: url), let options = try? JSONDecoder().decode([TaskIconOption].self, from: data) else { return fallbackOptions }
+        return options
+    }()
+    /// 查找已保存图标；参数：key为可选稳定键；返回值：已知SF Symbol或文件夹回退；不改变未知原始键。
+    static func symbol(_ key: String?) -> String { options.first { $0.key == key }?.symbol ?? "folder" }
 }
 nonisolated struct TaskProgress {
     var total: Double
@@ -224,12 +270,38 @@ nonisolated enum Values {
     /// 聚合任务子树（包括归档子任务）；参数：task 为当前节点，all 为全部任务，visited 用于检测环；返回值：叶节点进度汇总；无副作用。
     static func progress(_ task: AssistantTask, all: [AssistantTask], visited: Set<Int> = []) -> TaskProgress {
         let own = TaskProgress(total: task.progressTotal, completed: task.progressCompleted, unit: task.progressUnit)
-        guard !visited.contains(task.id) else { return own }
+        guard !visited.contains(task.id) else { return TaskProgress(total: 0, completed: 0, unit: "") }
         let children = all.filter { $0.parentId == task.id }
-        if children.isEmpty { return visited.isEmpty && task.taskType == "main" ? TaskProgress(total: 1, completed: 1, unit: "") : own }
-        let summaries = children.map { progress($0, all: all, visited: visited.union([task.id])) }
+        if children.isEmpty { return task.taskType == "main" ? TaskProgress(total: 0, completed: 0, unit: "") : own }
+        // 聚合回调输入下级节点、输出具体叶数量；空主节点与循环不贡献旧配置，归档叶仍参与汇总。
+        let summaries = children.map { progress($0, all: all, visited: visited.union([task.id])) }.filter { $0.total > 0 }
         let unit = summaries.first?.unit ?? ""
-        return TaskProgress(total: summaries.reduce(0) { $0 + $1.total }, completed: summaries.reduce(0) { $0 + $1.completed }, unit: !unit.isEmpty && summaries.allSatisfy { $0.unit == unit } ? unit : "工作量")
+        return TaskProgress(total: summaries.reduce(0) { $0 + ($1.total * 100).rounded() } / 100, completed: summaries.reduce(0) { $0 + ($1.completed * 100).rounded() } / 100, unit: !unit.isEmpty && summaries.allSatisfy { $0.unit == unit } ? unit : "")
+    }
+    /// 合并已确认的服务端任务；参数：saved为写成功实体，snapshot为写前本地树；返回值：新快照，跨清单时仅迁移根旧后代的listId并更新根实体；结果未知不得调用，无外部副作用。
+    static func tasksAfterConfirmedWrite(_ saved: AssistantTask, snapshot: [AssistantTask]) -> [AssistantTask] {
+        var result = snapshot
+        if let original = snapshot.first(where: { $0.id == saved.id }), original.listId != saved.listId {
+            var descendants: Set<Int> = [saved.id]
+            var changed = true
+            while changed {
+                changed = false
+                for node in snapshot { if let parent = node.parentId, descendants.contains(parent), descendants.insert(node.id).inserted { changed = true } }
+            }
+            // 仅补确认的服务端整树归属副作用，标题、进度、父关系和归档等字段保留原值，等待完整读取补充其他数据。
+            for index in result.indices where descendants.contains(result[index].id) { result[index].listId = saved.listId }
+        }
+        if let index = result.firstIndex(where: { $0.id == saved.id }) { result[index] = saved } else { result.append(saved) }
+        return result
+    }
+    /// 将可见排序合并为完整ID序列；参数：tasks为全缓存顺序，orderedVisibleIDs为本次同父可见排序且必须唯一存在；返回值：完整序列，仅替换这些节点所在位置，输入非法返回原顺序；无副作用。
+    static func taskOrderPreservingHidden(_ tasks: [AssistantTask], orderedVisibleIDs: [Int]) -> [Int] {
+        let selected = Set(orderedVisibleIDs)
+        let allIDs = Set(tasks.map(\.id))
+        guard selected.count == orderedVisibleIDs.count, selected.isSubset(of: allIDs) else { return tasks.map(\.id) }
+        var iterator = orderedVisibleIDs.makeIterator()
+        // 顺序回调输入全树节点、输出对应ID；隐藏节点占位不变，只按新的可见顺序替换选择槽。
+        return tasks.map { selected.contains($0.id) ? iterator.next() ?? $0.id : $0.id }
     }
     /// 构建局部更新字典；参数：original 为编辑前白名单字段，edited 为编辑后同一白名单；返回值：仅变化字段，保留 false、0、空串、null；无副作用。
     static func patch(original: [String: Any], edited: [String: Any]) -> [String: Any] {

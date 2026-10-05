@@ -104,6 +104,7 @@ const parentSelection = computed({
   get: () => draft.parentId ?? 0,
   set: (value: number) => { draft.parentId = value === 0 ? null : value },
 })
+// 父候选回调输入无、输出同清单主任务路径；排除自身与后代，历史原父关系由表单草稿保留，不自动迁移。
 const eligibleParents = computed(() => {
   const listTasks = tasks.value.filter(task => task.listId === draft.listId)
   const tasksById = new Map(listTasks.map(task => [task.id, task]))
@@ -126,6 +127,7 @@ const eligibleParents = computed(() => {
     }
   }
 
+  // 路径回调输入候选主任务、输出从根至候选的名称路径；环检测避免旧异常数据无限遍历。
   const pathLabel = (task: Task) => {
     const titles: string[] = []
     const visited = new Set<number>()
@@ -138,9 +140,11 @@ const eligibleParents = computed(() => {
     return titles.join(' / ')
   }
 
+  const originalParent = tasks.value.find(task => task.id === editingTaskId.value)?.parentId
+  // 候选转换输入同清单节点、输出名称与禁用状态；旧具体父仅显示当前原关系，不允许作为新重挂目标。
   return listTasks
-    .filter(task => !excluded.has(task.id))
-    .map(task => ({ id: task.id, label: pathLabel(task) }))
+    .filter(task => !excluded.has(task.id) && (task.taskType === 'main' || task.id === originalParent))
+    .map(task => ({ id: task.id, label: pathLabel(task), disabled: task.taskType !== 'main' }))
 })
 
 function taskCompleted(task: Task) {
@@ -475,10 +479,12 @@ function clearTaskTime(kind: 'start' | 'end') {
   if (kind === 'start') Object.assign(draft, { startDate: '', startTime: '' })
   else Object.assign(draft, { endDate: '', endTime: '' })
 }
+/** 打开创建草稿；参数parentId为可选主父任务，listId为清单上下文；返回无，仅主任务允许新下级，普通创建不锁归属。 */
 function openTaskEditor(parentId: number | null = null, listId?: number) {
+  const parent = tasks.value.find(task => task.id === parentId)
+  if (parentId !== null && (!parent || parent.taskType !== 'main' || parent.archived)) return
   resetTaskDraft()
   editingTaskId.value = null
-  const parent = tasks.value.find(task => task.id === parentId)
   parentLocked.value = Boolean(parent)
   draft.listId = listId ?? parent?.listId ?? 0
   if (parent) {
@@ -676,7 +682,7 @@ async function removeTaskList(item: TaskList) {
                       <el-dropdown-item v-if="!row.task.archived" :icon="Edit" @click="openTaskInfoEditor(row.task)">编辑信息</el-dropdown-item>
                       <el-dropdown-item v-if="row.task.archived" :icon="archivedTaskHidden(row.task) ? View : Hide" @click="toggleArchivedTaskVisibility(row.task)">{{ archivedTaskHidden(row.task) ? '在常规视图显示' : '从常规视图隐藏' }}</el-dropdown-item>
                       <el-dropdown-item :icon="row.task.archived ? RefreshLeft : FolderOpened" @click="toggleTaskArchived(row.task)">{{ row.task.archived ? '恢复任务' : '归档任务' }}</el-dropdown-item>
-                      <el-dropdown-item v-if="!row.task.archived" :icon="Plus" @click="openTaskEditor(row.task.id)">添加下级任务</el-dropdown-item>
+                      <el-dropdown-item v-if="!row.task.archived && row.task.taskType === 'main'" :icon="Plus" @click="openTaskEditor(row.task.id)">添加下级任务</el-dropdown-item>
                       <el-dropdown-item class="task-action-danger" :icon="Delete" divided @click="removeTask(row.task)">删除任务</el-dropdown-item>
                     </el-dropdown-menu>
                   </template>
@@ -703,7 +709,7 @@ async function removeTaskList(item: TaskList) {
       <el-form-item label="任务名" required><el-input v-model="draft.title" maxlength="200" /></el-form-item><el-form-item label="任务备注"><el-input v-model="draft.remark" type="textarea" :rows="3" maxlength="1000" /></el-form-item>
       <div class="task-time-range"><el-form-item label="开始时间"><div class="task-time-fields"><el-date-picker v-model="draft.startDate" type="date" value-format="YYYY-MM-DD" format="YYYY-MM-DD" placeholder="" :clearable="false" /><el-time-picker v-model="draft.startTime" value-format="HH:mm" format="HH:mm" placeholder="" :disabled="!draft.startDate" clearable @clear="clearTaskTime('start')" /></div></el-form-item><el-form-item label="结束时间"><div class="task-time-fields"><el-date-picker v-model="draft.endDate" type="date" value-format="YYYY-MM-DD" format="YYYY-MM-DD" placeholder="" :clearable="false" /><el-time-picker v-model="draft.endTime" value-format="HH:mm" format="HH:mm" placeholder="" :disabled="!draft.endDate" clearable @clear="clearTaskTime('end')" /></div></el-form-item></div>
       <el-form-item label="优先级"><el-radio-group v-model="draft.priority"><el-radio-button value="high">高</el-radio-button><el-radio-button value="medium">中</el-radio-button><el-radio-button value="low">低</el-radio-button></el-radio-group></el-form-item>
-      <el-form-item label="上级节点"><el-select v-model="parentSelection" filterable><el-option label="无上级节点（顶级）" :value="0" /><el-option v-for="parent in eligibleParents" :key="parent.id" :label="parent.label" :value="parent.id" /></el-select></el-form-item>
+      <el-form-item label="上级节点"><el-select v-model="parentSelection" filterable><el-option label="无上级节点（顶级）" :value="0" /><el-option v-for="parent in eligibleParents" :key="parent.id" :label="parent.label" :value="parent.id" :disabled="parent.disabled" /></el-select></el-form-item>
       <div v-if="draft.taskType === 'subtask'" class="task-more-settings"><button type="button" class="task-more-toggle" :aria-expanded="taskMoreVisible" @click="taskMoreVisible = !taskMoreVisible"><span>{{ taskMoreVisible ? '收起设置' : '更多设置' }}</span><ArrowDown :class="{ expanded: taskMoreVisible }" /></button><el-collapse-transition><div v-show="taskMoreVisible" class="progress-settings"><h4>进度设置</h4><div class="progress-input-grid"><el-form-item label="进度总量" required><el-input v-model="draft.progressTotal" /></el-form-item><el-form-item label="当前完成量" required><el-input v-model="draft.progressCompleted" /></el-form-item><el-form-item label="每次添加" required><el-input v-model="draft.progressStep" /></el-form-item><el-form-item label="单位（可选）"><el-input v-model="draft.progressUnit" maxlength="20" placeholder="如：页、次、小时" /></el-form-item></div><p v-if="!validProgressDraft()" class="progress-form-error">总量需大于 0，完成量不能超过总量，每次添加需在 0 与总量之间，最多保留两位小数。</p></div></el-collapse-transition></div>
     </el-form><template #footer><el-button @click="taskDialogVisible = false">取消</el-button><el-button type="primary" :disabled="!draft.title.trim() || !draft.listId || (draft.taskType === 'subtask' && (!validProgressDraft() || (editingTaskId === null && !draft.parentId)))" @click="saveTask">{{ editingTaskId === null ? '添加任务' : '保存修改' }}</el-button></template>
   </WorkspacePanel>

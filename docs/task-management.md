@@ -20,11 +20,11 @@ AI 必须从底层接入同一业务服务，通过有描述和 JSON Schema 的�
 
 登录用户，包括管理员，只能访问自己拥有的任务和清单。不存在和无权访问统一返回 404。任务变更在数据库事务内锁定操作者用户行，使同一用户的任务树写操作串行化；失败同时回滚数据和事件。该方案适合个人助手，未来高吞吐协作场景需细化锁粒度。测试数据库为 SQLite，实际 MySQL 行锁行为尚未实测。
 
-PATCH 拒绝未知字段、空对象和不允许的 null；允许 `remark:""`、`archived:false`、`progressCompleted:"0"`，`parentId:null` 表示解除父级。`listId` 可以更新，但有后代的任务不能直接搬到其他清单。所有父级必须归属本人且与当前任务同清单，不能指向自身或后代。
+PATCH 拒绝未知字段、空对象和不允许的 null；允许 `remark:""`、`archived:false`、`progressCompleted:"0"`，`parentId:null` 表示解除父级。`listId` 更新在同一用户锁事务内迁移当前节点和全部后代（含归档节点）。换清单同时提交 `parentId:null` 或有效新父，验证后才执行白名单 map 更新，失败整树与事件回滚。所有父级必须归属本人且与当前任务同清单，不能指向自身或后代。新增任务或实质改变父关系只能选择 main；历史 subtask 容器的未变父关系 PATCH 保持兼容，不自动迁移类型，有下级 main 禁止改为 subtask。
 
 日期为 `YYYY-MM-DD`，时间为 `HH:mm`。时间不能脱离日期；未提供时分时按开始日 00:00、结束日 23:59 校验。日期目前是本地日历值，不执行时区转换或触发提醒。
 
-进度接受数字或十进制字符串，最多两位小数，最大十亿。总量、步长须大于零，完成量不得超过总量。仅未归档的叶子 `subtask` 可步进；减少时最低为零，增加溢出默认 409，`allowExceedTotal:true` 表示截断至总量。前端加一步操作使用该选项，保证最后不足一步时仍能完成。父级汇总继续由现有前端完成，后端返回原始配置，归档后代仍参与前端汇总。
+进度接受数字或十进制字符串，最多两位小数，最大十亿。总量、步长须大于零，完成量不得超过总量。仅未归档的叶子 `subtask` 可步进；减少时最低为零，增加溢出默认 409，`allowExceedTotal:true` 表示截断至总量。前端加一步操作使用该选项，保证最后不足一步时仍能完成。父级汇总继续由现有前端完成，后端返回原始配置，归档后代仍参与前端汇总。v4 前端仅汇总实际具体叶数量，空 main 为 0/0 并显示“暂无任务”，嵌套空 main 不贡献原配置；5/10+1/1=6/11，混单位不标为某一种单位。归档/恢复暂保持单节点，不改变后代状态。
 
 ## HTTP 契约
 
@@ -45,7 +45,7 @@ PATCH 拒绝未知字段、空对象和不允许的 null；允许 `remark:""`、
 | DELETE | /tasks/:id | 有下级时必须 query cascade=true；返回 deletedIds、affectedParent=null |
 | GET | /tasks/events | 最近 100 条本人操作记录 |
 
-任务允许字段：title、remark、listId、parentId、taskType（main/subtask）、priority（high/medium/low）、startDate、startTime、endDate、endTime、archived、progressTotal、progressCompleted、progressStep、progressUnit。默认类型 main，优先级 medium，总量 100、步长 1、完成量 0。顶级任务 parentId 为 null。时间与归档字段与现有 `TaskRecord` 兼容。
+任务允许字段：icon、title、remark、listId、parentId、taskType（main/subtask）、priority（high/medium/low）、startDate、startTime、endDate、endTime、archived、progressTotal、progressCompleted、progressStep、progressUnit。icon 默认为 Folder（最多64字节稳定键），未知已保存键允许保留；新增数据库列由既有启动 AutoMigrate 补充，本次未部署或迁移真实数据。iOS 可选解码兼容旧JSON缺 icon，旧客户端省略 icon 不覆盖；新版图标持久化需配套后端。目录为 `apps/iOS/PersonalAssistant/Resources/TaskIcons.json`，Web 引用同一资源，iOS 提供完整同序内置回退。默认类型 main，优先级 medium，总量 100、步长 1、完成量 0。顶级任务 parentId 为 null。时间与归档字段与现有 `TaskRecord` 兼容。
 
 列表暂不分页或按条件过滤，以兼容前端对整棵任务树的汇总。事件只保留操作名、记录 ID、来源与时间，不保存描述正文、前后值或可撤销快照。删除响应保留旧前端需要的 affectedParent 键，但当前调用方会重新加载列表，不返回父级计算结果。
 

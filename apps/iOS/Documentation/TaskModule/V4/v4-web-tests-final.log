@@ -1,0 +1,37 @@
+
+> personal-assistant-frontend@0.1.0 test
+> node --test tests/*.mjs
+
+✔ iOS and web ship the same six sections and 66 types with only 161 banks (3.066709ms)
+✔ every concrete account kind round-trips through existing API fields (1.916125ms)
+✔ legacy institutions, credit cards and custom accounts remain intact (0.920416ms)
+✔ account edits submit only actual whitelist changes (0.087208ms)
+✔ every selectable bank and account kind has bundled icons on both clients (30.527833ms)
+✔ all selectable banks use sourced brand assets with matching client bytes (13.524125ms)
+✔ captcha and login map the current API and load a profile with the new token (0.854833ms)
+✔ preferences patch only supported fields and use server-normalized values (0.12625ms)
+✔ AI list has no scope query, create uses source fields and discards returned secrets (0.299458ms)
+✔ user creation sends registration fields only and preserves the server identity (7.178541ms)
+✔ users list maps server identities and handles an empty list (4.100458ms)
+✔ edit payload contains only changed fields and treats blank password as unchanged (2.661208ms)
+✔ PATCH whitelists submitted fields, preserves explicit empty values, and returns server values (3.008667ms)
+✔ DELETE accepts an empty response and propagates failure (2.1495ms)
+✔ AI chat preserves action results and uses a timeout covering the server run (1.213583ms)
+✔ finance preserves money strings, request IDs and explicit draft confirmation endpoints (4.986083ms)
+✔ AI model catalog forwards saved identity with a bounded timeout and delete preserves failures (0.171083ms)
+✔ task summaries count concrete leaves and preserve unknown icons (7.681917ms)
+✔ renders user tables inside a focusable horizontal scrolling region (3.227167ms)
+✔ renders headings, lists, quotes, emphasis and escaped code (0.759583ms)
+✔ escapes raw HTML and rejects script links and automatic images (5.252708ms)
+✔ opens valid links separately and preserves plain text line breaks (1.781833ms)
+✔ nested panel closing restores its parent and unmount releases layout space (1.049125ms)
+✔ cancelling a confirmation prevents the subsequent mutation (0.247208ms)
+✔ replacing a confirmation cancels the old request and resolves only the accepted request (0.095ms)
+ℹ tests 25
+ℹ suites 0
+ℹ pass 25
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 337.899334

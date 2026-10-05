@@ -129,6 +129,18 @@ nonisolated final class TaskScenarioProtocol: URLProtocol, @unchecked Sendable {
             Self.initialized = true
             if scenario == "empty" { Self.rows = []; Self.lists = [] }
             else if scenario == "today-empty-list" { Self.rows = [] }
+            else if scenario == "v4" {
+                // v4模拟树：真实数量求和6/11、空主任务及历史具体容器；仅虚构内存数据，不发送真实请求。
+                var root = PreviewProtocol.task(1, "产品发布"); root["icon"] = "Rocket"
+                var design = PreviewProtocol.task(2, "设计准备", parent: 1); design["taskType"] = "main"; design["icon"] = "Layers"
+                var reading = PreviewProtocol.task(3, "阅读设计规范", parent: 2, completed: 5); reading["remark"] = "整理重点章节"; reading["endTime"] = "18:30"
+                var review = PreviewProtocol.task(4, "确认评审时间", parent: 2, completed: 1); review["progressTotal"] = 1; review["progressUnit"] = "次"
+                var empty = PreviewProtocol.task(5, "下一阶段"); empty["taskType"] = "main"; empty["icon"] = "Target"
+                var legacy = PreviewProtocol.task(6, "历史任务容器"); legacy["icon"] = "unknown-preserved-key"
+                let legacyLeaf = PreviewProtocol.task(7, "历史下级", parent: 6, completed: 2)
+                Self.rows = [root, design, reading, review, empty, legacy, legacyLeaf]
+                Self.lists = [["id": 1, "name": "工作", "remark": "项目与协作", "color": "#168F87", "icon": "Briefcase"], ["id": 2, "name": "学习", "remark": "阅读与成长", "color": "#8B5CF6", "icon": "Book"], ["id": 3, "name": "生活", "remark": "日常安排", "color": "#A16207", "icon": "Home"]]
+            }
         }
         let path = request.url!.path
         let method = request.httpMethod ?? "GET"
@@ -181,6 +193,13 @@ nonisolated final class TaskScenarioProtocol: URLProtocol, @unchecked Sendable {
                             Self.rows[offset]["progressCompleted"] = max(0, min(target, requested))
                         // 合并回调输入旧值和请求新值、输出新值；不变字段保留，仅用于隔离样本。
                         } else { Self.rows[offset].merge(body) { _, new in new } }
+                        // 归属模拟回调输入当前根与请求清单；输出原根实体，清单改变时同批迁移后代用于UI检查，真实事务由后端测试证明。
+                        if let newList = body["listId"] as? Int {
+                            var selected: Set<Int> = [id]
+                            var count = 0
+                            repeat { count = selected.count; for row in Self.rows { if selected.contains(row["parentId"] as? Int ?? 0), let child = row["id"] as? Int { selected.insert(child) } } } while count != selected.count
+                            for index in Self.rows.indices where selected.contains(Self.rows[index]["id"] as? Int ?? 0) { Self.rows[index]["listId"] = newList }
+                        }
                         result = Self.rows[offset]
                     } else {
                         let next = (Self.rows.compactMap { $0["id"] as? Int }.max() ?? 0) + 1

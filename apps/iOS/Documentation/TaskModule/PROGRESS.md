@@ -62,3 +62,15 @@ Goal续轮：当前工作区核对干净，前轮有实际修改与验收证据�
 Iteration6独立日期UI补验完成：iPhone18 Pro/iOS27同日18:00开始/09:00截止保存禁用、合法范围保存、关闭日期保存后重开确认日期与时分清空。原测试因键盘/原生节点定位跳过，本次使用实际子Switch与Time Picker滚轮已通过，无业务修改。见Iteration6/VALIDATION.md；其他locale、日历选日、真实后端未验。当前无新已证实缺陷，保留外部验证清单，等待新证据，不空转。
 
 用户明确指令“停止”：已停止分派并中断project_audit正在进行的竞品维度补充研究；该补充尚未交付，不记录完成。其他执行/验收代理已终止，无进行中代码修改。最新已保存提交b43e379；日期流程已独立通过，其他未验边界保留。持续Goal按用户指令暂停，等待明确恢复。
+
+2026-10-05恢复：用户改目标为参考v4落地iOS任务UI。已查看两图/文档，v3引用缺失。调查与独立评审完成，裁决见V4-PLAN.md；新设计覆盖旧清单导航否决与空main100%。task_implementation为唯一代码执行者，runtime_baseline只读准备验收。用户参考目录未追踪，保留不修改/提交。归档级联选项已询问，未答先沿用现行单节点行为。
+
+v4共享阶段：执行者报告backend任务测试、Swift462与分类/卡面/卡号、Web vue-tsc及25测试、Debug构建通过；project_audit独立静态评审发现Webleaf添加下级入口兼容问题，执行者已修main/归档守卫。root实际核对构建包TaskIcons.json存在，26个唯一键。UI尚未完成，执行者继续唯一写入；不把共享阶段计为视觉验收。
+
+v4完整首版Debug/共享检查通过，执行者停止后runtime开始页面截图与独立验收，project_audit代码评审未通过：整树move确认后本地只upsert根(P1)、siblings-only排序破坏隐藏顺序、v4表单日期/priority层次未落实、rootempty创建保护遗漏、搜索/allarchive必要路径隐藏。验收者已暂停测试文件写入，进入修复轮1，原执行者集中修五项；首版截图仅BeforeFix不计最终。
+
+v4修复1执行者完成五项并停止：AppStore.upsertTask复用纯Values helper明确成功移动原子合并后代；排序全ID保hidden；紧凑时间draft子页与独立priority；rootempty锁与必要路径。执行者Debug构建/467核心及真实Store受控GET503缓存检查通过，runtime恢复唯一测试执行做独立复跑、页面/深色大字/日期新路径，project_audit只读复核。未将自验报告当最终通过。
+
+v4修复1独立静态通过，runtime六页及真实Store move/race、Release/Web production构建通过；actual UI发现子页返回重跑populate覆盖草稿，Target保存恢复Layers及逆序日期save未禁用(P1)。独立静态确认Form.task生命周期根因，runtime暂停项目写入，进入最后修复轮2：每editor仅首load，子页返回保draft/original；实际树截图工具栏EditButton挤inline标题，收menu排序；详情摘要内分隔隐藏保持字段分隔。两轮额度后若仍失败不记录完成。
+
+v4最终独立验收结束，修复2草稿生命周期与视觉已实跑通过。六页、图标保存取消、逆序日期/清空、整树mock归属、共享保护与恢复、真实Store move/竞态、Release/Web build、iPhone17e深色最大字号通过。详见V4/VALIDATION.md，UI拖动排序/iPad/VoiceOver/真实后端等未验明确保留，不作全量通过。所有执行/验收代理停止修改；参考原型目录未动。当前无新已证实业务阻塞，保存本轮；未明确选择整树归档，现行单节点规则保留。

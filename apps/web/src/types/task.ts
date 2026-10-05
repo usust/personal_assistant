@@ -19,6 +19,7 @@ export type TaskPriority = 'high' | 'medium' | 'low'
 export type TaskType = 'main' | 'subtask'
 
 export interface TaskRecord {
+  icon?: string
   id: number
   title: string
   remark: string
@@ -41,6 +42,7 @@ export interface TaskRecord {
 }
 
 export interface Task {
+  icon?: string
   id: number
   title: string
   remark: string
@@ -70,6 +72,7 @@ export interface Task {
 }
 
 export interface CreateTaskPayload {
+  icon?: string
   title: string
   remark?: string
   listId: number
@@ -87,6 +90,7 @@ export interface CreateTaskPayload {
 }
 
 export interface UpdateTaskPayload {
+  icon?: string
   archived?: boolean
   title?: string
   remark?: string

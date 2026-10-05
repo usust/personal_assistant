@@ -216,10 +216,29 @@ final class StubProtocol: URLProtocol, @unchecked Sendable {
         let child = task(2, parent: 1, completed: 5, archived: true)
         let emptyMain = task(3, parent: 1, type: "main", total: 20, completed: 2)
         let progress = Values.progress(parent, all: [parent, child, emptyMain])
-        check(progress.total == 30 && progress.completed == 7, "汇总包括归档子任务及空主任务的原始进度")
-        check(Values.progress(emptyMain, all: [emptyMain]).fraction == 1, "空主任务单独展示 100%")
+        check(progress.total == 10 && progress.completed == 5, "汇总归档叶而排除空主任务原始配置")
+        check(Values.progress(emptyMain, all: [emptyMain]).total == 0 && Values.progress(emptyMain, all: [emptyMain]).fraction == 0, "空主任务展示零而非完成")
+        let oneStep = task(4, parent: 1, total: 1, completed: 1)
+        let sum = Values.progress(parent, all: [parent, child, oneStep, emptyMain])
+        check(sum.total == 11 && sum.completed == 6 && abs(sum.fraction - 6.0 / 11) < 0.000001, "5/10与1/1量化求和6/11")
+        var legacyJSON = try JSONSerialization.jsonObject(with: JSONEncoder().encode(child)) as! [String: Any]
+        legacyJSON.removeValue(forKey: "icon")
+        let legacyDecoded = try JSONDecoder().decode(AssistantTask.self, from: JSONSerialization.data(withJSONObject: legacyJSON))
+        check(legacyDecoded.icon == nil && TaskIcons.symbol(legacyDecoded.icon) == "folder", "缺图标字段旧JSON可解码并回退")
+        check(TaskIcons.symbol("unknown-custom-key") == "folder", "未知图标显示回退但不改原字段")
+        // 确认整树迁移后的本地快照保持所有后代归属一致，并保留其他字段，读取失败不应撤销此快照。
+        var savedRoot = parent; savedRoot.listId = 2; savedRoot.title = "移动后的根"
+        var otherList = task(8, total: 2, completed: 1); otherList.listId = 3
+        let movedSnapshot = Values.tasksAfterConfirmedWrite(savedRoot, snapshot: [parent, child, emptyMain, oneStep, otherList])
+        check(movedSnapshot.filter { $0.id != 8 }.allSatisfy { $0.listId == 2 } && movedSnapshot.last == otherList, "确认整树move本地后代和根同清单，其他清单不动")
+        var expectedChild = child; expectedChild.listId = 2
+        check(movedSnapshot.first { $0.id == child.id } == expectedChild, "确认move只改后代listId，归档进度标题父关系不变")
+        check(movedSnapshot.first { $0.id == 1 } == savedRoot, "确认move根使用完整成功实体")
+        let hiddenOrder = Values.taskOrderPreservingHidden([parent, child, emptyMain, oneStep, otherList], orderedVisibleIDs: [4, 2])
+        check(hiddenOrder == [1, 4, 3, 2, 8], "可见同父排序保留隐藏子树及其他清单位置")
+        check(Values.taskOrderPreservingHidden([parent, child], orderedVisibleIDs: [2, 2]) == [1, 2], "非法重复排序不改变全序列")
         let cyclicA = task(1, parent: 2); let cyclicB = task(2, parent: 1)
-        check(Values.progress(cyclicA, all: [cyclicA, cyclicB]).total == 10, "循环关系不会无限递归")
+        check(Values.progress(cyclicA, all: [cyclicA, cyclicB]).total == 0, "循环关系不会无限递归")
         check(try APIClient.normalize(" https://example.com/ ") == "https://example.com/api", "规范化默认 API 路径")
         check(try APIClient.normalize("http://localhost:16101/api/") == "http://localhost:16101/api", "允许本地开发地址")
         for host in ["192.168.88.185", "10.0.0.1", "172.16.0.1", "172.31.255.254", "127.0.0.2", "Mac.local"] {

@@ -1,0 +1,4 @@
+
+> personal-assistant-frontend@0.1.0 type-check
+> vue-tsc -b
+

@@ -1,0 +1,125 @@
+
+> personal-assistant-frontend@0.1.0 build
+> npm run catalog:check && vue-tsc -b && vite build
+
+
+> personal-assistant-frontend@0.1.0 catalog:check
+> node ../../scripts/sync-account-catalog.mjs --check
+
+账户目录一致：66 种账户类型
+vite v7.3.6 building client environment for production...
+transforming...
+node_modules/@vueuse/core/dist/index.js (3362:0): A comment
+
+"/* #__PURE__ */"
+
+in "node_modules/@vueuse/core/dist/index.js" contains an annotation that Rollup cannot interpret due to the position of the comment. The comment will be removed to avoid issues.
+node_modules/@vueuse/core/dist/index.js (5780:22): A comment
+
+"/* #__PURE__ */"
+
+in "node_modules/@vueuse/core/dist/index.js" contains an annotation that Rollup cannot interpret due to the position of the comment. The comment will be removed to avoid issues.
+✓ 8168 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                                                                 0.48 kB │ gzip:   0.33 kB
+dist/assets/brand-czcb-BisMXj2h.svg                                             4.81 kB │ gzip:   1.09 kB
+dist/assets/brand-cqcbank-BMUjJ7w9.svg                                          5.35 kB │ gzip:   1.51 kB
+dist/assets/brand-jshbank-CbjJoaH1.svg                                          5.74 kB │ gzip:   1.01 kB
+dist/assets/brand-srbank-CFLSub8b.svg                                           6.47 kB │ gzip:   1.45 kB
+dist/assets/brand-hzccb-nOOnp8eZ.svg                                            7.55 kB │ gzip:   3.05 kB
+dist/assets/brand-hrbb-qIK1lz14.svg                                             9.93 kB │ gzip:   3.97 kB
+dist/assets/bank-pingan-bWg3AxKn.svg                                           11.23 kB │ gzip:   4.10 kB
+dist/assets/brand-hzbank-DFc-pE8T.svg                                          11.45 kB │ gzip:   3.64 kB
+dist/assets/brand-qzccbank-BxpjckaB.svg                                        18.27 kB │ gzip:   4.16 kB
+dist/assets/brand-kind-19-faPRBkFD.png                                         34.78 kB
+dist/assets/brand-kind-14-BR90ZJev.png                                         35.39 kB
+dist/assets/brand-nfra-b1949h332020001-CmBPDy1L.png                            35.43 kB
+dist/assets/brand-nfra-b0160h233100001-FwNwcm5e.png                            41.75 kB
+dist/assets/brand-nfra-b0675h233010001-DvgPNl56.png                            42.56 kB
+dist/assets/brand-nfra-b0593h244030001-D28bIUtr.png                            46.32 kB
+dist/assets/brand-nfra-b2036h221010001-Cf2Z5cFa.png                            46.72 kB
+dist/assets/brand-kind-53-BhsbI89r.png                                         47.36 kB
+dist/assets/brand-kind-20-f2cLixrP.png                                         56.19 kB
+dist/assets/brand-nfra-z0041h111000001-FX0k3fzp.png                            59.88 kB
+dist/assets/brand-nfra-b1611h211000001-iaFp5XE0.png                            61.99 kB
+dist/assets/brand-kind-52-CUeyhVuk.png                                         62.14 kB
+dist/assets/brand-nfra-b1563h235010001-DjPTA9g5.png                            62.87 kB
+dist/assets/brand-nfra-b1627h244140001-DDGuAHEo.png                            63.61 kB
+dist/assets/brand-nfra-b0655h212000001-CGNo4wEF.png                            64.79 kB
+dist/assets/brand-nfra-b0154h233040001-j70CztC7.png                            67.05 kB
+dist/assets/brand-kind-18-coatovV6.png                                         67.22 kB
+dist/assets/brand-nfra-b1954h215020001-BsP5m6Wa.png                            68.76 kB
+dist/assets/brand-kind-12-spYi9y9d.png                                         70.28 kB
+dist/assets/brand-nfra-b0199h244040001-Am0hUbV2.png                            70.47 kB
+dist/assets/brand-kind-48-BNxzGx5z.png                                         71.16 kB
+dist/assets/brand-kind-15-Cpvo-UgH.png                                         72.40 kB
+dist/assets/brand-nfra-b1033h215010001-DnwY5J5d.png                            73.24 kB
+dist/assets/brand-nfra-b0651h233030001-D_H8mOYD.png                            73.73 kB
+dist/assets/brand-nfra-b1987h251010001-B919lLFg.png                            76.05 kB
+dist/assets/brand-nfra-b0176h337100001-dzVcKwj2.png                            77.05 kB
+dist/assets/brand-kind-50-BAR9Dnmu.png                                         78.97 kB
+dist/assets/brand-nfra-b0301h313050001-BHz3NK9Q.png                            79.74 kB
+dist/assets/brand-kind-10-CVkTDdEr.png                                         85.77 kB
+dist/assets/brand-nfra-b0161h233100001-BaI6wUDP.png                            85.92 kB
+dist/assets/brand-nfra-b0260h253040001-BOM3oqf3.png                            86.28 kB
+dist/assets/brand-nfra-b1085h365220001-Bnc25bTX.png                            87.05 kB
+dist/assets/brand-nfra-b1016h313110001-0mpkOszb.png                            95.02 kB
+dist/assets/brand-nfra-b1877h236010001-Dz9W9vSZ.png                            98.44 kB
+dist/assets/brand-nfra-b1621h232010001-J1vrWclL.png                           100.15 kB
+dist/assets/brand-kind-17-cakNIjS1.png                                        103.94 kB
+dist/assets/brand-nfra-b0343h251180001-B18Ae-f5.png                           104.18 kB
+dist/assets/brand-nfra-b1606h237100001-kFmT8WQO.png                           106.21 kB
+dist/assets/brand-nfra-b1661h221010001-Cei-r2T5.png                           106.49 kB
+dist/assets/brand-kind-7-B5VvXJtn.png                                         107.31 kB
+dist/assets/brand-nfra-b1522h265010001-qu-DwWDe.png                           109.27 kB
+dist/assets/brand-nfra-b1293h254010001-CPHisPHX.png                           111.25 kB
+dist/assets/brand-nfra-b0284h251150001-B0hGlVIe.png                           112.76 kB
+dist/assets/brand-nfra-b1686h234010001-B_uTavHw.png                           114.03 kB
+dist/assets/brand-nfra-b0159h233100001-17ZaS2ks.png                           115.42 kB
+dist/assets/brand-kind-11-tqL6XJWu.png                                        116.96 kB
+dist/assets/brand-kind-51-C8PZ5_yu.png                                        117.61 kB
+dist/assets/brand-nfra-b0729h246010001-CbDVtPsk.png                           118.01 kB
+dist/assets/brand-nfra-b2027h214010001-B5cJtGZV.png                           118.76 kB
+dist/assets/brand-kind-31-BfMUkVcW.png                                        119.25 kB
+dist/assets/brand-nfra-b1191h250000001-COED_WRI.png                           123.12 kB
+dist/assets/brand-nfra-b1544h251010001-g8fXYCGl.png                           124.43 kB
+dist/assets/brand-nfra-b1099h243010001-CNGqBmvm.png                           126.75 kB
+dist/assets/brand-nfra-b0772h313070001-CcPhKpR0.png                           127.31 kB
+dist/assets/brand-nfra-b0796h265010001-C-h-0rmf.png                           130.82 kB
+dist/assets/brand-nfra-b0164h235020001-Dw34Avy6.png                           137.89 kB
+dist/assets/brand-kind-21-HfIUTSBL.png                                        139.99 kB
+dist/assets/brand-nfra-b0212h251070001-BjMgjahy.png                           143.91 kB
+dist/assets/brand-nfra-b0358h233020001-DXojyuds.png                           151.82 kB
+dist/assets/brand-nfra-b0211h251060002-Bp-e2Hli.png                           153.48 kB
+dist/assets/brand-nfra-b1519h243010001-DuN4okMy.png                           159.38 kB
+dist/assets/brand-nfra-b0606h231000001-BkTTNTT0.png                           169.40 kB
+dist/assets/brand-nfra-b0108h212000001-DZYnAcq7.png                           172.41 kB
+dist/assets/brand-nfra-b1071h321050001-DQ7MXQEd.png                           181.23 kB
+dist/assets/brand-nfra-b1600h222010001-DRvX_Jhe.png                           238.31 kB
+dist/assets/brand-kind-13-Bs9xCtHu.png                                        243.76 kB
+dist/assets/UsersView-Kk1_DQf_.css                                              0.15 kB │ gzip:   0.13 kB
+dist/assets/AISettingsView-O5AY2Q9M.css                                         0.48 kB │ gzip:   0.28 kB
+dist/assets/HealthView-C9bXc_SL.css                                             0.72 kB │ gzip:   0.32 kB
+dist/assets/AIChatView-DWPu6wD7.css                                             3.92 kB │ gzip:   1.09 kB
+dist/assets/FinanceView-CJPOe1NQ.css                                            4.37 kB │ gzip:   1.25 kB
+dist/assets/index-D-dvThsI.css                                                432.24 kB │ gzip:  63.07 kB
+dist/assets/aiConfig-kD_-NxnE.js                                                0.61 kB │ gzip:   0.27 kB
+dist/assets/UnavailableView-DXHgIUgR.js                                         0.68 kB │ gzip:   0.53 kB
+dist/assets/DashboardView-8bUJVj9t.js                                           2.09 kB │ gzip:   1.24 kB
+dist/assets/WorkspacePanel.vue_vue_type_script_setup_true_lang-BM5BEtTB.js      2.64 kB │ gzip:   1.38 kB
+dist/assets/AdminLayout-t0wXED4-.js                                             3.65 kB │ gzip:   1.51 kB
+dist/assets/LoginView-CiIRZhkl.js                                               4.14 kB │ gzip:   1.84 kB
+dist/assets/HealthView-rsTvbiQP.js                                              5.53 kB │ gzip:   2.68 kB
+dist/assets/UsersView-CYalsJqR.js                                               7.50 kB │ gzip:   3.13 kB
+dist/assets/AISettingsView-FxTQZYrp.js                                          8.69 kB │ gzip:   3.39 kB
+dist/assets/TasksView-CHxOZM6u.js                                              66.92 kB │ gzip:  20.04 kB
+dist/assets/AIChatView-lqUq-uCo.js                                            104.87 kB │ gzip:  43.49 kB
+dist/assets/FinanceView-CMdWed_5.js                                           413.20 kB │ gzip: 112.34 kB
+dist/assets/index-CwWj_0WM.js                                               1,072.10 kB │ gzip: 355.94 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 4.05s

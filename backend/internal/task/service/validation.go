@@ -14,7 +14,7 @@ import (
 	domain "personal_assistant_server/internal/task/model"
 )
 
-var taskFields = map[string]string{"title": "title", "remark": "remark", "listId": "list_id", "parentId": "parent_id", "taskType": "task_type", "priority": "priority", "startDate": "start_date", "startTime": "start_time", "endDate": "end_date", "endTime": "end_time", "archived": "archived", "progressTotal": "progress_total", "progressCompleted": "progress_completed", "progressStep": "progress_step", "progressUnit": "progress_unit"}
+var taskFields = map[string]string{"icon": "icon", "title": "title", "remark": "remark", "listId": "list_id", "parentId": "parent_id", "taskType": "task_type", "priority": "priority", "startDate": "start_date", "startTime": "start_time", "endDate": "end_date", "endTime": "end_time", "archived": "archived", "progressTotal": "progress_total", "progressCompleted": "progress_completed", "progressStep": "progress_step", "progressUnit": "progress_unit"}
 
 var listFields = map[string]string{"name": "name", "remark": "remark", "color": "color", "icon": "icon"}
 
@@ -80,9 +80,9 @@ func Invalid(message string) error { return fmt.Errorf("%w: %s", ErrInvalid, mes
 // validateTask 校验合并后的完整任务；参数：t 为候选任务；返回值：校验错误，无副作用。
 func validateTask(t domain.Task) error {
 	// 规范化输入，避免首尾空白影响校验。
-	if strings.TrimSpace(t.Title) == "" || len([]rune(t.Title)) > 256 || len([]rune(t.Remark)) > 10000 || len([]rune(t.ProgressUnit)) > 20 {
-		// 拒绝本次操作：标题、备注或单位长度无效。
-		return Invalid("标题、备注或单位长度无效")
+	if strings.TrimSpace(t.Title) == "" || len([]rune(t.Title)) > 256 || len([]rune(t.Remark)) > 10000 || len([]rune(t.ProgressUnit)) > 20 || len(t.Icon) > 64 || strings.TrimSpace(t.Icon) == "" {
+		// 拒绝本次操作：标题、备注、图标或单位长度无效。
+		return Invalid("标题、备注、图标或单位长度无效")
 	}
 	if t.Priority != "high" && t.Priority != "medium" && t.Priority != "low" {
 		// 拒绝本次操作：优先级无效。

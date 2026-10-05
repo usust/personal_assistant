@@ -300,4 +300,55 @@ import XCTest
         capture(app,"iteration5-empty-recovered")
     }
 
+    /// 验证v4六页面与类型边界；参数无；返回无，隔离样本不代表真实后端联调。
+    func testV4Pages() {
+        let app=launch("v4");capture(app,"v4-root")
+        app.staticTexts["工作"].tap();XCTAssertTrue(app.navigationBars["工作"].waitForExistence(timeout:5))
+        XCTAssertFalse(app.tabBars.firstMatch.exists)
+        capture(app,"v4-tree")
+        app.staticTexts["设计准备"].tap();XCTAssertTrue(app.navigationBars["主任务详情"].waitForExistence(timeout:5))
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format:"label CONTAINS %@","6 / 11")).firstMatch.exists)
+        capture(app,"v4-main-detail")
+        app.buttons["编辑"].tap();XCTAssertTrue(app.navigationBars["编辑主任务"].waitForExistence(timeout:5));capture(app,"v4-main-edit")
+        app.buttons["图标"].tap();capture(app,"v4-icon-picker");app.buttons["完成"].tap();app.buttons["取消"].tap()
+        app.staticTexts["阅读设计规范"].tap();XCTAssertTrue(app.navigationBars["任务详情"].waitForExistence(timeout:5));XCTAssertFalse(app.buttons["新建下级"].exists);capture(app,"v4-leaf-detail")
+        back(app);back(app);for _ in 0..<8 { if app.staticTexts["下一阶段"].exists { break };app.swipeUp() };app.staticTexts["下一阶段"].tap();XCTAssertTrue(app.staticTexts["暂无任务"].exists);capture(app,"v4-empty-main")
+    }
+
+    /// 验证图标草稿与保存、归属和历史容器；参数无；返回无，只作用于内存样本。
+    func testV4IconAndMove() {
+        let app=launch("v4");app.staticTexts["工作"].tap();app.staticTexts["设计准备"].tap();app.buttons["编辑"].tap();app.buttons["图标"].tap()
+        XCTAssertTrue(app.buttons["分层计划"].isSelected);app.buttons["目标"].tap();app.buttons["完成"].tap();app.buttons["取消"].tap()
+        app.buttons["编辑"].tap();app.buttons["图标"].tap();XCTAssertTrue(app.buttons["分层计划"].isSelected)
+        app.buttons["目标"].tap();app.buttons["完成"].tap();app.buttons["保存"].tap()
+        app.buttons["编辑"].tap();app.buttons["图标"].tap();XCTAssertTrue(app.buttons["目标"].isSelected);capture(app,"v4-icon-saved")
+        app.buttons["完成"].tap();app.buttons["取消"].tap();back(app)
+        app.staticTexts["产品发布"].tap();app.buttons["编辑"].tap();app.buttons["清单、工作"].tap();app.buttons["学习"].tap()
+        XCTAssertTrue(app.buttons["父主任务、无"].exists);app.buttons["保存"].tap();back(app);back(app)
+        app.staticTexts["学习"].tap();XCTAssertTrue(app.staticTexts["产品发布"].exists);XCTAssertTrue(app.staticTexts["阅读设计规范"].exists);capture(app,"v4-tree-moved")
+        back(app);app.staticTexts["工作"].tap();app.staticTexts["历史任务容器"].tap()
+        XCTAssertFalse(app.buttons["新建下级"].exists);XCTAssertFalse(app.buttons["减少"].exists);capture(app,"v4-legacy-container")
+    }
+    /// 验证push日期子页及清空；参数无；返回无，既有v4日期同日18:30截止。
+    func testV4DateDraft() {
+        let app=launch("v4");app.staticTexts["工作"].tap();app.staticTexts["阅读设计规范"].tap();app.buttons["编辑"].tap()
+        app.buttons.matching(NSPredicate(format:"label BEGINSWITH %@","开始、")).firstMatch.tap();nativeToggle(app,"指定时间")
+        app.buttons["Time Picker"].firstMatch.tap();app.pickerWheels.element(boundBy:0).adjust(toPickerWheelValue:"19");app.navigationBars["开始"].tap();back(app)
+        XCTAssertFalse(app.buttons["保存"].isEnabled);capture(app,"v4-date-reversed")
+        app.buttons.matching(NSPredicate(format:"label BEGINSWITH %@","开始、")).firstMatch.tap();nativeToggle(app,"设置日期");back(app)
+        XCTAssertTrue(app.buttons["保存"].isEnabled);app.buttons["保存"].tap();app.buttons["编辑"].tap()
+        app.buttons.matching(NSPredicate(format:"label BEGINSWITH %@","开始、")).firstMatch.tap();XCTAssertEqual(app.switches["设置日期"].value as? String,"0")
+        nativeToggle(app,"设置日期");XCTAssertEqual(app.switches["指定时间"].value as? String,"0");capture(app,"v4-date-cleared")
+    }
+
+    /// 验证v4菜单排序和共享失败保护；参数无；返回无，不提交真实排序或真实服务器请求。
+    func testV4SortAndProtection() {
+        let app=launch("v4");app.staticTexts["工作"].tap();app.buttons["更多"].tap();app.buttons["排序"].tap();capture(app,"v4-sort-mode")
+        app.buttons["更多"].tap();app.buttons["完成排序"].tap();capture(app,"v4-sort-ended")
+        app.terminate();let failure=launch("refresh-error");failure.staticTexts["日常与成长"].tap();failure.staticTexts["整理本月订阅与开销"].tap()
+        failure.buttons.matching(NSPredicate(format:"label BEGINSWITH %@","+1")).firstMatch.tap();XCTAssertFalse(failure.buttons["编辑"].isEnabled)
+        back(failure);XCTAssertFalse(failure.buttons["新建任务"].isEnabled);capture(failure,"v4-shared-protection")
+        failure.buttons["刷新任务"].tap();if !failure.buttons["新建任务"].isEnabled { failure.buttons["刷新任务"].tap() };XCTAssertTrue(failure.buttons["新建任务"].isEnabled);capture(failure,"v4-shared-recovered")
+    }
+
 }

@@ -1,0 +1,6 @@
+?   	personal_assistant_server/internal/task	[no test files]
+ok  	personal_assistant_server/internal/task/capability	0.680s
+ok  	personal_assistant_server/internal/task/handler	0.644s
+?   	personal_assistant_server/internal/task/model	[no test files]
+?   	personal_assistant_server/internal/task/repository	[no test files]
+ok  	personal_assistant_server/internal/task/service	0.506s

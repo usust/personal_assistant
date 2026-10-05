@@ -22,7 +22,7 @@ func (s *Service) taskMutation(tx *gorm.DB, owner uint64, op string, in Input) (
 	for _, r := range rows {
 		byID[r.ID] = r
 	}
-	row := domain.Task{OwnerID: owner, TaskType: "main", Priority: "medium", ProgressTotal: 100, ProgressStep: 1}
+	row := domain.Task{OwnerID: owner, Icon: "Folder", TaskType: "main", Priority: "medium", ProgressTotal: 100, ProgressStep: 1}
 	if op != "task.create" && op != "task.reorder" {
 		var ok bool
 		row, ok = byID[in.ID]
@@ -102,7 +102,7 @@ func (s *Service) taskMutation(tx *gorm.DB, owner uint64, op string, in Input) (
 		// 仅写入本次经过校验的变更字段。
 		return row, repository.UpdateTask(tx, owner, row.ID, map[string]any{"progress_completed": value})
 	}
-	oldList := row.ListID
+	oldList, oldParent, oldType := row.ListID, row.ParentID, row.TaskType
 	// 通过白名单解析实际提交的更新字段。
 	fields, err := patch(in.Changes, taskFields, &row)
 	if err != nil {
@@ -117,10 +117,23 @@ func (s *Service) taskMutation(tx *gorm.DB, owner uint64, op string, in Input) (
 	if _, err = repository.ReadList(tx, owner, row.ListID); err != nil {
 		return nil, err
 	}
-	// 禁止直接搬移有后代的节点到另一清单，避免产生跨清单关系；重挂只能指向同清单且不在后代链的节点。
-	if oldList != 0 && oldList != row.ListID && children > 0 {
-		// 拒绝本次操作：请先移出下级任务再更换清单。
-		return nil, Invalid("请先移出下级任务再更换清单")
+	// 历史具体任务容器保持可编辑；禁止把已有下级的主任务变成具体任务，不隐式转换旧数据。
+	if children > 0 && oldType == "main" && row.TaskType != "main" {
+		return nil, Invalid("有下级的主任务不能改为具体任务")
+	}
+	parentChanged := (oldParent == nil) != (row.ParentID == nil)
+	if oldParent != nil && row.ParentID != nil {
+		parentChanged = *oldParent != *row.ParentID
+	}
+	// 仅新增或实质重挂父级要求主任务；未变历史父关系的普通PATCH继续兼容。
+	if row.ParentID != nil && (op == "task.create" || parentChanged) {
+		p, ok := byID[*row.ParentID]
+		if !ok {
+			return nil, ErrNotFound
+		}
+		if p.TaskType != "main" {
+			return nil, Invalid("父级必须为主任务")
+		}
 	}
 	visited := map[uint64]bool{row.ID: true}
 	parent := row.ParentID
@@ -141,8 +154,25 @@ func (s *Service) taskMutation(tx *gorm.DB, owner uint64, op string, in Input) (
 		// 保存新建的业务记录。
 		err = repository.CreateTask(tx, &row)
 	} else {
-		// 仅写入本次经过校验的变更字段。
+		// 验证全部完成后才写根字段；清单归属变化在同一用户锁事务中迁移所有后代，任何失败整体回滚。
 		err = repository.UpdateTask(tx, owner, row.ID, fields)
+		if err == nil && oldList != row.ListID {
+			selected := map[uint64]bool{row.ID: true}
+			ids := []uint64{row.ID}
+			for i := 0; i < len(ids); i++ {
+				for _, child := range rows {
+					if child.ParentID != nil && *child.ParentID == ids[i] && !selected[child.ID] {
+						selected[child.ID] = true
+						ids = append(ids, child.ID)
+					}
+				}
+			}
+			for _, id := range ids[1:] {
+				if err = repository.UpdateTask(tx, owner, id, map[string]any{"list_id": row.ListID}); err != nil {
+					break
+				}
+			}
+		}
 	}
 	return row, err
 }

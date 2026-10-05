@@ -178,7 +178,7 @@ struct TaskFloatingField: View {
 }
 
 /// 使用跨端共用键保存图标，iOS 通过 Apple SF Symbols 绘制，无需下载第三方图片。
-private enum TaskListAppearance {
+enum TaskListAppearance {
     // 按色系覆盖冷暖色与中性色，17 个预设加颜色盘正好组成三行。
     static let colors = ["#EF4444", "#FB7185", "#F97316", "#EAB308", "#A16207", "#EC4899",
                          "#8B5CF6", "#6366F1", "#3B82F6", "#38BDF8", "#06B6D4", "#14B8A6",

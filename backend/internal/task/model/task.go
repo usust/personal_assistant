@@ -9,6 +9,7 @@ import (
 type Task struct {
 	ID                uint64    `json:"id" gorm:"primaryKey"`
 	OwnerID           uint64    `json:"-" gorm:"index;not null"`
+	Icon              string    `json:"icon" gorm:"size:64;not null;default:Folder"`
 	Title             string    `json:"title" gorm:"size:256"`
 	Remark            string    `json:"remark" gorm:"type:text"`
 	ListID            uint64    `json:"listId" gorm:"index;not null"`

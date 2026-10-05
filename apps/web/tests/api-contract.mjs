@@ -177,3 +177,21 @@ test('AI model catalog forwards saved identity with a bounded timeout and delete
   await assert.rejects(aiConfig.deleteProviderConfig(7), /需要管理权限/)
   calls.length = 0
 })
+
+// v4量化契约回调输入无、输出异步完成；使用真实转换器验证空主任务、混合单位及归档叶，不联网。
+test('task summaries count concrete leaves and preserve unknown icons', async () => {
+  const taskAPI = await loadAPI('tasks')
+  const base = { remark: '', listId: 1, startDate: '', startTime: '', endDate: '', endTime: '', priority: 'medium', archived: false, progressStep: 1, progressUnit: '页' }
+  replies.push([
+    { ...base, id: 1, title: '根', taskType: 'main', parentId: null, icon: 'unknown-key', progressTotal: 100, progressCompleted: 100 },
+    { ...base, id: 2, title: '叶', taskType: 'subtask', parentId: 1, archived: true, progressTotal: 10, progressCompleted: 5 },
+    { ...base, id: 3, title: '叶2', taskType: 'subtask', parentId: 1, progressUnit: '次', progressTotal: 1, progressCompleted: 1 },
+    { ...base, id: 4, title: '空主', taskType: 'main', parentId: 1, progressTotal: 100, progressCompleted: 80 },
+  ])
+  const rows = await taskAPI.getTasks()
+  assert.equal(rows[0].progressTotal, '11'); assert.equal(rows[0].progressCompleted, '6')
+  assert.equal(rows[0].progressUnit, ''); assert.equal(rows[0].icon, 'unknown-key')
+  assert.equal(rows[3].progressTotal, '0'); assert.equal(rows[3].progressPercent, 0)
+  assert.equal(rows[3].progressConfigTotal, '100'); assert.equal(rows[3].progressStep, null)
+  assert.deepEqual(calls.shift(), { method: 'get', args: ['/tasks'] })
+})
