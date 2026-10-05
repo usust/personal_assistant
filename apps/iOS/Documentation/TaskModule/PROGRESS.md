@@ -86,3 +86,5 @@ Goal续轮iPad新版布局补验：独立iPad Pro11(M5)/iOS27默认浅色竖屏8
 Goal续轮实际排序补验：独立原生Reorder手柄真实drag把空main5移root1前；完成排序、下拉刷新、返回root重入后仍5在1前，2/3/4可达与6/11保留，单项通过。V4-Reorder记录实际frame/手势/截图AX日志。无业务改动，其他拖动矩阵与真实服务器未验，验收者停止。
 
 Goal续轮后端契约补验：runtime独立新增HTTP Handler→Service→隔离SQLite及AI Executor→真实Schema/Service测试；默认/未知icon与仅title保留、非法父与有child类型转换、字段白名单、含归档后代整树move及GET持久结果通过。指定router/task包无缓存全跑通过，现有事务回滚同时通过；project_audit独立只读评审认可，无阻塞。仅测试与证据，业务未改；trusted身份非JWT/在线模型/真实部署，详见V4-BackendContract。验收者停止写入，参考目录未动。当前无新证据充分的产品缺陷；保留外部条件与适用边界验证，不为持续目标制造修改。
+
+Goal续轮范围审计：上一轮为已完成测试/提交的实际进展，本轮读取当前v4明确要求、方案、待办和验收，独立审计无新明确遗漏/缺陷。保存BACKLOG等待范围，不启动新执行者。局部和隔离环境验收不替代外部端到端；Goal不记录全量完成，也不自行暂停。
