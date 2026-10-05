@@ -52,11 +52,6 @@ struct ListEditor: View {
             Form {
                 if uncertainCreation { InlineError(message: "创建结果未确认。请关闭表单并刷新清单，确认后再创建。") }
                 else if let error { InlineError(message: error) }
-                if list == nil {
-                    Section {
-                        TaskListPreview(name: name.isEmpty ? "清单名称" : name, remark: remark, icon: icon, color: color, centered: true)
-                    }
-                }
                 Section {
                     TaskFloatingField(title: "清单名称", text: $name)
                     TaskFloatingField(title: "备注", text: $remark, multiline: true)
@@ -132,7 +127,7 @@ struct ListEditor: View {
     }
 }
 
-/// 清单列表紧邻图标左对齐；仅新建预览使用居中布局，编辑表单不显示预览。
+/// 清单列表紧邻图标左对齐；新建与编辑表单均不显示顶部预览。
 private struct TaskListPreview: View {
     let name: String
     let remark: String

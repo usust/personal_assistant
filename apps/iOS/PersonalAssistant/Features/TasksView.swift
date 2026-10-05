@@ -1,14 +1,34 @@
 import SwiftUI
+import UIKit
 
-/// 唯一任务模块根：以清单组织入口，任务树和详情使用系统推入导航。
+/// 任务模块默认显示所有未归档任务，顶部原生控件切换清单及归档可见性，目录按钮用于管理清单。
 struct TasksView: View {
+    @State private var selectedListID = 0
+    @State private var selectedTitle = "任务"
+    @State private var selectedScope = "active"
+    /// 构建任务首页；参数：无；返回值：保留全局 Tab 的任务树，无独立业务副作用。
+    var body: some View {
+        // 选择回调输入清单 ID、标题与任务范围，输出无；更新首页筛选并重建该范围的搜索和展开状态。
+        TaskCollectionView(listID: selectedListID, title: selectedTitle, scope: selectedScope, isRoot: true) { id, title, scope in
+            selectedListID = id
+            selectedTitle = title
+            selectedScope = scope
+        }.id("\(selectedListID)-\(selectedScope)")
+    }
+}
+
+/// 收起的清单目录；仅由任务首页按钮推入，保留清单管理与归档入口。
+private struct TaskDirectoryView: View {
+    /// 删除后的首页重置回调：参数为清单 ID、标题与范围；返回值无，恢复全部任务。
+    let onSelect: (Int, String, String) -> Void
     @Environment(AppStore.self) private var store
     @State private var search = ""
     @State private var loading = true
     @State private var error: String?
     @State private var creating = false
     @State private var edited: TaskList?
-    /// 构建清单根页面；参数：无；返回值：连续列表与原全局Tab；回调仅修改呈现状态或启动只读刷新。
+    @State private var deleted: TaskList?
+    /// 构建清单目录页面；参数：无；返回值：可返回任务首页的清单列表；回调仅修改呈现状态或启动只读刷新。
     var body: some View {
         List {
             if let notice = store.taskNotice { InlineError(message: notice); Button("刷新任务") { Task { await reload() } } }
@@ -16,28 +36,57 @@ struct TasksView: View {
             else if let error, store.lists.isEmpty { InlineError(message: error); Button("重新加载") { Task { await reload() } } }
             else {
                 if let error { InlineError(message: error) }
-                Section("我的清单") {
-                    // 清单回调输入已保存清单、输出内容页导航；数量仅统计清单当前未归档节点。
+                Section {
+                    // 行回调输入已保存清单、输出无；行本身不响应点击，管理操作仅由滑动按钮触发。
                     ForEach(store.lists.filter { search.isEmpty || $0.name.localizedCaseInsensitiveContains(search) }) { list in
-                        NavigationLink { TaskCollectionView(listID: list.id, title: list.name) } label: {
-                            HStack(spacing: 12) {
-                                Image(systemName: TaskListAppearance.symbol(list.icon)).font(.title3).foregroundStyle(Color.listColor(list.color))
-                                    .frame(width: 38, height: 38).background(Color.listColor(list.color).opacity(0.1), in: RoundedRectangle(cornerRadius: 12))
-                                VStack(alignment: .leading, spacing: 4) { Text(list.name).font(.body.weight(.medium)); if !list.remark.isEmpty { Text(list.remark).font(.caption).foregroundStyle(.secondary) } }
-                                Spacer()
-                                Text(store.tasks.filter { $0.listId == list.id && !$0.archived }.count.formatted()).font(.subheadline).foregroundStyle(.secondary)
-                            }.padding(.vertical, 7)
-                        }.swipeActions { Button("编辑") { edited = list } }
+                        TaskDirectoryRow(
+                            name: list.name, remark: list.remark,
+                            symbol: TaskListAppearance.symbol(list.icon), color: .listColor(list.color),
+                            count: store.tasks.filter { $0.listId == list.id && !$0.archived }.count
+                        ).swipeActions(allowsFullSwipe: false) {
+                            // 操作回调输入无、输出无；删除仅打开确认，编辑仅打开表单，使用系统图标与明确操作颜色。
+                            Button(role: .destructive) { deleted = list } label: {
+                                Label("删除", systemImage: "trash")
+                            }.tint(.red).disabled(store.taskWriteBusy || store.taskWriteBlocked)
+                            Button { edited = list } label: {
+                                Label("编辑", systemImage: "pencil")
+                            }.tint(.blue).disabled(store.taskWriteBusy || store.taskWriteBlocked)
+                        }
                     }
                     if store.lists.isEmpty { ContentUnavailableView("创建第一个清单", systemImage: "folder.badge.plus"); Button("新建清单") { creating = true }.disabled(store.taskWriteBusy || store.taskWriteBlocked) }
                     else if !search.isEmpty && !store.lists.contains(where: { $0.name.localizedCaseInsensitiveContains(search) }) { ContentUnavailableView.search(text: search) }
+                    // 归档入口复用清单行并放在同一分组，保持图标、文字、间距和分隔线一致。
+                    TaskDirectoryRow(name: "已归档", symbol: "archivebox", color: .accentColor)
                 }
-                Section { NavigationLink { TaskCollectionView(listID: 0, title: "已归档", scope: "archived") } label: { Label("已归档", systemImage: "archivebox") } }
             }
-        }.listStyle(.plain).navigationTitle("任务").navigationBarTitleDisplayMode(.inline).searchable(text: $search, prompt: "搜索清单")
+        }.listStyle(.plain).navigationTitle("我的清单").navigationBarTitleDisplayMode(.inline).toolbar(.hidden, for: .tabBar).searchable(text: $search, prompt: "搜索清单")
             .toolbar { Button("新建清单", systemImage: "plus") { creating = true }.disabled(store.taskWriteBusy || store.taskWriteBlocked) }
             .sheet(isPresented: $creating) { ListEditor(list: nil) }.sheet(item: $edited) { ListEditor(list: $0) }
+            .alert("删除清单？", isPresented: Binding(
+                get: { deleted != nil }, set: { if !$0 { deleted = nil } }
+            )) {
+                Button("取消", role: .cancel) { deleted = nil }
+                Button("删除", role: .destructive) {
+                    if let list = deleted { Task { await remove(list) } }
+                }
+            } message: { Text("此操作会同时删除清单中的全部任务和子任务，无法撤销。") }
             .task { await reload() }.refreshable { await reload() }
+    }
+    /// 删除已确认清单；参数：list 为已保存且经用户确认的清单；返回值：无；级联删除任务，失败保留数据并展示错误，未知结果不重发。
+    private func remove(_ list: TaskList) async {
+        let generation = store.cloudSessionID
+        do {
+            // 写回调参数无、返回值无；共享写保护防止重复提交，服务器确认后才清理本地快照。
+            try await store.writeTask { try await store.api.mutate("/task-lists/\(list.id)", method: "DELETE") }
+            store.lists.removeAll { $0.id == list.id }
+            store.tasks.removeAll { $0.listId == list.id }
+            deleted = nil
+            onSelect(0, "任务", "active")
+            await store.refreshTaskWrite()
+        } catch {
+            guard generation == store.cloudSessionID, !(error is CancellationError) else { return }
+            self.error = error.localizedDescription
+        }
     }
     /// 刷新清单及任务快照；参数：无；返回值：无；失败保留缓存，取消及旧云身份反馈静默。
     private func reload() async {
@@ -48,6 +97,30 @@ struct TasksView: View {
     }
 }
 
+/// 清单目录统一行样式，供普通清单与归档入口共用。
+private struct TaskDirectoryRow: View {
+    let name: String
+    var remark = ""
+    let symbol: String
+    let color: Color
+    var count: Int? = nil
+
+    /// 构建目录行；参数：无；返回值：统一图标底色、文字对齐与行间距的视图，数量为空时不展示，无副作用。
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: symbol).font(.title3).foregroundStyle(color)
+                .frame(width: 38, height: 38)
+                .background(color.opacity(0.1), in: RoundedRectangle(cornerRadius: 12))
+            VStack(alignment: .leading, spacing: 4) {
+                Text(name).font(.body.weight(.medium))
+                if !remark.isEmpty { Text(remark).font(.caption).foregroundStyle(.secondary) }
+            }
+            Spacer()
+            if let count { Text(count.formatted()).font(.subheadline).foregroundStyle(.secondary) }
+        }.padding(.vertical, 2)
+    }
+}
+
 /// 推入的清单内容页，连续内容面展示可展开树，不增加独立模块导航。
 struct TaskCollectionView: View {
     @Environment(AppStore.self) private var store
@@ -55,6 +128,9 @@ struct TaskCollectionView: View {
     let listID: Int
     let title: String
     var scope = "active"
+    var isRoot = false
+    /// 首页范围更新回调；参数为清单 ID、标题和范围；返回值无，仅根页面提供。
+    var onSelect: ((Int, String, String) -> Void)? = nil
     @State private var search = ""
     @State private var expanded: Set<Int> = []
     @State private var initializedTree = false
@@ -64,11 +140,19 @@ struct TaskCollectionView: View {
     @State private var deletingList = false
     @State private var error: String?
     @State private var loading = false
+    @State private var openedTaskID: Int?
+    @State private var editedTask: AssistantTask?
+    @State private var deletedTask: AssistantTask?
     private var list: TaskList? { store.lists.first { $0.id == listID } }
-    /// 当前范围的树节点；参数：无；返回值：节点与缩进深度，父不在当前范围的节点成为有效根；搜索平列实际匹配节点。
-    private var rows: [(task: AssistantTask, depth: Int)] {
-        let scoped = store.tasks.filter { (listID == 0 || $0.listId == listID) && $0.archived == (scope == "archived") }
-        if !search.isEmpty { return scoped.filter { $0.title.localizedCaseInsensitiveContains(search) }.map { ($0, 0) } }
+    /// 判断任务是否属于当前清单及显示范围；参数：task 为已加载任务；返回值：是否显示，all 包含归档，archived 仅含归档，其他范围仅含未归档；无副作用。
+    private func includesTask(_ task: AssistantTask) -> Bool {
+        (listID == 0 || task.listId == listID) && (scope == "all" || task.archived == (scope == "archived"))
+    }
+    /// 当前范围的树节点；参数：无；返回值：节点、显示深度及各层后续分支标记；父不在范围内时成为有效根，搜索平列匹配节点；无副作用。
+    private var rows: [(task: AssistantTask, depth: Int, guides: [Bool])] {
+        // 树节点与展开入口复用相同范围，显示归档时保留父子关系，避免归档子任务无法展开。
+        let scoped = store.tasks.filter { includesTask($0) }
+        if !search.isEmpty { return scoped.filter { $0.title.localizedCaseInsensitiveContains(search) }.map { ($0, 0, []) } }
         let ids = Set(scoped.map(\.id))
         var result: [(task: AssistantTask, depth: Int)] = []
         var visited: Set<Int> = []
@@ -79,7 +163,18 @@ struct TaskCollectionView: View {
             if expanded.contains(task.id) { for child in scoped where child.parentId == task.id { append(child, depth: depth + 1) } }
         }
         for task in scoped where !ids.contains(task.parentId ?? 0) { append(task, depth: 0) }
-        return result
+        // 转换回调输入行索引与节点、返回带分支标记的行；按可见树计算连线，末尾节点止于横向连接处，避免跨根节点连线。
+        return result.enumerated().map { index, row in
+            let guides = (0..<row.depth).map { level in
+                // 层级回调输入零起始层级、返回是否存在后续同层分支；跳过后代，遇到更浅节点即结束当前分支。
+                for next in result.dropFirst(index + 1) {
+                    if next.depth < level + 1 { return false }
+                    if next.depth == level + 1 { return true }
+                }
+                return false
+            }
+            return (row.task, row.depth, guides)
+        }
     }
     /// 构建清单树；参数：无；返回值：普通内容面与原生推入导航；展开按钮与详情入口分离，写入口遵循共享保护。
     var body: some View {
@@ -88,26 +183,164 @@ struct TaskCollectionView: View {
             if let error { InlineError(message: error); Button("重新加载") { Task { await reload() } } }
             if rows.isEmpty && error == nil {
                 ContentUnavailableView(search.isEmpty ? scope == "archived" ? "暂无归档任务" : "暂无任务" : "没有匹配的任务", systemImage: "checklist")
-                if search.isEmpty && scope != "archived" && list != nil { Button("新建任务") { creating = true }.disabled(store.taskWriteBusy || store.taskWriteBlocked) }
+                if search.isEmpty && scope != "archived" && (list != nil || isRoot) && !store.lists.isEmpty { Button("新建任务") { creating = true }.disabled(store.taskWriteBusy || store.taskWriteBlocked) }
             }
-            Section("任务") {
+            Section {
                 // 树行回调输入节点与深度、输出详情导航及独立展开操作；展开不修改业务数据。
                 ForEach(rows, id: \.task.id) { row in
-                    HStack(spacing: 8) {
-                        NavigationLink { TaskDetailView(taskID: row.task.id) } label: { TaskRow(task: row.task, showsContext: !search.isEmpty || listID == 0) }
-                        if search.isEmpty && store.tasks.contains(where: { $0.parentId == row.task.id && $0.archived == (scope == "archived") }) {
-                            Button { if expanded.contains(row.task.id) { expanded.remove(row.task.id) } else { expanded.insert(row.task.id) } } label: { Image(systemName: expanded.contains(row.task.id) ? "chevron.down" : "chevron.right").font(.caption).frame(width: 44, height: 44) }
-                                .buttonStyle(.borderless).accessibilityLabel(expanded.contains(row.task.id) ? "收起下级" : "展开下级")
+                    let hasChildren = store.tasks.contains { $0.parentId == row.task.id && includesTask($0) }
+                    // 点击回调参数无、返回无；树模式点击父节点切换展开，叶节点或平列搜索结果进入详情，无业务写入。
+                    Button {
+                        if search.isEmpty && hasChildren {
+                            if expanded.contains(row.task.id) { expanded.remove(row.task.id) }
+                            else { expanded.insert(row.task.id) }
+                        } else { openedTaskID = row.task.id }
+                    } label: {
+                        TaskRow(task: row.task, showsContext: false, compact: true)
+                            .frame(maxWidth: .infinity, alignment: .leading).contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityHint(search.isEmpty && hasChildren ? (expanded.contains(row.task.id) ? "收起下级" : "展开下级") : "查看详情")
+                    .contextMenu {
+                        // 菜单回调参数无、返回无；保留父节点详情入口，避免整行展开交互遮蔽查看和编辑功能。
+                        Button("查看详情", systemImage: "info.circle") { openedTaskID = row.task.id }
+                    }
+                    // 每层预留 20 点连线区，内容使用完整宽度；搜索结果不缩进，避免缺失祖先时暗示错误层级。
+                    .padding(.leading, CGFloat(row.depth) * 20)
+                    // 在连线绘制前增加上下留白，让相邻任务有间隔，同时使竖向层级线覆盖留白、保持连续。
+                    .padding(.vertical, 9)
+                    .overlay(alignment: .leading) {
+                        if row.depth > 0 {
+                            TaskTreeGuides(continuations: row.guides)
+                                .frame(width: CGFloat(row.depth) * 20)
+                                .allowsHitTesting(false)
+                                .accessibilityHidden(true)
                         }
-                    }.padding(.leading, CGFloat(row.depth) * 16)
+                    }
+                    .listRowInsets(EdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 20))
+                    .listRowSeparator(.hidden)
+                    .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                        // 滑动操作回调参数无、返回无；写操作遵循共享保护，删除仅选择待确认任务，详情不受写保护限制。
+                        Button("删除", systemImage: "trash", role: .destructive) { deletedTask = row.task }
+                            .disabled(store.taskWriteBusy || store.taskWriteBlocked)
+                        Button(row.task.archived ? "取消归档" : "归档", systemImage: "archivebox") {
+                            Task { await archiveTask(row.task) }
+                        }.tint(.orange).disabled(store.taskWriteBusy || store.taskWriteBlocked)
+                        Button("编辑", systemImage: "pencil") { editedTask = row.task }
+                            .tint(.blue).disabled(store.taskWriteBusy || store.taskWriteBlocked)
+                        Button("详情", systemImage: "info.circle") { openedTaskID = row.task.id }.tint(.gray)
+                    }
                 }
                 // 拖动回调输入源索引和插入位置、输出无；仅在同父序列中写入排序，不改变任务归属。
                 .onMove { source, destination in Task { await reorder(source, to: destination) } }
             }
-        }.environment(\.editMode, $editMode).listStyle(.plain).navigationTitle(list?.name ?? title).navigationBarTitleDisplayMode(.inline).toolbar(.hidden, for: .tabBar)
-            .searchable(text: $search, prompt: "搜索任务")
-            .toolbar {
+            // 使用缩进和树形虚线区分任务关系，不再显示行间及分组横线。
+            .listSectionSeparator(.hidden)
+        }.environment(\.editMode, $editMode).listStyle(.plain).navigationTitle(list?.name ?? title).navigationBarTitleDisplayMode(.inline).toolbar(isRoot ? .visible : .hidden, for: .tabBar)
+            .toolbar { collectionToolbar }
+            // 导航绑定读取详情任务 ID；关闭回调输入呈现状态、返回无，返回列表时清理 ID 并保留筛选和展开状态。
+            .navigationDestination(isPresented: Binding(
+                get: { openedTaskID != nil },
+                set: { if !$0 { openedTaskID = nil } }
+            )) {
+                if let openedTaskID { TaskDetailView(taskID: openedTaskID) }
+            }
+            .safeAreaInset(edge: .top, spacing: 0) {
+                if isRoot { quickListSwitcher }
+            }
+            .sheet(isPresented: $creating) { TaskEditor(task: nil, parent: nil, preferredListID: listID) }
+            .sheet(item: $editedTask) { task in TaskEditor(task: task, parent: nil) }
+            // 确认绑定读取待删除任务；关闭回调输入呈现状态、返回无；取消清空选择，确认后才执行级联删除。
+            .confirmationDialog("删除此任务及全部下级？", isPresented: Binding(
+                get: { deletedTask != nil }, set: { if !$0 { deletedTask = nil } }
+            ), titleVisibility: .visible) {
+                Button("删除任务及下级", role: .destructive) {
+                    if let task = deletedTask { Task { await removeTask(task) } }
+                }
+            }
+            .sheet(isPresented: $editingList) { if let list { ListEditor(list: list) } }
+            .confirmationDialog("删除清单及其中全部任务？", isPresented: $deletingList, titleVisibility: .visible) { Button("删除清单", role: .destructive) { Task { await removeList() } } }
+            // 首次展示回调输入无、输出无；首页先刷新快照，再展开主任务；后续保留用户折叠状态。
+            .task {
+                if isRoot { await reload() }
+                if !initializedTree {
+                    expanded = Set(store.tasks.filter { (listID == 0 || $0.listId == listID) && $0.taskType == "main" }.map(\.id))
+                    initializedTree = true
+                }
+            }
+            .refreshable { await reload() }
+    }
+    /// 构建首页筛选栏；参数：无；返回值：左侧原生清单选择器及右侧紧凑归档勾选按钮，仅修改显示范围，不写入业务数据。
+    private var quickListSwitcher: some View {
+        HStack(spacing: 12) {
+            // 绑定读取当前清单 ID；写入回调输入选择的 ID、返回无，保留归档显示偏好并由首页重建任务树。
+            Menu {
+                Picker("切换任务清单", selection: Binding(
+                get: { listID },
+                set: { id in
+                    let name = store.lists.first { $0.id == id }?.name ?? "任务"
+                    onSelect?(id, name, scope)
+                }
+            )) {
+                Label("全部任务", systemImage: "checklist").tag(0)
+                // 清单选项输入已保存清单、输出原生选项；复用共用图标键，系统菜单负责选中标记和长名称适配。
+                ForEach(store.lists) { list in
+                    Label(list.name, systemImage: TaskListAppearance.symbol(list.icon)).tag(list.id)
+                }
+            }
+                .pickerStyle(.inline)
+            } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: list.map { TaskListAppearance.symbol($0.icon) } ?? "checklist")
+                    Text(list?.name ?? "全部任务").lineLimit(1)
+                    Image(systemName: "chevron.down").font(.caption)
+                }.frame(minHeight: 44)
+            }
+            .buttonStyle(.plain)
+            .tint(.accentColor)
+            .accessibilityIdentifier("taskListSwitcher")
+            Spacer(minLength: 0)
+            // 点击回调参数无、返回无；勾选后包含归档任务，取消后仅显示未归档任务，保持当前清单。
+            Button {
+                onSelect?(listID, list?.name ?? title, scope == "all" ? "active" : "all")
+            } label: {
+                // 使用系统方框符号呈现勾选状态；整个标签保留 44 点点击高度，小尺寸视觉不缩小触控范围。
+                HStack(spacing: 5) {
+                    Image(systemName: scope == "all" ? "checkmark.square.fill" : "square")
+                        .font(.system(size: 16, weight: .regular))
+                        .foregroundStyle(scope == "all" ? Color.accentColor : Color.secondary)
+                    Text("已归档")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .fixedSize(horizontal: true, vertical: false)
+                .frame(minHeight: 44)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityValue(scope == "all" ? "已勾选" : "未勾选")
+            .accessibilityAddTraits(scope == "all" ? [.isSelected] : [])
+            .accessibilityIdentifier("taskShowArchivedToggle")
+        }
+        .font(.subheadline)
+        .padding(.horizontal, 20)
+        .padding(.vertical, 2)
+        .background(.background)
+    }
+    /// 构建任务导航操作；参数：无；返回值：首页清单入口或清单管理工具栏，按钮只修改呈现状态。
+    @ToolbarContentBuilder
+    private var collectionToolbar: some ToolbarContent {
+                if isRoot {
+                    ToolbarItem(placement: .topBarLeading) {
+                        NavigationLink { TaskDirectoryView { id, title, scope in onSelect?(id, title, scope) } } label: { Label("我的清单", systemImage: "folder") }
+                    }
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button("新建任务", systemImage: "plus") { creating = true }
+                            .disabled(scope == "archived" || store.lists.isEmpty || store.taskWriteBusy || store.taskWriteBlocked)
+                    }
+                }
                 if list != nil {
+                    ToolbarItemGroup(placement: .topBarTrailing) {
                     Menu {
                         Button("编辑清单") { editingList = true }
                         Button("删除清单", role: .destructive) { deletingList = true }
@@ -115,15 +348,52 @@ struct TaskCollectionView: View {
                         Button(editMode.isEditing ? "完成排序" : "排序") { editMode = editMode.isEditing ? .inactive : .active }
                             .disabled(loading || !search.isEmpty || store.taskWriteBusy || store.taskWriteBlocked)
                     } label: { Image(systemName: "ellipsis") }.disabled(store.taskWriteBusy || store.taskWriteBlocked)
-                    Button("新建任务", systemImage: "plus") { creating = true }.disabled(store.taskWriteBusy || store.taskWriteBlocked || scope == "archived")
+                    if !isRoot { Button("新建任务", systemImage: "plus") { creating = true }.disabled(store.taskWriteBusy || store.taskWriteBlocked || scope == "archived") }
+                    }
+                }
+    }
+    /// 切换任务归档；参数：task 为当前快照任务；返回值：无；仅 PATCH archived，成功合并后刷新，失败显示错误，未知结果不重发。
+    private func archiveTask(_ task: AssistantTask) async {
+        let generation = store.cloudSessionID
+        do {
+            // 写回调参数无、返回服务器确认的任务；共享写保护防止重复提交，支持显式 false 取消归档。
+            let saved: AssistantTask = try await store.writeTask {
+                try await store.api.request("/tasks/\(task.id)", method: "PATCH", body: ["archived": !task.archived])
+            }
+            store.upsertTask(saved)
+            error = nil
+            await store.refreshTaskWrite()
+        } catch {
+            guard generation == store.cloudSessionID, !(error is CancellationError) else { return }
+            self.error = error.localizedDescription
+        }
+    }
+    /// 删除已确认任务及后代；参数：task 为经用户确认的任务；返回值：无；服务确认后清理本地树，失败保留快照，未知结果不重发。
+    private func removeTask(_ task: AssistantTask) async {
+        let generation = store.cloudSessionID
+        do {
+            // 删除回调参数无、返回无；复用详情接口的级联参数，服务器确认后再移除本地节点。
+            try await store.writeTask {
+                try await store.api.mutate("/tasks/\(task.id)", method: "DELETE", query: [URLQueryItem(name: "cascade", value: "true")])
+            }
+            var removed: Set<Int> = [task.id]
+            var foundDescendant = true
+            // 包含归档及折叠后代，循环保护保证异常父子关系不会导致无限遍历。
+            while foundDescendant {
+                foundDescendant = false
+                for item in store.tasks {
+                    if let parent = item.parentId, removed.contains(parent), removed.insert(item.id).inserted { foundDescendant = true }
                 }
             }
-            .sheet(isPresented: $creating) { TaskEditor(task: nil, parent: nil, preferredListID: listID) }
-            .sheet(isPresented: $editingList) { if let list { ListEditor(list: list) } }
-            .confirmationDialog("删除清单及其中全部任务？", isPresented: $deletingList, titleVisibility: .visible) { Button("删除清单", role: .destructive) { Task { await removeList() } } }
-            // 首次树展示回调输入无、输出无；默认展开已有主容器，后续用户折叠状态由本页State保留。
-            .task { if !initializedTree { expanded = Set(store.tasks.filter { $0.listId == listID && $0.taskType == "main" }.map(\.id)); initializedTree = true } }
-            .refreshable { await reload() }
+            store.tasks.removeAll { removed.contains($0.id) }
+            expanded.subtract(removed)
+            deletedTask = nil
+            error = nil
+            await store.refreshTaskWrite()
+        } catch {
+            guard generation == store.cloudSessionID, !(error is CancellationError) else { return }
+            self.error = error.localizedDescription
+        }
     }
     /// 刷新任务内容；参数：无；返回值：无；旧云身份与取消不显示错误。
     private func reload() async {
@@ -150,8 +420,103 @@ struct TaskCollectionView: View {
     /// 删除已确认清单；参数：无；返回值：无；服务端确认后本地移除并返回，未知结果不重发。
     private func removeList() async {
         let generation = store.cloudSessionID
-        do { try await store.writeTask { try await store.api.mutate("/task-lists/\(listID)", method: "DELETE") }; store.lists.removeAll { $0.id == listID }; store.tasks.removeAll { $0.listId == listID }; dismiss(); await store.refreshTaskWrite() }
+        do { try await store.writeTask { try await store.api.mutate("/task-lists/\(listID)", method: "DELETE") }; store.lists.removeAll { $0.id == listID }; store.tasks.removeAll { $0.listId == listID }; if isRoot { onSelect?(0, "任务", "active") } else { dismiss() }; await store.refreshTaskWrite() }
         catch { guard generation == store.cloudSessionID, !(error is CancellationError) else { return }; self.error = error.localizedDescription }
+    }
+}
+
+/// 树形任务行的装饰连线；每层宽度固定为 20 点，不参与点击或辅助功能读取。
+private struct TaskTreeGuides: View {
+    /// 从外至内各层是否还有后续兄弟分支，数组长度等于当前行显示深度。
+    let continuations: [Bool]
+
+    /// 构建层级虚线；参数：无；返回值：随任务行高度延伸的连接线，无业务副作用。
+    var body: some View {
+        // 几何回调输入当前行尺寸、返回连线视图；祖先竖线仅在仍有分支时延伸，当前层末节点用转角结束。
+        GeometryReader { geometry in
+            // 路径回调输入可变路径、返回无；按层绘制竖线，当前层再连接任务内容，虚线弱化装饰视觉。
+            Path { path in
+                for level in continuations.indices {
+                    let x = CGFloat(level) * 20 + 6
+                    let isCurrent = level == continuations.count - 1
+                    let jointY = min(22, geometry.size.height / 2)
+                    if isCurrent || continuations[level] {
+                        path.move(to: CGPoint(x: x, y: 0))
+                        path.addLine(to: CGPoint(x: x, y: continuations[level] ? geometry.size.height : jointY))
+                    }
+                    if isCurrent {
+                        path.move(to: CGPoint(x: x, y: jointY))
+                        path.addLine(to: CGPoint(x: geometry.size.width - 4, y: jointY))
+                    }
+                }
+            }
+            .stroke(Color.secondary.opacity(0.35), style: StrokeStyle(lineWidth: 1, dash: [3, 3]))
+        }
+    }
+}
+
+/// 按实际字符宽度省略标题，避免按词组截断造成尾部空白。
+private struct TaskTruncatedTitle: View {
+    let title: String
+    let width: CGFloat
+    var badge: String? = nil
+    @ScaledMetric(relativeTo: .body) private var fontSize: CGFloat = 17
+    @ScaledMetric(relativeTo: .caption2) private var badgeFontSize: CGFloat = 11
+
+    /// 构建单行标题；参数：无；返回值：测量字体一致的标题视图，辅助功能读取全文；无副作用。
+    var body: some View {
+        HStack(spacing: 6) {
+            Text(fittedTitle)
+                .font(.system(size: fontSize, weight: .medium))
+                .fixedSize(horizontal: true, vertical: false)
+            if let badge {
+                Text(badge)
+                    .font(.system(size: badgeFontSize, weight: .medium))
+                    .foregroundStyle(badge == "主任务" ? Color.teal : Color.secondary)
+                    .padding(.horizontal, 8).padding(.vertical, 3)
+                    .background((badge == "主任务" ? Color.teal : Color.secondary).opacity(0.1), in: Capsule())
+                    .fixedSize()
+            }
+        }
+            .frame(width: max(0, width), alignment: .leading)
+            .clipped()
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(title + (badge.map { "，" + $0 } ?? ""))
+    }
+
+    /// 求可容纳的最长字符前缀；参数：无；返回值：全文或尾部带省略号的文本，不拆分组合字符；无副作用。
+    private var fittedTitle: String {
+        let attributes: [NSAttributedString.Key: Any] = [.font: UIFont.systemFont(ofSize: fontSize, weight: .medium)]
+        // 标题测量扣除标签实际字宽、内边距和间距；按保存类型显示标签，不能凭是否存在子任务推断类型。
+        let badgeWidth = badge.map { ($0 as NSString).size(withAttributes: [.font: UIFont.systemFont(ofSize: badgeFontSize, weight: .medium)]).width + 22 } ?? 0
+        let available = max(0, width - badgeWidth)
+        guard (title as NSString).size(withAttributes: attributes).width > available else { return title }
+        let characters = Array(title)
+        var lower = 0
+        var upper = characters.count
+        // 按实际字形宽度二分查找，预留省略号宽度，尽量填满标题区域且不越过进度条边界。
+        while lower < upper {
+            let middle = (lower + upper + 1) / 2
+            let candidate = String(characters.prefix(middle)) + "…"
+            if (candidate as NSString).size(withAttributes: attributes).width <= available { lower = middle }
+            else { upper = middle - 1 }
+        }
+        return String(characters.prefix(lower)) + "…"
+    }
+}
+
+/// 所有任务展示入口共用的类型标签，仅依据保存类型，父子归属不改变标签。
+private struct TaskTypeBadge: View {
+    let taskType: String
+
+    /// 构建类型标签；参数：无；返回值：main 显示主任务，subtask 显示任务的小胶囊；无副作用。
+    var body: some View {
+        Text(taskType == "main" ? "主任务" : "任务")
+            .font(.caption2.weight(.medium))
+            .foregroundStyle(taskType == "main" ? Color.teal : Color.secondary)
+            .padding(.horizontal, 8).padding(.vertical, 3)
+            .background((taskType == "main" ? Color.teal : Color.secondary).opacity(0.1), in: Capsule())
+            .fixedSize()
     }
 }
 
@@ -160,33 +525,56 @@ struct TaskRow: View {
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     let task: AssistantTask
     var showsContext = true
+    /// 任务树使用紧凑间距，其他页面保留原有任务行布局。
+    var compact = false
     private var progress: TaskProgress { Values.progress(task, all: store.tasks) }
     private var container: Bool { task.taskType == "main" || store.tasks.contains { $0.parentId == task.id } }
-    /// 构建数量优先的任务行；参数：无；返回值：主任务图标或具体进度环，辅助字号纵排元信息；无业务写入。
+    /// 构建数量优先的任务行；参数：无；返回值：所有任务均显示百分比及进度条，按 compact 选择间距、按 showsContext 显示路径，辅助字号纵排元信息；无业务写入。
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
-            if container {
-                Image(systemName: TaskIcons.symbol(task.icon)).font(.title3).foregroundStyle(.teal)
-                    .frame(width: 38, height: 38).background(Color.teal.opacity(0.1), in: RoundedRectangle(cornerRadius: 12)).accessibilityHidden(true)
-            } else {
-                ZStack {
-                    Circle().stroke(.teal.opacity(0.14), lineWidth: 3)
-                    Circle().trim(from: 0, to: progress.fraction).stroke(.teal, style: StrokeStyle(lineWidth: 3, lineCap: .round)).rotationEffect(.degrees(-90))
-                    if progress.fraction >= 1 { Image(systemName: "checkmark").font(.caption.bold()).foregroundStyle(.teal) }
-                }.frame(width: 28, height: 28).padding(5).accessibilityHidden(true)
-            }
             VStack(alignment: .leading, spacing: 5) {
-                if dynamicTypeSize.isAccessibilitySize { Text(task.title).font(.body.weight(.medium)); if !(container && progress.total == 0) { Text(taskQuantity(progress)).font(.caption).foregroundStyle(.secondary) } }
-                else { HStack { Text(task.title).font(.body.weight(.medium)); Spacer(minLength: 6); if !(container && progress.total == 0) { Text(taskQuantity(progress)).font(.caption).foregroundStyle(.secondary) } } }
-                if container {
-                    if progress.total == 0 { Text("暂无任务").font(.caption).foregroundStyle(.secondary) }
-                    else { Text(taskPercent(progress)).font(.caption).foregroundStyle(.secondary); ProgressView(value: progress.fraction).tint(.teal).accessibilityHidden(true) }
+                // 紧凑列表标题单行尾部省略，辅助功能仍读取完整标题；其他入口保留原有换行，详情页不受影响。
+                if compact {
+                    // 用单行占位确定动态字号高度，再给标题明确的内容宽度，避免布局协商提前截断；右边界与进度条一致。
+                    Text(" ").font(.body.weight(.medium)).hidden()
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .overlay(alignment: .leading) {
+                            // 几何回调输入标题行尺寸、返回同宽标题；不改变任务数据，辅助功能仍读取完整标题。
+                            GeometryReader { geometry in
+                                TaskTruncatedTitle(title: task.title, width: geometry.size.width, badge: task.taskType == "main" ? "主任务" : "任务")
+                            }
+                        }
+                    // 标题独占首行，第二行左侧为无单位数量、右侧为百分比，让长标题和进度信息互不挤占。
+                    HStack {
+                        Text(taskQuantity(progress, includesUnit: false))
+                        Spacer(minLength: 8)
+                        Text(taskPercent(progress))
+                    }.font(.caption).foregroundStyle(.secondary)
                 }
+                else if dynamicTypeSize.isAccessibilitySize { taskTitle; if !(container && progress.total == 0) { Text(taskQuantity(progress)).font(.caption).foregroundStyle(.secondary) } }
+                else { HStack { taskTitle; Spacer(minLength: 6); if !(container && progress.total == 0) { Text(taskQuantity(progress)).font(.caption).foregroundStyle(.secondary).fixedSize() } } }
+                // 普通任务使用自身量化进度，容器使用叶节点汇总；零总量由统一进度模型安全显示为 0%，保持行样式一致。
+                if !compact { Text(taskPercent(progress)).font(.caption).foregroundStyle(.secondary) }
+                ProgressView(value: progress.fraction).tint(.teal).accessibilityHidden(true)
                 if showsContext { Text(taskPath(task, tasks: store.tasks, lists: store.lists)).font(.caption).foregroundStyle(.secondary) }
-                if dynamicTypeSize.isAccessibilitySize { VStack(alignment: .leading, spacing: 5) { metadata }.font(.caption).foregroundStyle(.secondary) }
-                else { HStack { metadata }.font(.caption).foregroundStyle(.secondary) }
+                // 仅在存在优先级或日期时保留元信息区域，避免空布局占据紧凑任务行高度。
+                if task.priority == "high" || !task.endDate.isEmpty {
+                    if dynamicTypeSize.isAccessibilitySize { VStack(alignment: .leading, spacing: compact ? 3 : 5) { metadata }.font(.caption).foregroundStyle(.secondary) }
+                    else { HStack { metadata }.font(.caption).foregroundStyle(.secondary) }
+                }
             }
-        }.padding(.vertical, 7).foregroundStyle(task.archived ? .secondary : .primary).accessibilityElement(children: .combine)
+        }.padding(.vertical, compact ? 6 : 7).foregroundStyle(task.archived ? .secondary : .primary).accessibilityElement(children: .combine)
+    }
+    /// 构建任务标题；参数：无；返回值：紧凑列表单行省略的标题视图，辅助功能保留全文，无副作用。
+    private var taskTitle: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 6) {
+            Text(task.title)
+            .font(.body.weight(.medium))
+            .lineLimit(compact ? 1 : nil)
+            .truncationMode(.tail)
+            .accessibilityLabel(task.title)
+            TaskTypeBadge(taskType: task.taskType)
+        }
     }
     /// 构建辅助元信息；参数：无；返回值：必要优先级及完整日期时分；两种字号共用，不截断日期。
     @ViewBuilder private var metadata: some View {
@@ -206,60 +594,125 @@ struct TaskDetailView: View {
     @State private var error: String?
     private var item: AssistantTask? { store.tasks.first { $0.id == taskID } }
     private var children: [AssistantTask] { store.tasks.filter { $0.parentId == taskID } }
-    /// 构建主任务或具体任务详情；参数：无；返回值：对象层次、细进度条和系统底部工具栏；历史具体容器只显示下级，不允许新增或直接步进。
+    /// 构建只读任务详情；参数：无；返回值：任务信息与进度，未归档叶任务通过加减按钮按步长修改完成数量，其他信息通过独立编辑表单修改；容器进度由下级汇总。
     var body: some View {
         Group {
             if let task = item {
                 let summary = Values.progress(task, all: store.tasks)
                 let container = task.taskType == "main" || !children.isEmpty
-                List {
-                    Section {
-                        HStack(alignment: .top, spacing: 14) {
-                            if container { Image(systemName: TaskIcons.symbol(task.icon)).font(.title2).foregroundStyle(.teal).frame(width: 44, height: 44).background(Color.teal.opacity(0.1), in: RoundedRectangle(cornerRadius: 12)) }
-                            VStack(alignment: .leading, spacing: 7) { Text(task.title).font(.title2.weight(.semibold)); Text(taskPath(task, tasks: store.tasks, lists: store.lists)).font(.caption).foregroundStyle(.secondary) }
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 20) {
+                        HStack(alignment: .top, spacing: 10) {
+                            Text(task.title)
+                                .font(.title2.weight(.semibold)).tracking(0.2)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .textSelection(.enabled)
+                            TaskTypeBadge(taskType: task.taskType).padding(.top, 5)
+                        }.padding(.vertical, 8)
+
+                        // 进度与唯一可编辑的完成数量放在同一卡片，其他信息保持只读。
+                        VStack(alignment: .leading, spacing: 18) {
+                            HStack {
+                                Label("完成进度", systemImage: "chart.bar.fill")
+                                    .font(.subheadline.weight(.medium)).foregroundStyle(.secondary)
+                                Spacer()
+                                if task.archived { Text("已归档").font(.caption).foregroundStyle(.secondary) }
+                            }
+                            // 容器与归档任务没有加减控件，在摘要中显示进度；可操作任务的数字统一放入药丸，避免重复。
+                            if container || task.archived {
+                            ViewThatFits(in: .horizontal) {
+                                HStack(alignment: .firstTextBaseline) {
+                                    Text(taskQuantity(summary, includesUnit: false)).font(.largeTitle.weight(.semibold)).monospacedDigit()
+                                    Spacer(minLength: 12)
+                                    Text(taskPercent(summary)).font(.title3.weight(.medium)).foregroundStyle(.teal).monospacedDigit()
+                                }
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Text(taskQuantity(summary, includesUnit: false)).font(.title.weight(.semibold)).monospacedDigit()
+                                    Text(taskPercent(summary)).font(.title3).foregroundStyle(.teal)
+                                }
+                            }
+                            }
+                            if container || task.archived {
+                                ProgressView(value: summary.fraction).tint(.teal)
+                            }
+                            if !container && !task.archived {
+                                HStack(spacing: 12) {
+                                    // 操作回调参数无、返回无；统一使用服务端步长接口，提交期间禁用，防止连续点击重复写入。
+                                    Button { Task { await progress("decrement") } } label: {
+                                        Image(systemName: "minus").font(.body.weight(.semibold)).frame(width: 44, height: 44)
+                                    }
+                                    .buttonStyle(.plain).foregroundStyle(.teal)
+                                    .accessibilityLabel("减少进度")
+                                    .disabled(task.progressCompleted <= 0 || busy || store.taskWriteBusy || store.taskWriteBlocked)
+                                    // 中间集中显示完成数量／总量与百分比，左右按步长加减，共用药丸背景。
+                                    VStack(spacing: 3) {
+                                        Text(taskQuantity(summary, includesUnit: false))
+                                            .font(.headline).monospacedDigit()
+                                        // 进度条与数量、百分比共用药丸中央区域，保持左右加减按钮的独立点击范围。
+                                        ProgressView(value: summary.fraction).tint(.teal).accessibilityHidden(true)
+                                        Text(taskPercent(summary)).font(.caption).foregroundStyle(.teal).monospacedDigit()
+                                    }.frame(maxWidth: .infinity)
+                                    Button { Task { await progress("increment") } } label: {
+                                        Image(systemName: "plus").font(.body.weight(.semibold)).frame(width: 44, height: 44)
+                                    }
+                                    .buttonStyle(.plain).foregroundStyle(.teal)
+                                    .accessibilityLabel("增加进度")
+                                    .disabled(task.progressCompleted >= task.progressTotal || busy || store.taskWriteBusy || store.taskWriteBlocked)
+                                }
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 6)
+                                .background(Color(uiColor: .tertiarySystemGroupedBackground), in: Capsule())
+                            }
                         }
-                        if container && summary.total == 0 { Text("暂无任务").foregroundStyle(.secondary) }
-                        else {
-                            // 数量布局按辅助字号纵排；保留完整量化值，不缩小文字以塞入固定横排。
-                            if dynamicTypeSize.isAccessibilitySize { VStack(alignment: .leading, spacing: 6) { Text(taskQuantity(summary)).font(.title.weight(.regular)); Text(taskPercent(summary)).foregroundStyle(.secondary) } }
-                            else { HStack(alignment: .firstTextBaseline) { Text(taskQuantity(summary)).font(.title.weight(.regular)); Spacer(); Text(taskPercent(summary)).foregroundStyle(.secondary) } }
-                            ProgressView(value: summary.fraction).tint(.teal)
+                        .padding(20)
+                        .background(Color(uiColor: .secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 24))
+
+                        // 双列信息块替代长串字段行；辅助字号改为单列，保持日期和长清单名称可读。
+                        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), alignment: .topLeading), count: dynamicTypeSize.isAccessibilitySize ? 1 : 2), alignment: .leading, spacing: 24) {
+                            informationTile("清单", value: store.lists.first { $0.id == task.listId }?.name ?? "未设置", symbol: "folder")
+                            informationTile("优先级", value: task.priority == "high" ? "高" : task.priority == "low" ? "低" : "中", symbol: "flag")
+                            informationTile("开始", value: task.startDate.isEmpty ? "未设置" : taskDate(task.startDate, time: task.startTime), symbol: "calendar")
+                            informationTile("截止", value: task.endDate.isEmpty ? "未设置" : taskDate(task.endDate, time: task.endTime), symbol: "calendar.badge.clock")
+                            if !container {
+                                informationTile("总量", value: task.progressTotal.formatted() + " " + task.progressUnit, symbol: "target")
+                                informationTile("步长", value: task.progressStep.formatted() + " " + task.progressUnit, symbol: "plus.forwardslash.minus")
+                            }
                         }
-                    }
-                    // 对象标题、数量与细条属于同一摘要，隐藏摘要内部行分隔；下级与字段分隔保持系统样式。
-                    .listRowSeparator(.hidden)
-                    if container {
-                        Section("下级") { ForEach(children) { child in NavigationLink { TaskDetailView(taskID: child.id) } label: { TaskRow(task: child, showsContext: false) } } }
-                    } else {
-                        Section {
-                            LabeledContent("优先级", value: task.priority == "high" ? "高" : task.priority == "low" ? "低" : "中")
-                            LabeledContent("开始", value: task.startDate.isEmpty ? "未设置" : taskDate(task.startDate, time: task.startTime))
-                            LabeledContent("截止", value: task.endDate.isEmpty ? "未设置" : taskDate(task.endDate, time: task.endTime))
+                        .padding(20)
+                        .background(Color(uiColor: .secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 24))
+
+                        if container && !children.isEmpty {
+                            VStack(alignment: .leading, spacing: 16) {
+                                Text("下级任务").font(.subheadline.weight(.medium)).foregroundStyle(.secondary)
+                                // 子任务回调输入任务、返回导航行；继续复用只读详情，避免建立另一套编辑入口。
+                                ForEach(children) { child in
+                                    NavigationLink { TaskDetailView(taskID: child.id) } label: {
+                                        TaskRow(task: child, showsContext: false, compact: true)
+                                    }.buttonStyle(.plain)
+                                }
+                            }.padding(20)
+                                .background(Color(uiColor: .secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 24))
                         }
-                        Section("进度配置") { LabeledContent("总量", value: task.progressTotal.formatted() + " " + task.progressUnit); LabeledContent("步长", value: task.progressStep.formatted() + " " + task.progressUnit) }
-                    }
-                    if !task.remark.isEmpty { Section("备注") { Text(task.remark).foregroundStyle(.secondary).textSelection(.enabled) } }
-                    if let notice = store.taskNotice { InlineError(message: notice); Button("刷新任务") { Task { await store.refreshTaskWrite(confirmedWrite: false) } } }
-                    else if let error { InlineError(message: error) }
-                }.listStyle(.plain).navigationTitle(task.taskType == "main" ? "主任务详情" : "任务详情").navigationBarTitleDisplayMode(.inline).toolbar(.hidden, for: .tabBar)
+                        if !task.remark.isEmpty {
+                            VStack(alignment: .leading, spacing: 12) {
+                                Label("备注", systemImage: "text.alignleft").font(.subheadline.weight(.medium)).foregroundStyle(.secondary)
+                                Text(task.remark).font(.body).textSelection(.enabled)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                            }.padding(20)
+                                .background(Color(uiColor: .secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 24))
+                        }
+                        if let notice = store.taskNotice {
+                            InlineError(message: notice)
+                            Button("刷新任务") { Task { await store.refreshTaskWrite(confirmedWrite: false) } }
+                        } else if let error { InlineError(message: error) }
+                    }.padding(.horizontal, 20).padding(.vertical, 16)
+                }
+                .scrollDismissesKeyboard(.interactively)
+                .background(Color(uiColor: .systemGroupedBackground))
+                .navigationTitle("任务").navigationBarTitleDisplayMode(.inline).toolbar(.hidden, for: .tabBar)
                     .toolbar {
-                        ToolbarItem(placement: .topBarTrailing) { Button("编辑") { editing = true }.disabled(task.archived || busy || store.taskWriteBusy || store.taskWriteBlocked) }
-                        ToolbarItem(placement: .topBarTrailing) {
-                            Menu {
-                                Button(task.archived ? "恢复任务" : "归档任务", systemImage: "archivebox") { Task { await archive(task) } }
-                                Button("删除任务", role: .destructive) { deleting = true }
-                            } label: { Image(systemName: "ellipsis") }.disabled(busy || store.taskWriteBusy || store.taskWriteBlocked)
-                        }
                         if !task.archived && task.taskType == "main" {
                             ToolbarItem(placement: .bottomBar) { Button("新建下级", systemImage: "plus") { addingChild = true }.disabled(busy || store.taskWriteBusy || store.taskWriteBlocked) }
-                        } else if !task.archived && !container {
-                            ToolbarItemGroup(placement: .bottomBar) {
-                                Button("减少", systemImage: "minus") { Task { await progress("decrement") } }.disabled(task.progressCompleted <= 0 || busy || store.taskWriteBusy || store.taskWriteBlocked)
-                                Spacer()
-                                Text(task.progressCompleted.formatted() + " " + task.progressUnit).foregroundStyle(.secondary)
-                                Spacer()
-                                Button("+" + task.progressStep.formatted() + " " + task.progressUnit) { Task { await progress("increment") } }.disabled(task.progressCompleted >= task.progressTotal || busy || store.taskWriteBusy || store.taskWriteBlocked)
-                            }
                         }
                     }
                     .sheet(isPresented: $editing) { TaskEditor(task: task, parent: nil) }
@@ -267,6 +720,13 @@ struct TaskDetailView: View {
                     .confirmationDialog("删除此任务及全部下级？", isPresented: $deleting, titleVisibility: .visible) { Button("删除任务及下级", role: .destructive) { Task { await remove() } } }
             } else { ContentUnavailableView("任务已不存在", systemImage: "checkmark.circle") }
         }
+    }
+    /// 构建只读信息块；参数：title 为简短字段名，value 为完整显示值，symbol 为系统图标名称；返回值：标签和数值组成的信息视图，无副作用。
+    private func informationTile(_ title: String, value: String, symbol: String) -> some View {
+        VStack(alignment: .leading, spacing: 9) {
+            Label(title, systemImage: symbol).font(.caption).foregroundStyle(.secondary)
+            Text(value).font(.subheadline.weight(.medium)).fixedSize(horizontal: false, vertical: true)
+        }.frame(maxWidth: .infinity, alignment: .leading)
     }
     /// 更改叶任务进度；参数：operation 为 increment/decrement；返回值：无；后端检查溢出和归档，成功刷新。
     private func progress(_ operation: String) async {
@@ -389,7 +849,7 @@ struct TaskEditor: View {
                     TaskFloatingField(title: "名称", text: $title)
                     TaskFloatingField(title: "备注", text: $remark, multiline: true)
                     if task == nil || (task?.taskType == "subtask" && !configuresProgress) {
-                        Picker("类型", selection: $taskType) { Text("具体任务").tag("subtask"); Text("主任务").tag("main") }
+                        Picker("类型", selection: $taskType) { Text("任务").tag("subtask"); Text("主任务").tag("main") }
                     }
                 }
                 if taskType == "main" { Section { NavigationLink { TaskIconPicker(selection: $icon) } label: { HStack { Text("图标"); Spacer(); Image(systemName: TaskIcons.symbol(icon)).foregroundStyle(.teal) } } } }
@@ -467,9 +927,9 @@ private func taskDate(_ day: String, time: String) -> String {
     Values.date(day).formatted(date: .abbreviated, time: .omitted) + (time.isEmpty ? "" : " " + time)
 }
 
-/// 格式化量化进度；参数：progress为实际叶汇总；返回值：最多两位小数的完成/总量与一致单位，混合单位不伪装；无副作用。
-private func taskQuantity(_ progress: TaskProgress) -> String {
-    progress.completed.formatted(.number.precision(.fractionLength(0...2))) + " / " + progress.total.formatted(.number.precision(.fractionLength(0...2))) + (progress.unit.isEmpty ? "" : " " + progress.unit)
+/// 格式化任务数量；参数：progress 为任务进度，includesUnit 控制是否附加非空单位，默认附加；返回值：最多两位小数的完成数量 / 总数量文本；无副作用。
+private func taskQuantity(_ progress: TaskProgress, includesUnit: Bool = true) -> String {
+    progress.completed.formatted(.number.precision(.fractionLength(0...2))) + " / " + progress.total.formatted(.number.precision(.fractionLength(0...2))) + (!includesUnit || progress.unit.isEmpty ? "" : " " + progress.unit)
 }
 /// 格式化完成比例；参数：progress为汇总；返回值：最多一位小数百分比，如54.5%；无副作用。
 private func taskPercent(_ progress: TaskProgress) -> String { (progress.fraction * 100).formatted(.number.precision(.fractionLength(0...1))) + "%" }
