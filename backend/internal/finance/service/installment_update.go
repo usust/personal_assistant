@@ -14,7 +14,7 @@ import (
 	"personal_assistant_server/internal/finance/repository"
 )
 
-// updateInstallment 合并并保存整套分期设置；参数：db 为持有用户锁的事务，owner 为身份，bill 为分期主账单，old 为原规则，changes 为实际提交的字段；返回值：新计划或错误，所有期次与余额变更由外层原子提交。
+// updateInstallment 合并并保存整套分期设置；参数：db 为持有用户锁的事务，owner 为可信身份，bill 为分期主账单，old 为原规则，changes 为实际提交的白名单字段；返回值：新计划或校验、权限、数据库错误，所有期次与余额变更由外层原子提交，原报销继承规则不可通过计划 PATCH 修改。
 func (s *Service) updateInstallment(db *gorm.DB, owner uint64, bill domain.Transaction, old domain.InstallmentPlan, changes json.RawMessage) (domain.InstallmentPlan, error) {
 	var submitted map[string]json.RawMessage
 	// 严格解析业务输入，避免无效字段进入操作流程。
@@ -64,6 +64,7 @@ func (s *Service) updateInstallment(db *gorm.DB, owner uint64, bill domain.Trans
 	if err != nil {
 		return old, err
 	}
+	next.Reimbursable = old.Reimbursable
 	fields := map[string]any{}
 	childFields := map[string]any{}
 	if _, ok := submitted["categoryId"]; ok {
@@ -131,7 +132,7 @@ func (s *Service) updateInstallment(db *gorm.DB, owner uint64, bill domain.Trans
 	return installment(db, owner, "finance.installment.plan", Input{ID: bill.ID})
 }
 
-// reconcileInstallment 重算各期并按新旧净差调整余额；参数：db 为用户锁事务，owner 为身份，bill 为主账单，old 为原计划，next 为待写计划，fields/childFields 为已校验的资料 map；返回值：错误或 nil，失败必须回滚，保留单期删除及退款关联。
+// reconcileInstallment 重算各期并按新旧净差调整余额；参数：db 为用户锁事务，owner 为可信身份，bill 为主账单，old 为原计划，next 为非 nil 待写计划，fields/childFields 为已校验的资料 map；返回值：校验、权限、数据库错误或 nil，失败必须回滚；保留单期删除、退款及报销资料，已报销期次不得移出范围、改为待入账或降至报销净额以下。
 func (s *Service) reconcileInstallment(db *gorm.DB, owner uint64, bill domain.Transaction, old domain.InstallmentPlan, next *domain.InstallmentPlan, fields, childFields map[string]any) error {
 	// 按所属用户读取账户并检查可用状态。
 	if _, err := account(db, owner, bill.AccountID, true); err != nil {
@@ -196,9 +197,12 @@ func (s *Service) reconcileInstallment(db *gorm.DB, owner uint64, bill domain.Tr
 				// 拒绝本次操作：调整后的单期金额不能低于已退款金额。
 				return Invalid("调整后的单期金额不能低于已退款金额")
 			}
+			if child.ReimbursedAmount > row.Amount-refunded || (row.Status != "posted" && child.ReimbursedAmount != 0) {
+				return Invalid("请先调整该期已报销金额，再修改分期")
+			}
 		} else {
 			// 生成当前操作需要的展示或协议文本。
-			child = domain.Transaction{OwnerID: owner, RequestID: fmt.Sprintf("installment_%d_%d", bill.ID, row.Period), AccountID: bill.AccountID, Type: "expense", CategoryID: bill.CategoryID, Counterparty: bill.Counterparty, Description: bill.Description, Source: "http", InstallmentParentID: &bill.ID, InstallmentPeriod: row.Period}
+			child = domain.Transaction{Reimbursable: next.Reimbursable, OwnerID: owner, RequestID: fmt.Sprintf("installment_%d_%d", bill.ID, row.Period), AccountID: bill.AccountID, Type: "expense", CategoryID: bill.CategoryID, Counterparty: bill.Counterparty, Description: bill.Description, Source: "http", InstallmentParentID: &bill.ID, InstallmentPeriod: row.Period}
 		}
 		update := map[string]any{"amount": row.Amount, "transaction_date": row.Date, "status": row.Status, "installment_edit_removed": false}
 		// 已单独修改的历史资料保留；计划资料仅传播到原本未入账的期次。
@@ -231,6 +235,9 @@ func (s *Service) reconcileInstallment(db *gorm.DB, owner uint64, bill domain.Tr
 	for _, child := range children {
 		if retained[child.InstallmentPeriod] || child.Status == "deleted" {
 			continue
+		}
+		if child.ReimbursedAmount != 0 {
+			return Invalid("请先调整该期已报销金额，再修改分期范围")
 		}
 		var count int64
 		// 统计符合条件的业务记录。

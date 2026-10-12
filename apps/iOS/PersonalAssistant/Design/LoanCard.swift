@@ -7,10 +7,6 @@ struct LoanCard<Content: View>: View {
     /// 创建内容卡片；参数：content 为无输入、返回 Content 的视图构造回调；返回值：卡片，无业务副作用。
     init(@ViewBuilder content: () -> Content) { self.content = content() }
 
-    var body: some View {
-        content
-            .padding(20)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color(uiColor: .secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 24, style: .continuous))
-    }
+    /// 构建贷款卡片；参数：无；返回值：复用共享尺度的普通内容卡片，无业务副作用。
+    var body: some View { ContentCard { content } }
 }

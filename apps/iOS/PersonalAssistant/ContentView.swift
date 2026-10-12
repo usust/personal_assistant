@@ -12,18 +12,18 @@ struct ContentView: View {
             else {
                 TabView(selection: $selectedTab) {
                     if store.canUseCloud {
-                        Tab("今日", systemImage: "sun.max", value: "today") { NavigationStack { TodayView() } }
-                        Tab("任务", systemImage: "checklist", value: "tasks") { NavigationStack { TasksView() } }
+                        Tab("今日", systemImage: "sun.max", value: "today") { TabRootNavigation { TodayView() } }
+                        Tab("任务", systemImage: "checklist", value: "tasks") { TabRootNavigation { TasksView() } }
                     }
-                    Tab("财务", systemImage: "chart.pie", value: "finance") { NavigationStack { FinanceView() } }
+                    Tab("财务", systemImage: "chart.pie", value: "finance") { TabRootNavigation { FinanceView() } }
                     if store.profile != nil {
-                        Tab("健康", systemImage: "heart", value: "health") { NavigationStack { HealthView() } }
+                        Tab("健康", systemImage: "heart", value: "health") { TabRootNavigation { HealthView() } }
                     }
                     if store.canUseCloud {
-                        Tab("助手", systemImage: "sparkles", value: "chat") { NavigationStack { ChatView() } }
+                        Tab("助手", systemImage: "sparkles", value: "chat") { TabRootNavigation { ChatView() } }
                     }
-                    Tab("用户", systemImage: "person.crop.circle", value: "user") { NavigationStack { UserAccountView() } }
-                    Tab("设置", systemImage: "gearshape", value: "settings") { NavigationStack { SettingsView() } }
+                    Tab("用户", systemImage: "person.crop.circle", value: "user") { TabRootNavigation { UserAccountView() } }
+                    Tab("设置", systemImage: "gearshape", value: "settings") { TabRootNavigation { SettingsView() } }
                 }
                 // 由 iOS 27 系统 TabView 管理液态玻璃导航，滚动时收起以增加内容空间。
                 .tabViewStyle(.sidebarAdaptable)

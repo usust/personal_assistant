@@ -253,8 +253,11 @@ func accountFields(raw json.RawMessage, create bool) (map[string]any, error) {
 	return fields, nil
 }
 
-// validate 校验流水结构；参数：无；返回值：字段错误，不访问数据库；关联记录权限在事务中另行验证。
+// validateTransactionInput 校验流水结构；参数：in 为原始金额及账户、日期、报销等输入；返回值：字段错误或 nil，不访问数据库；关联记录权限在事务中另行验证。
 func validateTransactionInput(in domain.TransactionInput) error {
+	if err := validateReimbursementInput(in); err != nil {
+		return err
+	}
 	// 检查流水时间是否有效。
 	if !validTransactionTime(in.TransactionTime) {
 		// 拒绝本次操作：交易时间须为 HH:mm。

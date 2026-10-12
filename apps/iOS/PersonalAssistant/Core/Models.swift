@@ -147,6 +147,10 @@ nonisolated struct AccountCard: Codable, Identifiable, Equatable {
 }
 
 nonisolated struct FinanceTransaction: Codable, Identifiable {
+    /// 是否需要报销；历史未返回字段时按 false 展示。
+    var reimbursable: Bool? = nil
+    /// 已报销金额；仅追踪报销进度，不改变账户余额，历史缺失按零处理。
+    var reimbursedAmount: String? = nil
     var screenshotJobID: String? = nil
     var screenshotIssue: String? = nil
     var installmentPeriods: Int? = nil
@@ -186,6 +190,10 @@ nonisolated struct TransactionCategory: Codable, Identifiable { let id: Int; let
 nonisolated struct FinanceMetric: Codable { let name: String; let amount: String }
 nonisolated struct CashFlow: Codable { let month: String; let income: String; let expense: String; let net: String }
 nonisolated struct FinanceOverview: Codable {
+    /// 当前累计净报销支出，包含待同步的本机操作；历史接口缺失时保持 nil。
+    var reimbursementTotal: String? = nil
+    var reimbursementReceived: String? = nil
+    var reimbursementPending: String? = nil
     let totalAssets: String
     let totalLiabilities: String
     let netWorth: String
@@ -351,6 +359,9 @@ nonisolated struct FinancePreset: Decodable, Identifiable {
     let lastError: String
 }
 nonisolated struct PresetTransaction: Decodable {
+    /// 模板保留是否报销，使用时不继承任何已报销金额。
+    var reimbursable: Bool? = nil
+    var reimbursedAmount: String? = nil
     var discount: String? = nil
     let accountId: Int
     let targetAccountId: Int?

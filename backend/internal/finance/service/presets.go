@@ -16,7 +16,7 @@ import (
 	"personal_assistant_server/internal/finance/repository"
 )
 
-// presets 管理用户模板及周期计划；参数：db 为持有用户锁的事务，owner 为用户，op 为操作，in 为输入；返回值：记录或错误；删除不影响已生成流水。
+// presets 管理用户模板及周期计划；参数：db 为持有用户锁的事务，owner 为可信用户，op 为预设白名单操作，in 为目标 ID 和提交字段；返回值：记录或校验、权限、数据库错误；模板可标记报销但不能预记到账金额，删除不影响已生成流水，PATCH 仅写入已提交字段。
 func (s *Service) presets(db *gorm.DB, owner uint64, op string, in Input) (any, error) {
 	if op == "finance.preset.list" {
 		rows := []domain.Preset{}
@@ -44,6 +44,9 @@ func (s *Service) presets(db *gorm.DB, owner uint64, op string, in Input) (any, 
 		// 确认输入满足当前业务约束。
 		if err := validateTransactionInput(body.Transaction); err != nil {
 			return nil, err
+		}
+		if body.Transaction.ReimbursedAmount != 0 {
+			return nil, Invalid("模板不能填写已报销金额")
 		}
 		// 检查文本长度与必填约束。
 		if !validText(body.Name, 128, true) {
@@ -126,6 +129,9 @@ func (s *Service) presets(db *gorm.DB, owner uint64, op string, in Input) (any, 
 		// 确认输入满足当前业务约束。
 		if err := validateTransactionInput(*body.Transaction); err != nil {
 			return nil, err
+		}
+		if body.Transaction.ReimbursedAmount != 0 {
+			return nil, Invalid("模板不能填写已报销金额")
 		}
 		// 确认交易引用的账户与分类属于当前用户。
 		if err := validateReferences(db, owner, *body.Transaction); err != nil {

@@ -6,6 +6,9 @@ import (
 )
 
 type Transaction struct {
+	// 报销仅记录支出的报销归属与已到账金额，不独立调整账户余额。
+	Reimbursable       bool   `json:"reimbursable" gorm:"not null;default:false"`
+	ReimbursedAmount   Money  `json:"reimbursedAmount" gorm:"type:bigint;not null;default:0"`
 	InstallmentPeriods int    `json:"installmentPeriods,omitempty" gorm:"-"`
 	InstallmentName    string `json:"installmentName,omitempty" gorm:"-"`
 	// Discount 为支出减免，Amount 保存实际扣款金额。
@@ -46,6 +49,9 @@ type Transaction struct {
 func (Transaction) TableName() string { return "finance_transactions_v2" }
 
 type TransactionInput struct {
+	// 省略新字段保持历史请求的幂等指纹，历史流水默认不参与报销。
+	Reimbursable       bool    `json:"reimbursable,omitempty"`
+	ReimbursedAmount   Money   `json:"reimbursedAmount,omitempty"`
 	Discount           Money   `json:"discount,omitempty"`
 	Rebate             Money   `json:"rebate,omitempty"`
 	RebateAccountID    *uint64 `json:"rebateAccountId,omitempty"`

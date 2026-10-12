@@ -14,7 +14,7 @@ struct TodayView: View {
         store.tasks.filter { !$0.archived && $0.taskType == "subtask" && Values.progress($0, all: store.tasks).fraction < 1 &&
             ((!$0.endDate.isEmpty && $0.endDate <= Values.day()) || $0.startDate == Values.day()) }
     }
-    /// 构建今日首页；参数：无；返回值：保持原布局的原生页面；任务与财务错误分别在所属区域展示。
+    /// 构建今日首页；参数：无；返回值：复用内容卡片与语义颜色的原生页面；任务与财务错误分别在所属区域展示。
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
@@ -26,8 +26,8 @@ struct TodayView: View {
                 }
                 NavigationLink { HealthView() } label: {
                     Label("健康管理 · 同步到服务器", systemImage: "heart.text.clipboard")
-                        .font(.headline).frame(maxWidth: .infinity, alignment: .leading).padding(20)
-                        .background(Color(uiColor: .secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 24))
+                        .font(.headline).frame(maxWidth: .infinity, alignment: .leading).padding(AppVisualStyle.cardInset)
+                        .cardSurface()
                 }.buttonStyle(.plain)
                 VStack(alignment: .leading, spacing: 18) {
                     Label("今日专注", systemImage: "sun.max.fill").font(.headline).foregroundStyle(.teal)
@@ -47,20 +47,20 @@ struct TodayView: View {
                     Button("添加任务", systemImage: "plus") { creating = true }.buttonStyle(.glassProminent)
                         .disabled(store.lists.isEmpty || taskLoading || store.taskWriteBusy || store.taskWriteBlocked)
                     if taskLoaded && store.lists.isEmpty { NavigationLink("先创建一个清单") { ListsView() }.font(.subheadline) }
-                }.padding(24).frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Color(uiColor: .secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 28))
+                }.padding(AppVisualStyle.cardInset).frame(maxWidth: .infinity, alignment: .leading)
+                    .cardSurface()
                 if let overview = store.overview {
                     Text("财务一瞥").font(.title2.bold())
                     ViewThatFits(in: .horizontal) {
-                        HStack { MetricCard(title: "本月支出", value: Values.money(overview.monthExpense), symbol: "arrow.up.right", color: .orange); MetricCard(title: "本月结余", value: Values.money(overview.monthBalance), symbol: "leaf") }
-                        VStack { MetricCard(title: "本月支出", value: Values.money(overview.monthExpense), symbol: "arrow.up.right", color: .orange); MetricCard(title: "本月结余", value: Values.money(overview.monthBalance), symbol: "leaf") }
+                        HStack { MetricCard(title: "本月支出", value: Values.money(overview.monthExpense), symbol: "arrow.up.right", color: FinanceVisualStyle.expense); MetricCard(title: "本月结余", value: Values.money(overview.monthBalance), symbol: "leaf") }
+                        VStack { MetricCard(title: "本月支出", value: Values.money(overview.monthExpense), symbol: "arrow.up.right", color: FinanceVisualStyle.expense); MetricCard(title: "本月结余", value: Values.money(overview.monthBalance), symbol: "leaf") }
                     }
                     NavigationLink { FinanceView() } label: { Label("打开财务", systemImage: "chart.pie") }
                 }
                 if let financeError { InlineError(message: "财务：" + financeError) }
                 NavigationLink { ChatView() } label: {
-                    HStack(spacing: 14) { SymbolTile(symbol: "sparkles"); VStack(alignment: .leading, spacing: 5) { Text("交给你的 AI 助手").font(.headline); Text("梳理计划，记录收支，整理思路").font(.subheadline).foregroundStyle(.secondary) }; Spacer(); Image(systemName: "chevron.right") }.padding(20)
-                        .background(Color(uiColor: .secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 24))
+                    HStack(spacing: 14) { SymbolTile(symbol: "sparkles"); VStack(alignment: .leading, spacing: 5) { Text("交给你的 AI 助手").font(.headline); Text("梳理计划，记录收支，整理思路").font(.subheadline).foregroundStyle(.secondary) }; Spacer(); Image(systemName: "chevron.right") }.padding(AppVisualStyle.cardInset)
+                        .cardSurface()
                 }.buttonStyle(.plain)
             }.padding(20).frame(maxWidth: 820).frame(maxWidth: .infinity)
         }.background(Color(uiColor: .systemGroupedBackground)).navigationTitle("今日").navigationBarTitleDisplayMode(.inline)

@@ -116,7 +116,7 @@ func listTransactions(db *gorm.DB, owner uint64, f Filter) ([]domain.Transaction
 	return rows, nil
 }
 
-// overview 汇总全部已入账流水而非列表分页；参数：db 为数据库，owner 为身份；返回值：CNY 总览或数据库错误，月份使用 UTC+8，转账与草稿/作废排除收支。
+// overview 汇总完整账本；参数：db 为用户锁事务数据库，owner 为可信身份；返回值：CNY 总览或数据库错误，无直接写入；月份使用 UTC+8，报销累计已入账支出的退款后净额，报销资料不改变资产、负债或收支。
 func overview(db *gorm.DB, owner uint64) (domain.Overview, error) {
 	out := domain.Overview{Currency: "CNY", Timezone: "Asia/Shanghai", AssetStructure: []domain.Metric{}, CashFlow: []domain.CashFlow{}, ExpenseCategories: []domain.Metric{}, NetWorthTrend: []any{}, Upcoming: []any{}}
 	accounts := []domain.Account{}
@@ -156,6 +156,11 @@ func overview(db *gorm.DB, owner uint64) (domain.Overview, error) {
 		}
 	}
 	out.NetWorth = out.TotalAssets - out.TotalLiabilities
+	// 报销独立于账户资产及收支口径；金额来源于全部流水，列表分页不影响结果。
+	if e := repository.SumReimbursements(db, owner, &out); e != nil {
+		return out, e
+	}
+	out.ReimbursementPending = out.ReimbursementTotal - out.ReimbursementReceived
 	// 将时间转换到业务使用的时区。
 	now := time.Now().In(time.FixedZone("UTC+8", 8*3600))
 	// 按业务周期边界构造日期。

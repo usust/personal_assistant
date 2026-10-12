@@ -108,9 +108,7 @@ private struct TaskDirectoryRow: View {
     /// 构建目录行；参数：无；返回值：统一图标底色、文字对齐与行间距的视图，数量为空时不展示，无副作用。
     var body: some View {
         HStack(spacing: 12) {
-            Image(systemName: symbol).font(.title3).foregroundStyle(color)
-                .frame(width: 38, height: 38)
-                .background(color.opacity(0.1), in: RoundedRectangle(cornerRadius: 12))
+            SymbolTile(symbol: symbol, color: color, size: 38)
             VStack(alignment: .leading, spacing: 4) {
                 Text(name).font(.body.weight(.medium))
                 if !remark.isEmpty { Text(remark).font(.caption).foregroundStyle(.secondary) }
@@ -218,7 +216,9 @@ struct TaskCollectionView: View {
                     .listRowSeparator(.hidden)
                     .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                         // 滑动操作回调参数无、返回无；写操作遵循共享保护，删除仅选择待确认任务，编辑仅打开表单。
-                        Button("删除", systemImage: "trash", role: .destructive) { deletedTask = row.task }
+                        // 这里只选择待确认任务；不用 destructive 角色，避免系统在确认前播放移除行动画。
+                        Button("删除", systemImage: "trash") { deletedTask = row.task }
+                            .tint(.red)
                             .disabled(store.taskWriteBusy || store.taskWriteBlocked)
                         Button(row.task.archived ? "取消归档" : "归档", systemImage: "archivebox") {
                             Task { await archiveTask(row.task) }
@@ -246,13 +246,16 @@ struct TaskCollectionView: View {
             }
             .sheet(isPresented: $creating) { TaskEditor(task: nil, parent: nil, preferredListID: listID) }
             .sheet(item: $editedTask) { task in TaskEditor(task: task, parent: nil) }
-            // 确认绑定读取待删除任务；关闭回调输入呈现状态、返回无；取消清空选择，确认后才执行级联删除。
-            .confirmationDialog("删除此任务及全部下级？", isPresented: Binding(
+            // 确认绑定仅控制独立系统弹窗；呈现参数捕获待删除实体，避免关闭清空选择时丢失确认对象。
+            .alert("删除任务？", isPresented: Binding(
                 get: { deletedTask != nil }, set: { if !$0 { deletedTask = nil } }
-            ), titleVisibility: .visible) {
-                Button("删除任务及下级", role: .destructive) {
-                    if let task = deletedTask { Task { await removeTask(task) } }
-                }
+            ), presenting: deletedTask) { task in
+                // 确认回调输入已捕获任务、返回操作按钮；仅确认后发起删除，取消不修改数据。
+                Button("取消", role: .cancel) { deletedTask = nil }
+                Button("删除", role: .destructive) { Task { await removeTask(task) } }
+            } message: { task in
+                // 消息回调输入待删除任务、返回级联影响说明；不修改业务数据。
+                Text("将删除“" + task.title + "”及其全部下级任务。")
             }
             .sheet(isPresented: $editingList) { if let list { ListEditor(list: list) } }
             .confirmationDialog("删除清单及其中全部任务？", isPresented: $deletingList, titleVisibility: .visible) { Button("删除清单", role: .destructive) { Task { await removeList() } } }
@@ -549,8 +552,10 @@ struct TaskRow: View {
                 statusMetadata
                 // 普通任务与主任务都复用统一汇总结果，零总量安全显示为 0%。
                 integratedProgress
-                // 元信息紧跟进度条，按可用宽度换行；空日期不占位，保持任务树紧凑。
-                metadata.font(.caption).foregroundStyle(.secondary)
+                // 起止日期时间共用一行并紧跟进度条；空日期不占位，所有任务行入口保持一致。
+                if !task.startDate.isEmpty || !task.endDate.isEmpty {
+                    metadata.font(.caption).foregroundStyle(.secondary)
+                }
                 if showsContext { Text(taskPath(task, tasks: store.tasks, lists: store.lists)).font(.caption).foregroundStyle(.secondary) }
             }
         }.padding(.vertical, compact ? 6 : 7)
@@ -613,10 +618,11 @@ struct TaskRow: View {
         }
         .font(.caption2.weight(.medium))
     }
-    /// 构建进度条下方的日期信息；参数：无；返回值：已设置日期，按内容高度换行，空日期不占位；无副作用。
+    /// 构建进度条下方的日期信息；参数：无；返回值：已设置起止日期时间的单行内容，窄行最多缩小至一半，辅助功能保留完整值，空日期不占位；无副作用。
     private var metadata: some View {
-        // 明确图文布局及内容高度，避免列表默认样式撑高任务行。
+        // 日期保持同一行，优先使用完整年月日和时分；受树层级或字号挤压时缩放文字，避免日期与时间拆行。
         dateRange.font(.caption2).monospacedDigit()
+            .lineLimit(1).minimumScaleFactor(0.5)
             .fixedSize(horizontal: false, vertical: true)
     }
     /// 构建紧急程度标签；参数：无；返回值：紧邻旗帜的中文等级，活动任务高为红、中为橙、低为蓝，归档统一中性色，图文同色；无副作用。
@@ -638,29 +644,50 @@ struct TaskRow: View {
         }
         .foregroundStyle(!task.archived && progress.fraction >= 1 ? Color.teal : Color.secondary)
     }
-    /// 构建日期范围内容；参数：无；返回值：已设置的起止日期各占紧凑一行，以图标区分开始和结束，活动任务逾期结束日期标红，归档保持中性色；无副作用。
-    @ViewBuilder private var dateRange: some View {
-        if !task.startDate.isEmpty {
-            HStack(alignment: .firstTextBaseline, spacing: 4) {
-                Image(systemName: "calendar")
-                Text(taskRowDate(task.startDate, time: task.startTime))
-                    .fixedSize(horizontal: false, vertical: true)
+    /// 构建日期范围内容；参数：无；返回值：起止日期时间并排在同一行，以图标区分开始和结束，活动任务逾期结束日期标红，归档保持中性色；无副作用。
+    private var dateRange: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 12) {
+            if !task.startDate.isEmpty {
+                HStack(alignment: .firstTextBaseline, spacing: 4) {
+                    Image(systemName: "calendar")
+                    Text(taskRowDate(task.startDate, time: task.startTime))
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel("开始：" + taskDate(task.startDate, time: task.startTime))
             }
-            .accessibilityElement(children: .ignore)
-            .accessibilityLabel("开始：" + taskDate(task.startDate, time: task.startTime))
-        }
-        if !task.endDate.isEmpty {
-            HStack(alignment: .firstTextBaseline, spacing: 4) {
-                Image(systemName: "calendar.badge.clock")
-                Text(taskRowDate(task.endDate, time: task.endTime))
-                    .fixedSize(horizontal: false, vertical: true)
+            if !task.endDate.isEmpty {
+                HStack(alignment: .firstTextBaseline, spacing: 4) {
+                    Image(systemName: "calendar.badge.clock")
+                    Text(taskRowDate(task.endDate, time: task.endTime))
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .foregroundStyle(!task.archived && Values.taskIsOverdue(task, all: store.tasks) ? Color.red : Color.secondary)
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel("结束：" + taskDate(task.endDate, time: task.endTime))
             }
-            .foregroundStyle(!task.archived && Values.taskIsOverdue(task, all: store.tasks) ? Color.red : Color.secondary)
-            .accessibilityElement(children: .ignore)
-            .accessibilityLabel("结束：" + taskDate(task.endDate, time: task.endTime))
         }
     }
 }
+/// 任务详情共用的进度摘要；主任务、普通任务及归档任务共用字号与排列，操作按钮由外层控制。
+private struct TaskDetailProgressSummary: View {
+    let summary: TaskProgress
+    let archived: Bool
+
+    /// 构建数量、进度条与百分比；参数：无；返回值：至少 44 点高的居中摘要，归档使用中性色；无副作用。
+    var body: some View {
+        VStack(spacing: 3) {
+            Text(taskQuantity(summary, includesUnit: false))
+                .font(.headline).monospacedDigit()
+            ProgressView(value: summary.fraction)
+                .tint(archived ? .secondary : .teal).accessibilityHidden(true)
+            Text(taskPercent(summary))
+                .font(.caption).foregroundStyle(archived ? Color.secondary : Color.teal).monospacedDigit()
+        }
+        .frame(maxWidth: .infinity, minHeight: 44)
+    }
+}
+
 struct TaskDetailView: View {
     @Environment(AppStore.self) private var store
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
@@ -673,7 +700,7 @@ struct TaskDetailView: View {
     @State private var error: String?
     private var item: AssistantTask? { store.tasks.first { $0.id == taskID } }
     private var children: [AssistantTask] { store.tasks.filter { $0.parentId == taskID } }
-    /// 构建只读任务详情；参数：无；返回值：任务信息与进度，未归档叶任务通过加减按钮按步长修改完成数量，其他信息通过独立编辑表单修改；容器进度由下级汇总。
+    /// 构建任务详情；参数：无；返回值：任务信息与统一进度摘要，活动叶任务可按步长调整进度，活动主任务通过右上角统一入口新建任务或主任务；容器进度由下级汇总。
     var body: some View {
         Group {
             if let task = item {
@@ -699,25 +726,9 @@ struct TaskDetailView: View {
                                 Spacer()
                                 if task.archived { Text("已归档").font(.caption).foregroundStyle(.secondary) }
                             }
-                            // 容器与归档任务没有加减控件，在摘要中显示进度；可操作任务的数字统一放入药丸，避免重复。
-                            if container || task.archived {
-                            ViewThatFits(in: .horizontal) {
-                                HStack(alignment: .firstTextBaseline) {
-                                    Text(taskQuantity(summary, includesUnit: false)).font(.largeTitle.weight(.semibold)).monospacedDigit()
-                                    Spacer(minLength: 12)
-                                    Text(taskPercent(summary)).font(.title3.weight(.medium)).foregroundStyle(task.archived ? Color.secondary : Color.teal).monospacedDigit()
-                                }
-                                VStack(alignment: .leading, spacing: 8) {
-                                    Text(taskQuantity(summary, includesUnit: false)).font(.title.weight(.semibold)).monospacedDigit()
-                                    Text(taskPercent(summary)).font(.title3).foregroundStyle(task.archived ? Color.secondary : Color.teal)
-                                }
-                            }
-                            }
-                            if container || task.archived {
-                                ProgressView(value: summary.fraction).tint(task.archived ? .secondary : .teal)
-                            }
-                            if !container && !task.archived {
-                                HStack(spacing: 12) {
+                            // 所有类型复用同一胶囊和摘要；容器进度由下级汇总，归档只读，仅活动叶任务显示加减按钮。
+                            HStack(spacing: 12) {
+                                if !container && !task.archived {
                                     // 操作回调参数无、返回无；统一使用服务端步长接口，提交期间禁用，防止连续点击重复写入。
                                     Button { Task { await progress("decrement") } } label: {
                                         Image(systemName: "minus").font(.body.weight(.semibold)).frame(width: 44, height: 44)
@@ -725,14 +736,10 @@ struct TaskDetailView: View {
                                     .buttonStyle(.plain).foregroundStyle(.teal)
                                     .accessibilityLabel("减少进度")
                                     .disabled(task.progressCompleted <= 0 || busy || store.taskWriteBusy || store.taskWriteBlocked)
-                                    // 中间集中显示完成数量／总量与百分比，左右按步长加减，共用药丸背景。
-                                    VStack(spacing: 3) {
-                                        Text(taskQuantity(summary, includesUnit: false))
-                                            .font(.headline).monospacedDigit()
-                                        // 进度条与数量、百分比共用药丸中央区域，保持左右加减按钮的独立点击范围。
-                                        ProgressView(value: summary.fraction).tint(.teal).accessibilityHidden(true)
-                                        Text(taskPercent(summary)).font(.caption).foregroundStyle(.teal).monospacedDigit()
-                                    }.frame(maxWidth: .infinity)
+                                }
+                                TaskDetailProgressSummary(summary: summary, archived: task.archived)
+                                if !container && !task.archived {
+                                    // 操作回调参数无、返回无；按服务端步长增加进度，共用原有写保护。
                                     Button { Task { await progress("increment") } } label: {
                                         Image(systemName: "plus").font(.body.weight(.semibold)).frame(width: 44, height: 44)
                                     }
@@ -740,10 +747,10 @@ struct TaskDetailView: View {
                                     .accessibilityLabel("增加进度")
                                     .disabled(task.progressCompleted >= task.progressTotal || busy || store.taskWriteBusy || store.taskWriteBlocked)
                                 }
-                                .padding(.horizontal, 8)
-                                .padding(.vertical, 6)
-                                .background(Color(uiColor: .tertiarySystemGroupedBackground), in: Capsule())
                             }
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 6)
+                            .background(Color(uiColor: .tertiarySystemGroupedBackground), in: Capsule())
                         }
                         .padding(20)
                         .background(Color(uiColor: .secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 24))
@@ -793,12 +800,23 @@ struct TaskDetailView: View {
                 .navigationTitle("任务").navigationBarTitleDisplayMode(.inline).toolbar(.hidden, for: .tabBar)
                     .toolbar {
                         if !task.archived && task.taskType == "main" {
-                            ToolbarItem(placement: .bottomBar) { Button("新建下级", systemImage: "plus") { addingChild = true }.disabled(busy || store.taskWriteBusy || store.taskWriteBlocked) }
+                            // 与任务首页共用导航栏位置及入口名称，避免底部工具栏被 TabView 占用后入口不可见。
+                            ToolbarItem(placement: .topBarTrailing) {
+                                // 点击回调参数无、返回无；打开统一表单并带入当前主任务，类型选择与保存沿用现有校验和写保护。
+                                Button("新建任务", systemImage: "plus") { addingChild = true }
+                                    .disabled(busy || store.taskWriteBusy || store.taskWriteBlocked)
+                            }
                         }
                     }
                     .sheet(isPresented: $editing) { TaskEditor(task: task, parent: nil) }
+                    // 表单回调参数无、返回新建视图；默认继承父任务及清单，支持任务／主任务两种类型，取消不写入。
                     .sheet(isPresented: $addingChild) { TaskEditor(task: nil, parent: task) }
-                    .confirmationDialog("删除此任务及全部下级？", isPresented: $deleting, titleVisibility: .visible) { Button("删除任务及下级", role: .destructive) { Task { await remove() } } }
+                    .alert("删除任务？", isPresented: $deleting) {
+                        Button("取消", role: .cancel) { }
+                        Button("删除", role: .destructive) { Task { await remove() } }
+                    } message: {
+                        Text("将删除“" + task.title + "”及其全部下级任务。")
+                    }
             } else { ContentUnavailableView("任务已不存在", systemImage: "checkmark.circle") }
         }
     }
@@ -882,6 +900,12 @@ struct TaskEditor: View {
     private var progressFieldLayout: AnyLayout {
         dynamicTypeSize.isAccessibilitySize ? AnyLayout(VStackLayout(alignment: .leading, spacing: 12)) : AnyLayout(HStackLayout(alignment: .top, spacing: 16))
     }
+    /// 计算目标总量按钮范围；参数：无；返回值：至少覆盖已完成量及每次增加、且不超过业务上限的整数区间；不改写其他字段，手动输入仍由保存校验处理。
+    private var totalStepperRange: ClosedRange<Int> {
+        min(1_000_000_000, max(1, max(Int(completed) ?? 0, Int(step) ?? 1)))...1_000_000_000
+    }
+    /// 计算进度按钮上限；参数：无；返回值：当前有效目标总量，异常草稿按 1 至业务上限收敛以避免构造无效范围；无副作用。
+    private var progressStepperMaximum: Int { min(1_000_000_000, max(1, Int(total) ?? 1)) }
     /// 生成提交字段白名单；参数：无；返回值：归属和当前类型字段，主任务不提交隐藏进度；未提交字段保留原值。
     private var fields: [String: Any] {
         var result: [String: Any] = ["title": title.trimmingCharacters(in: .whitespacesAndNewlines), "remark": remark, "priority": priority, "taskType": taskType, "autoArchive": autoArchive,
@@ -954,20 +978,20 @@ struct TaskEditor: View {
                     }
                 }
                 Section("时间") {
-                    // 日期入口回调输入无、输出共享草稿子页；返回只保留编辑状态，整个编辑取消时不发送写入。
-                    NavigationLink { TaskDateDraft(title: "开始", enabled: $hasStart, date: $start, time: $startTime) } label: { LabeledContent("开始", value: hasStart ? taskDate(Values.day(start), time: startTime) : "未设置") }
-                    NavigationLink { TaskDateDraft(title: "截止", enabled: $hasEnd, date: $end, time: $endTime) } label: { LabeledContent("截止", value: hasEnd ? taskDate(Values.day(end), time: endTime) : "未设置") }
+                    // 开始与截止各保留一个入口；底部系统滚轮一次选择日期和时间，整个表单保存前不持久化。
+                    OptionalDateTimeInput(title: "开始", enabled: $hasStart, date: $start, time: $startTime)
+                    OptionalDateTimeInput(title: "截止", enabled: $hasEnd, date: $end, time: $endTime)
                 }
                 if configuresProgress { Section("进度") {
-                    // 数量与单位按相关性排列，两列输入减少表单长度；浮动标签继续复用统一输入控件。
+                    // 数量与单位按相关性排列；三个数量复用原生液态玻璃加减按钮和浮动输入，边界按当前草稿联动，仅修改所点击字段。
                     progressFieldLayout {
-                        TaskFloatingField(title: "目标总量", text: $total).keyboardType(.numberPad)
-                        TaskFloatingField(title: "单位", text: $unit)
-                    }
+                        TaskFloatingField(title: "目标总量", text: $total, stepperRange: totalStepperRange).keyboardType(.numberPad)
+                        TaskFloatingField(title: "单位", text: $unit, minimumInputHeight: 44)
+                    }.listRowInsets(TaskFloatingField.rowInsets)
                     progressFieldLayout {
-                        TaskFloatingField(title: "已完成量", text: $completed).keyboardType(.numberPad)
-                        TaskFloatingField(title: "每次增加", text: $step).keyboardType(.numberPad)
-                    }
+                        TaskFloatingField(title: "已完成量", text: $completed, stepperRange: 0...progressStepperMaximum).keyboardType(.numberPad)
+                        TaskFloatingField(title: "每次增加", text: $step, stepperRange: 1...progressStepperMaximum).keyboardType(.numberPad)
+                    }.listRowInsets(TaskFloatingField.rowInsets)
                 } }
                 Section("选项") {
                     Picker("优先级", selection: $priority) { Text("高").tag("high"); Text("中").tag("medium"); Text("低").tag("low") }
@@ -977,12 +1001,12 @@ struct TaskEditor: View {
             }.navigationTitle(task == nil ? "新建任务" : taskType == "main" ? "编辑主任务" : "编辑任务").navigationBarTitleDisplayMode(.inline)
                 .toolbar { SaveToolbar(busy: busy, valid: valid) { Task { await save() } } }
                 .interactiveDismissDisabled(busy)
-                // 日期开关回调输入前后布尔值；返回无；关闭立即清空时分，避免重新开启恢复隐藏旧时间。
+                // 日期启用状态回调输入前后布尔值；返回无；清除日期同时清空时分，避免恢复隐藏旧时间。
                 .onChange(of: hasStart) { _, value in if !value { startTime = "" } }
                 .onChange(of: hasEnd) { _, value in if !value { endTime = "" } }
                 // 清单变更回调输入前后清单ID、输出无；真正跨清单草稿清原父，PATCH必须明确null或重新选有效主父。
                 .onChange(of: listID) { old, new in if old != 0 && old != new { parentID = 0 } }
-                // 生命周期回调输入无、输出无；新编辑实例只装载一次，图标或日期子页返回时保留草稿与最初PATCH快照。
+                // 生命周期回调输入无、输出无；新编辑实例只装载一次，图标子页返回时保留草稿与最初PATCH快照。
                 .task { populate() }
         }
     }
@@ -1144,22 +1168,5 @@ private struct TaskIconPicker: View {
             }.padding(16)
         }.navigationTitle("选择图标").navigationBarTitleDisplayMode(.inline).searchable(text: $search, prompt: "搜索图标")
             .toolbar { Button("完成") { dismiss() } }.toolbar(.hidden, for: .tabBar)
-    }
-}
-
-/// 日期子页共享编辑草稿；返回保留输入，持久化仅由整个任务表单保存触发。
-private struct TaskDateDraft: View {
-    let title: String
-    @Binding var enabled: Bool
-    @Binding var date: Date
-    @Binding var time: String
-    /// 构建日期草稿页；参数：无；返回值：原有系统开关、日期和时分组件；清除同步移除隐藏时分，无网络或保存副作用。
-    var body: some View {
-        Form {
-            Toggle("设置日期", isOn: $enabled)
-            if enabled { DatePicker("日期", selection: $date, displayedComponents: .date); TimeInput(title: "时间", value: $time) }
-        }.navigationTitle(title).navigationBarTitleDisplayMode(.inline).toolbar(.hidden, for: .tabBar)
-            // 开关回调输入旧新布尔值、输出无；关闭立即清空时分，重新开启不恢复旧时间。
-            .onChange(of: enabled) { _, value in if !value { time = "" } }
     }
 }

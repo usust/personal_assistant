@@ -244,6 +244,7 @@ struct AccountEditor: View {
     /// 校验保存条件；参数无；返回名称、余额及文本长度是否满足服务端约束。
     private var valid: Bool { !savedName.isEmpty && savedName.utf8.count <= 128 && provider.institution.utf8.count <= 128 && notes.utf8.count <= 2000 && Values.validMoney(openingBalance) && (!isLoan || loan.valid) && (!provider.isCredit || (Values.validMoney(debt) && Values.validMoney(creditLimit) && !creditLimit.hasPrefix("-") && (reminderDays < 0 || (isLoan ? (loan.enabled || repaymentDay > 0) : repaymentDay > 0)))) }
 
+    /// 构建账户编辑器；参数：无；返回值：共享实色分组卡片和原生玻璃保存操作，字段、金额计算与保存校验保持现有业务约束。
     var body: some View {
         Group {
             if account == nil && !hasChoice {
@@ -281,7 +282,7 @@ struct AccountEditor: View {
                                 inputRow("账户备注", text: $notes, placeholder: "点击填写备注（可不填）")
                             }
                             .padding(.horizontal, 18).padding(.vertical, 6)
-                            .background(Color(uiColor: .secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 26))
+                            .cardSurface()
 
                             if provider.isCredit && !isLoan { cardFields }
                             if isLoan {
@@ -289,7 +290,7 @@ struct AccountEditor: View {
                                 if account != nil {
                                     amountRow("剩余本金", value: debt)
                                         .padding(.horizontal, 18).padding(.vertical, 6)
-                                        .background(Color(uiColor: .secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 26))
+                                        .cardSurface()
                                 }
                             } else if provider.isCredit {
                                 VStack(spacing: 0) {
@@ -304,7 +305,7 @@ struct AccountEditor: View {
                                     Toggle("出账日账单计入当期", isOn: $billDayInclusive).tint(.green).frame(minHeight: 54)
                                 }
                                 .padding(.horizontal, 18).padding(.vertical, 6)
-                                .background(Color(uiColor: .secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 26))
+                                .cardSurface()
                             }
                             VStack(spacing: 0) {
                                 if !provider.isCredit {
@@ -317,7 +318,7 @@ struct AccountEditor: View {
                                 Toggle("计入净资产", isOn: $include).tint(.green).frame(minHeight: 54)
                             }
                             .padding(.horizontal, 18).padding(.vertical, 6)
-                            .background(Color(uiColor: .secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 26))
+                            .cardSurface()
                             if provider.isCredit {
                                 VStack(spacing: 0) {
                                     // 菜单选择器在 ScrollView 中不显示自身标题，使用独立标签保证字段名常驻。
@@ -333,16 +334,16 @@ struct AccountEditor: View {
                                     }.frame(maxWidth: .infinity, minHeight: 54, alignment: .leading)
                                     if reminderDays >= 0 {
                                         Divider()
-                                        DatePicker("提醒时间", selection: $reminderTime, displayedComponents: .hourAndMinute).frame(minHeight: 54)
+                                        SystemDateTimeInput(title: "提醒时间", selection: $reminderTime, displayedComponents: .hourAndMinute).frame(minHeight: 54)
                                     }
                                 }
                                 .padding(.horizontal, 18).padding(.vertical, 6)
-                                .background(Color(uiColor: .secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 26))
+                                .cardSurface()
                                 if reminderDays >= 0 && !isLoan && repaymentDay == 0 { InlineError(message: "请先设置还款日期。") }
                             }
                             Toggle("记账时可被选择", isOn: $selectable).tint(.green).frame(minHeight: 54)
                                 .padding(.horizontal, 18).padding(.vertical, 6)
-                                .background(Color(uiColor: .secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 26))
+                                .cardSurface()
                             if provider.isCredit && (!Values.validMoney(debt) || !Values.validMoney(creditLimit) || creditLimit.hasPrefix("-")) {
                                 InlineError(message: "请输入有效金额，信用额度不能为负数。")
                             }
@@ -388,16 +389,14 @@ struct AccountEditor: View {
                             // 提交回调参数、返回值无；仅显式点击创建／保存才执行网络写入。
                             Button { Task { await save() } } label: {
                                 Group {
-                                    if busy { ProgressView().tint(.white) }
-                                    else { Image(systemName: "checkmark").font(.title3.weight(.semibold)) }
+                                    if busy { ProgressView() }
+                                    else { Image(systemName: "checkmark").font(.body.weight(.semibold)) }
                                 }
-                                .frame(width: 44, height: 44)
-                                .foregroundStyle(.white)
-                                .background(valid && !hasPendingAmountCalculation ? Color.accentColor : Color.secondary, in: Circle())
-                            }.buttonStyle(.plain)
+                                .frame(minWidth: 44, minHeight: 44)
+                            }.buttonStyle(.glassProminent).buttonBorderShape(.circle)
                                 .accessibilityLabel(account == nil ? "创建账户" : "保存账户")
                                 .disabled(busy || !valid || !validCardNumber || !validCards || hasPendingAmountCalculation)
-                        }
+                        }.visibilityPriority(.high)
                     }
                     .disabled(busy)
                     .navigationDestination(isPresented: $choosingProvider) {

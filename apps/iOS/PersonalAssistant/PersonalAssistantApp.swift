@@ -9,6 +9,8 @@ struct PersonalAssistantApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView().environment(store).environment(\.locale, Locale(identifier: "zh_Hans_CN")).preferredColorScheme(appearance == "system" ? nil : appearance == "dark" ? .dark : .light)
+                // 零尺寸观察视图将外部点击处理绑定到当前窗口，覆盖所有编辑面板且不占用布局或遮挡控件。
+                .background { KeyboardDismissalHost().frame(width: 0, height: 0) }
                 .task {
                     // 场景预览回调无输入和返回；仅显式预览参数允许创建虚构状态，正常启动不产生实时活动。
                     #if DEBUG

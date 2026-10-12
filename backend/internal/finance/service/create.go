@@ -170,7 +170,7 @@ func (s *Service) createCategory(db *gorm.DB, owner uint64, raw json.RawMessage)
 	return row, e
 }
 
-// createTransaction 创建或幂等重放流水；参数：db 为事务，owner 为身份，raw 为字段，source 为可信来源；返回值：流水或冲突，AI 来源只产生待确认草稿。
+// createTransaction 创建或幂等重放流水；参数：db 为事务，owner 为身份，raw 为白名单输入字段，source 为可信 http、ai 或 recurring 来源；返回值：流水或校验、冲突、数据库错误；AI 和周期来源只产生待确认草稿，不能预记已报销金额，写入失败由外层事务回滚。
 func (s *Service) createTransaction(db *gorm.DB, owner uint64, raw json.RawMessage, source string) (domain.Transaction, error) {
 	var in domain.TransactionInput
 	// 严格解析业务输入，避免无效字段进入操作流程。
@@ -180,6 +180,9 @@ func (s *Service) createTransaction(db *gorm.DB, owner uint64, raw json.RawMessa
 	// 确认输入满足当前业务约束。
 	if e := validateTransactionInput(in); e != nil {
 		return domain.Transaction{}, e
+	}
+	if (source == "ai" || source == "recurring") && in.ReimbursedAmount != 0 {
+		return domain.Transaction{}, Invalid("待确认流水不能填写已报销金额")
 	}
 	// 序列化业务数据，供存储或响应使用。
 	canonical, _ := json.Marshal(in)
@@ -203,7 +206,7 @@ func (s *Service) createTransaction(db *gorm.DB, owner uint64, raw json.RawMessa
 	if e = validateReferences(db, owner, in); e != nil {
 		return domain.Transaction{}, e
 	}
-	row := domain.Transaction{Rebate: in.Rebate, RebateAccountID: in.RebateAccountID, RebatePending: in.RebatePending, Fee: in.Fee, OwnerID: owner, RequestID: in.RequestID, Fingerprint: hash, AccountID: in.AccountID, TargetAccountID: in.TargetAccountID, Type: in.Type, Amount: in.Amount - in.Discount, Discount: in.Discount, CategoryID: in.CategoryID, Counterparty: in.Counterparty, TransactionDate: in.TransactionDate, TransactionTime: in.TransactionTime, Description: in.Description, Source: source, Status: "posted"}
+	row := domain.Transaction{Reimbursable: in.Reimbursable, ReimbursedAmount: in.ReimbursedAmount, Rebate: in.Rebate, RebateAccountID: in.RebateAccountID, RebatePending: in.RebatePending, Fee: in.Fee, OwnerID: owner, RequestID: in.RequestID, Fingerprint: hash, AccountID: in.AccountID, TargetAccountID: in.TargetAccountID, Type: in.Type, Amount: in.Amount - in.Discount, Discount: in.Discount, CategoryID: in.CategoryID, Counterparty: in.Counterparty, TransactionDate: in.TransactionDate, TransactionTime: in.TransactionTime, Description: in.Description, Source: source, Status: "posted"}
 	if row.Rebate > 0 && row.RebateAccountID == nil {
 		row.RebateAccountID = &row.AccountID
 	}

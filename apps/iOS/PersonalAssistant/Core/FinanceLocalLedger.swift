@@ -1,4 +1,5 @@
 import Foundation
+import CoreFoundation
 
 extension FinanceLocalStore {
     /// 判断写入能否在本机安全执行；参数：path/method 为端点，body 为输入；返回值：普通账户、分类、收支和模板操作为 true，复杂分期贷款要求联网执行。
@@ -121,6 +122,9 @@ extension FinanceLocalStore {
             guard let name = row["name"] as? String, !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, name.utf8.count <= 128,
                   var transaction = row["transaction"] as? [String: Any], (row["frequency"] as? String ?? "") == "" else { throw failure("模板名称或流水无效") }
             // 模板保留原金额；仅在独立副本验证记账规则，不能提前扣余额或应用两次优惠。
+            // 与服务端校验保持一致，拒绝预记到账金额，避免本机成功但队列携带原金额后同步失败。
+            guard try cents(transaction["reimbursedAmount"] ?? "0.00") == 0 else { throw failure("模板不能填写已报销金额") }
+            transaction["reimbursedAmount"] = "0.00"
             transaction["requestId"] = "template-validation-" + String(newID)
             if transaction["transactionDate"] == nil { transaction["transactionDate"] = Values.day() }
             var validationSpace = space
@@ -133,7 +137,7 @@ extension FinanceLocalStore {
         }
         guard table == "transactions" else { throw failure("此操作需要联网") }
         if method == "POST" && target == 0 {
-            let allowed: Set<String> = ["requestId", "accountId", "targetAccountId", "targetCreditCardId", "type", "amount", "categoryId", "counterparty", "transactionDate", "transactionTime", "description", "fee", "discount", "rebate", "rebateAccountId", "rebatePending"]
+            let allowed: Set<String> = ["requestId", "accountId", "targetAccountId", "targetCreditCardId", "type", "amount", "categoryId", "counterparty", "transactionDate", "transactionTime", "description", "fee", "discount", "rebate", "rebateAccountId", "rebatePending", "reimbursable", "reimbursedAmount"]
             guard Set(body.keys).isSubset(of: allowed), (body["targetCreditCardId"] == nil || body["targetCreditCardId"] is NSNull),
                   let key = body["requestId"] as? String, key.range(of: #"^[A-Za-z0-9_-]{8,96}$"#, options: .regularExpression) != nil else { throw failure("流水字段或记账标识无效") }
             // 同一录入会话失败重试保持 requestId；本地也去重，避免界面重试形成两笔消费。
@@ -141,7 +145,7 @@ extension FinanceLocalStore {
                 guard let original = existing["localInput"] as? [String: Any], NSDictionary(dictionary: original).isEqual(to: body) else { throw failure("记账标识冲突") }
                 return existing
             }
-            var row: [String: Any] = ["id": newID, "type": "expense", "amount": "0.00", "fee": "0.00", "discount": "0.00", "counterparty": "", "description": "", "status": "posted", "source": "http"]
+            var row: [String: Any] = ["id": newID, "type": "expense", "amount": "0.00", "fee": "0.00", "discount": "0.00", "counterparty": "", "description": "", "status": "posted", "source": "http", "reimbursable": false, "reimbursedAmount": "0.00"]
             for (key, value) in body { row[key] = value }
             row["localInput"] = body
             let amount = try cents(body["amount"]), discount = try cents(body["discount"] ?? "0.00"), fee = try cents(body["fee"] ?? "0.00")
@@ -167,9 +171,10 @@ extension FinanceLocalStore {
         guard let index = records.firstIndex(where: { id($0) == target }) else { throw failure("流水不存在") }
         var row = records[index]
         if method == "PATCH" {
-            let allowed: Set<String> = ["accountId", "targetAccountId", "type", "amount", "discount", "fee", "rebate", "rebateAccountId", "rebatePending", "categoryId", "counterparty", "description", "transactionDate", "transactionTime"]
+            let allowed: Set<String> = ["accountId", "targetAccountId", "type", "amount", "discount", "fee", "rebate", "rebateAccountId", "rebatePending", "categoryId", "counterparty", "description", "transactionDate", "transactionTime", "reimbursable", "reimbursedAmount"]
             guard !body.isEmpty, Set(body.keys).isSubset(of: allowed), row["status"] as? String != "deleted", row["status"] as? String != "voided" else { throw failure("流水不可修改") }
-            let financial = !Set(body.keys).isSubset(of: ["categoryId", "counterparty", "description"])
+            // 报销字段只是进度资料，不冲销或重记账户余额；显式 false 和零金额仅在实际提交时更新。
+            let financial = !Set(body.keys).isSubset(of: ["categoryId", "counterparty", "description", "reimbursable", "reimbursedAmount"])
             let previous = row
             if financial {
                 // 关联账单财务关系由原业务维护；普通流水在同一账本副本内先验证再冲销重记。
@@ -218,6 +223,7 @@ extension FinanceLocalStore {
                 for (key, value) in body { row[key] = value }
                 try validateCategory(row, space: space)
             }
+            try validateReimbursement(row, records: records)
         } else if parts.last == "refund" {
             guard Set(body.keys).isSubset(of: ["requestId", "amount", "transactionDate", "transactionTime", "description"]),
                   let key = body["requestId"] as? String, key.range(of: #"^[A-Za-z0-9_-]{8,96}$"#, options: .regularExpression) != nil else { throw failure("退款字段或标识无效") }
@@ -226,11 +232,14 @@ extension FinanceLocalStore {
             var available = try cents(row["amount"])
             for refund in records where id(refund, "refundParentId") == target && refund["status"] as? String == "posted" { available += try cents(refund["amount"]) }
             guard amount > 0, amount <= available, (body["transactionDate"] as? String ?? "") >= (row["transactionDate"] as? String ?? "") else { throw failure("退款金额或日期无效") }
+            // 退款只抵减原支出应报销净额，不能让已登记的报销金额超过剩余支出。
+            guard available - amount >= (try cents(row["reimbursedAmount"] ?? "0.00")) else { throw failure("请先调整已报销金额，再退款") }
             var refund = row
             for key in ["localInput", "rebate", "rebateParentId", "discount"] { refund.removeValue(forKey: key) }
             for (key, value) in body { refund[key] = value }
             refund["localInput"] = body
             refund["id"] = newID; refund["refundParentId"] = target; refund["amount"] = money(-amount); refund["fee"] = "0.00"
+            refund["reimbursable"] = false; refund["reimbursedAmount"] = "0.00"
             try validateTransaction(refund, space: space)
             try adjustBalances(refund, direction: 1, space: &space)
             records.append(refund); space[table] = records; return refund
@@ -269,6 +278,7 @@ extension FinanceLocalStore {
            time.range(of: #"^([01][0-9]|2[0-3]):[0-5][0-9]$"#, options: .regularExpression) == nil { throw failure("交易时间无效") }
         if row["type"] as? String != "transfer", id(row, "targetAccountId") != 0 { throw failure("仅转账可指定转入账户") }
         try validateCategory(row, space: space)
+        try validateReimbursement(row, records: space["transactions"] as? [[String: Any]] ?? [])
         let accounts = space["accounts"] as? [[String: Any]] ?? []
         var ids = [id(row, "accountId")]
         if row["type"] as? String == "transfer" {
@@ -278,6 +288,27 @@ extension FinanceLocalStore {
         for accountID in ids {
             guard accounts.contains(where: { id($0) == accountID && $0["archived"] as? Bool != true && $0["selectable"] as? Bool != false }) else { throw failure("记账账户不可用") }
         }
+    }
+    /// 校验报销进度；参数：row 为完整待保存流水，records 为同账本全部流水，用于扣除已入账退款；返回值：无；字段类型、关联资格、未入账进度或金额上下界非法时抛错，不修改余额。
+    static func validateReimbursement(_ row: [String: Any], records: [[String: Any]]) throws {
+        // Foundation 会把数字 0/1 桥接成 Bool；只允许真正的布尔对象，避免接受服务端会拒绝的数字标记。
+        if let value = row["reimbursable"] {
+            guard let boolean = value as? NSNumber, CFGetTypeID(boolean) == CFBooleanGetTypeID() else { throw failure("报销标记无效") }
+        }
+        let marked = row["reimbursable"] as? Bool ?? false
+        let received = try cents(row["reimbursedAmount"] ?? "0.00")
+        guard received >= 0 else { throw failure("已报销金额不可为负") }
+        guard marked || received == 0 else { throw failure("取消报销时请将已报销金额调整为零") }
+        guard marked else { return }
+        guard row["type"] as? String == "expense", try cents(row["amount"]) > 0,
+              id(row, "refundParentId") == 0, id(row, "rebateParentId") == 0, row["status"] as? String != "installment" else { throw failure("仅支出流水可标记报销") }
+        guard row["status"] as? String == "posted" || received == 0 else { throw failure("待入账流水不可填写已报销金额") }
+        var net = try cents(row["amount"])
+        // 同一父支出的有效退款统一抵减净额；删除或作废退款不会影响报销上限。
+        for refund in records where id(refund, "refundParentId") == id(row) && refund["status"] as? String == "posted" {
+            net += try cents(refund["amount"])
+        }
+        guard received <= net else { throw failure("已报销金额不能超过退款后的实付金额") }
     }
     /// 调整本地余额投影；参数：row 为完整流水，direction 为 1 入账或 -1 冲销，space 为可变账本副本；返回值：无；两端均校验上限，失败由调用者放弃整个副本。
     static func adjustBalances(_ row: [String: Any], direction: Int64, space: inout [String: Any]) throws {

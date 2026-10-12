@@ -31,10 +31,12 @@ type InstallmentRow struct {
 
 type InstallmentPlan struct {
 	InstallmentTerms
-	Principal Money            `json:"principal"`
-	Total     Money            `json:"total"`
-	Posted    int              `json:"posted"`
-	Rows      []InstallmentRow `json:"rows"`
+	// 仅记录原支出转分期时的报销标记，供新生成期次继承，不覆盖已编辑的期次。
+	Reimbursable bool             `json:"reimbursable,omitempty"`
+	Principal    Money            `json:"principal"`
+	Total        Money            `json:"total"`
+	Posted       int              `json:"posted"`
+	Rows         []InstallmentRow `json:"rows"`
 }
 
 // InstallmentSummary 提供账户内完整分期摘要，金额只统计实际仍待入账的期次。

@@ -1,6 +1,8 @@
 import SwiftUI
 
 nonisolated struct ConsumptionInstallmentPlan: Decodable {
+    /// 原支出转分期时的报销意图，后端用于新期次继承；只能通过各期流水单独编辑。
+    var reimbursable: Bool? = nil
     var categoryId: Int? = nil
     var description: String? = nil
     let name: String
@@ -40,8 +42,7 @@ struct ConsumptionInstallmentView: View {
     @State private var categoryID = 0
     @State private var notes = ""
     @State private var editingNotes = false
-    // 预留开关仅保存本次页面状态，默认关闭；不提交接口、不参与试算或统计，后续再接入业务。
-    @State private var reimbursement = false
+    // 以下两项预留开关仅保存本次页面状态，后续再接入对应业务。
     @State private var excludeFromCashFlow = false
     @State private var excludeFromBudget = false
     @State private var periods = 0
@@ -67,7 +68,7 @@ struct ConsumptionInstallmentView: View {
     @State private var initialized = false
     /// 判断是否可试算；参数：无；返回值：名称非空、期数为 2–480 且利息金额合法时为 true。
     private var valid: Bool { !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && (2...480).contains(periods) && startPeriod >= 1 && startPeriod <= periods && Values.validMoney(interest, positive: false) }
-    /// 构建消费分期表单；参数：无；返回值：名称入口、账单资料、预留开关、分期规则和试算结果。
+    /// 构建消费分期表单；参数：无；返回值：名称入口、账单资料、真实报销继承状态、其他预留开关、分期规则和试算结果。
     var body: some View {
         Form {
             if !saved {
@@ -99,7 +100,7 @@ struct ConsumptionInstallmentView: View {
                     }.buttonStyle(.plain)
                 }
                 Section {
-                    Toggle("是否报销", isOn: $reimbursement)
+                    LabeledContent("需报销", value: (plan?.reimbursable ?? bill.reimbursable ?? false) ? "是" : "否")
                     Toggle("不计收支", isOn: $excludeFromCashFlow)
                     Toggle("不计预算", isOn: $excludeFromBudget)
                 }
@@ -112,7 +113,7 @@ struct ConsumptionInstallmentView: View {
                             Image(systemName: "chevron.right").font(.footnote.weight(.semibold)).foregroundStyle(.tertiary)
                         }.contentShape(Rectangle())
                     }.buttonStyle(.plain)
-                    DatePicker("首期入账日期", selection: $firstDate, displayedComponents: .date)
+                    SystemDateTimeInput(title: "首期入账日期", selection: $firstDate, displayedComponents: .date)
                     settingRow("开始生成账单的期数", value: startPeriod == 0 ? "点此设置" : "第 \(startPeriod) 期") { editingStartPeriod = true }
                     settingRow("额度恢复（分期专项额度）", value: restoredCredit.isEmpty ? "点此设置（可不填）" : Values.money(restoredCredit)) { editingRestoredCredit = true }
                     settingRow("欠款计入方式", value: debtMode == "upfront" ? "创建时一次性计入" : "分期计入") { activeOption = .debt }

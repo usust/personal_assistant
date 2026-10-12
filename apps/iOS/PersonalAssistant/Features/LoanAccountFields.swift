@@ -68,7 +68,7 @@ struct LoanAccountFields: View {
                 LabeledContent("已还期数") { HStack { TextField("0", value: $draft.paidPeriods, format: .number.grouping(.never)).keyboardType(.numberPad).multilineTextAlignment(.trailing).accessibilityLabel("已还期数"); Text("期") } }.frame(minHeight: 54)
                 if draft.paidPeriods > draft.periods { InlineError(message: "已还期数不能超过贷款期数。") }
                 Divider()
-                DatePicker("首次还款日", selection: $draft.firstPayment, displayedComponents: .date).disabled(contractLocked).frame(minHeight: 54)
+                SystemDateTimeInput(title: "首次还款日", selection: $draft.firstPayment, displayedComponents: .date).disabled(contractLocked).frame(minHeight: 54)
                 Divider()
                 LabeledContent("关联收款账户") {
                     Picker("关联收款账户", selection: $draft.receivingAccountID) {

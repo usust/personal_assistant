@@ -65,6 +65,23 @@ func SumTransactionSummary(db *gorm.DB, owner uint64, start, end string, result 
 	return db.Model(&domain.Transaction{}).Select("COALESCE(SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END), 0) AS income, COALESCE(SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END), 0) + COALESCE(SUM(fee), 0) AS expense").Where("owner_id = ? AND status = ? AND transaction_date >= ? AND transaction_date <= ?", owner, "posted", start, end).Scan(result).Error
 }
 
+// SumReimbursements 汇总完整账本的报销净额和到账金额；参数：db 为用户锁事务，owner 为可信身份，result 为非 nil 总览指针；返回值：数据库错误或 nil，无写入；仅统计已入账、标记报销的正支出，关联退款不受月份或分页影响。
+func SumReimbursements(db *gorm.DB, owner uint64, result *domain.Overview) error {
+	var totals struct {
+		ReimbursementTotal    domain.Money
+		ReimbursementReceived domain.Money
+	}
+	// 先按原支出聚合退款，再连接主流水，避免多笔退款使原金额或到账金额重复计数。
+	refunds := db.Model(&domain.Transaction{}).Select("refund_parent_id, SUM(amount) AS amount").Where("owner_id = ? AND status = ? AND refund_parent_id IS NOT NULL", owner, "posted").Group("refund_parent_id")
+	// 只扫描两个标量，避免 ORM 将总览中的图表集合误判为数据库关联字段。
+	if err := db.Model(&domain.Transaction{}).Table("finance_transactions_v2 AS expense").Select("COALESCE(SUM(expense.amount + COALESCE(refunds.amount, 0)), 0) AS reimbursement_total, COALESCE(SUM(expense.reimbursed_amount), 0) AS reimbursement_received").Joins("LEFT JOIN (?) AS refunds ON refunds.refund_parent_id = expense.id", refunds).Where("expense.owner_id = ? AND expense.status = ? AND expense.type = ? AND expense.amount > 0 AND expense.reimbursable = ? AND expense.refund_parent_id IS NULL AND expense.rebate_parent_id IS NULL", owner, "posted", "expense", true).Scan(&totals).Error; err != nil {
+		return err
+	}
+	result.ReimbursementTotal = totals.ReimbursementTotal
+	result.ReimbursementReceived = totals.ReimbursementReceived
+	return nil
+}
+
 // SumTypes 按收支类型聚合金额；参数：db 为事务，owner 为归属，start/end 为左闭右开日期，result 为含 Type、Total 字段的非 nil 集合指针；返回值：数据库错误或 nil，无写入。
 func SumTypes(db *gorm.DB, owner uint64, start, end string, result any) error {
 	return db.Model(&domain.Transaction{}).Select("type, SUM(amount) AS total").Where("owner_id = ? AND status = ? AND transaction_date >= ? AND transaction_date < ? AND type IN ?", owner, "posted", start, end, []string{"income", "expense"}).Group("type").Scan(result).Error

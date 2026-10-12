@@ -2,12 +2,13 @@ import SwiftUI
 
 struct ChatView: View {
     @Environment(AppStore.self) private var store
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @State private var draft = ""
     private var sending: Bool { store.chatSending }
     @State private var error: String?
     @State private var confirmingClear = false
     @State private var uncertain = false
-    /// 构建助手页面；参数：无；返回值：原生对话界面；登录过渡禁止发出携带上下文的请求。
+    /// 构建聊天界面；参数：无；返回值：实色内容与原生玻璃操作，减少透明度时用户消息使用系统实底；登录过渡禁止发送携带上下文的请求，其余消息流程不变。
     var body: some View {
         @Bindable var store = store
         VStack(spacing: 0) {
@@ -20,7 +21,7 @@ struct ChatView: View {
                     LazyVStack(alignment: .leading, spacing: 20) {
                         if store.messages.isEmpty {
                             VStack(alignment: .leading, spacing: 18) {
-                                Image(systemName: "sparkles").font(.system(size: 44)).foregroundStyle(.teal).padding(24).glassEffect()
+                                SymbolTile(symbol: "sparkles", size: 64)
                                 Text("把想法，说出来。").font(.largeTitle.bold())
                                 Text("我可以帮你梳理任务、查询收支，也能根据你的指令执行操作。").foregroundStyle(.secondary)
                                 if store.configs.isEmpty { NavigationLink { AISettingsView() } label: { Label("模型服务", systemImage: "slider.horizontal.3") } }
@@ -33,7 +34,10 @@ struct ChatView: View {
                             VStack(alignment: .leading, spacing: 8) {
                                 Label(message.role == "user" ? "你" : "助手", systemImage: message.role == "user" ? "person.crop.circle" : "sparkles").font(.caption).foregroundStyle(.secondary)
                                 Text(markdown(message.content)).textSelection(.enabled).frame(maxWidth: .infinity, alignment: .leading)
-                            }.padding(18).background(message.role == "user" ? Color.teal.opacity(0.09) : Color(uiColor: .secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 22)).id(message.id)
+                            }.padding(AppVisualStyle.cardInset)
+                                .background(message.role == "user" && !reduceTransparency ? Color.teal.opacity(0.09) : Color(uiColor: .secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: AppVisualStyle.cardRadius, style: .continuous))
+                                .overlay(alignment: .leading) { if message.role == "user" { RoundedRectangle(cornerRadius: AppVisualStyle.cardRadius, style: .continuous).strokeBorder(Color.teal.opacity(0.3), lineWidth: 1) } }
+                                .id(message.id)
                         }
                         if sending { Label("正在思考并处理…", systemImage: "ellipsis.bubble").foregroundStyle(.secondary) }
                         if !store.actions.isEmpty {
@@ -53,7 +57,7 @@ struct ChatView: View {
         }.background(Color(uiColor: .systemGroupedBackground))
             .safeAreaInset(edge: .bottom) {
                 HStack(alignment: .bottom, spacing: 12) {
-                    TextField("说说你的计划…", text: $draft, axis: .vertical).lineLimit(1...6).padding(14).background(Color(uiColor: .secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 24))
+                    TextField("说说你的计划…", text: $draft, axis: .vertical).lineLimit(1...6).padding(14).cardSurface(radius: AppVisualStyle.fieldRadius)
                     Button { Task { await send() } } label: { Image(systemName: sending ? "hourglass" : "arrow.up").font(.headline).frame(width: 44, height: 44) }
                         .buttonStyle(.glassProminent).accessibilityLabel("发送消息").disabled(!store.canUseCloud || sending || draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || store.chatConfigID == 0)
                 }.padding(.horizontal, 16).padding(.vertical, 10).frame(maxWidth: 840).frame(maxWidth: .infinity)

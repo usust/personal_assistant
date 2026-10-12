@@ -110,7 +110,7 @@ func calculateInstallment(principal domain.Money, terms domain.InstallmentTerms)
 	return plan, nil
 }
 
-// installment 读取、试算或原子转换支出；参数：db 为已锁定用户的事务，owner 为身份，op 为操作，in 含原账单 ID 和规则；返回值：计划或错误，失败全部回滚。
+// installment 读取、试算或原子转换支出；参数：db 为已锁定用户的事务，owner 为可信身份，op 为分期白名单操作，in 含原账单 ID 和规则；返回值：计划或校验、权限、数据库错误，失败全部回滚；未到账报销标记由各期继承，已有报销到账金额时禁止拆分。
 func installment(db *gorm.DB, owner uint64, op string, in Input) (domain.InstallmentPlan, error) {
 	var bill domain.Transaction
 	var plan domain.InstallmentPlan
@@ -211,12 +211,16 @@ func installment(db *gorm.DB, owner uint64, op string, in Input) (domain.Install
 		// 拒绝本次操作：仅普通已入账支出可以转分期。
 		return plan, Invalid("仅普通已入账支出可以转分期")
 	}
+	if bill.ReimbursedAmount != 0 {
+		return plan, Invalid("请先调整已报销金额，再转为分期")
+	}
 	// 按所属用户读取账户并检查可用状态。
 	if _, err := account(db, owner, bill.AccountID, true); err != nil {
 		return plan, err
 	}
 	// 按本金和分期条件计算计划。
 	plan, err = calculateInstallment(bill.Amount, terms)
+	plan.Reimbursable = bill.Reimbursable
 	if err != nil || op == "finance.installment.preview" {
 		return plan, err
 	}
@@ -238,7 +242,7 @@ func installment(db *gorm.DB, owner uint64, op string, in Input) (domain.Install
 	for i := range plan.Rows {
 		period := &plan.Rows[i]
 		// 生成当前操作需要的展示或协议文本。
-		child := domain.Transaction{OwnerID: owner, RequestID: fmt.Sprintf("installment_%d_%d", bill.ID, period.Period), AccountID: bill.AccountID, Type: "expense", Amount: period.Amount, CategoryID: bill.CategoryID, Counterparty: bill.Counterparty, TransactionDate: period.Date, Description: fmt.Sprintf("%s · %d/%d", terms.Name, period.Period, terms.Periods), Status: "pending", Source: "http", InstallmentParentID: &bill.ID, InstallmentPeriod: period.Period}
+		child := domain.Transaction{Reimbursable: bill.Reimbursable, OwnerID: owner, RequestID: fmt.Sprintf("installment_%d_%d", bill.ID, period.Period), AccountID: bill.AccountID, Type: "expense", Amount: period.Amount, CategoryID: bill.CategoryID, Counterparty: bill.Counterparty, TransactionDate: period.Date, Description: fmt.Sprintf("%s · %d/%d", terms.Name, period.Period, terms.Periods), Status: "pending", Source: "http", InstallmentParentID: &bill.ID, InstallmentPeriod: period.Period}
 		if terms.Description != nil || bill.Description != "" {
 			child.Description = bill.Description
 		}
@@ -255,6 +259,9 @@ func installment(db *gorm.DB, owner uint64, op string, in Input) (domain.Install
 	}
 	fields["status"] = "installment"
 	fields["installment_json"] = string(data)
+	// 隐藏主账单不再代表单笔支出，报销归属只保留在各期，避免主单和子项重复统计。
+	fields["reimbursable"] = false
+	fields["reimbursed_amount"] = domain.Money(0)
 	// 仅写入本次经过校验的变更字段。
 	err = repository.UpdateTransaction(db, owner, bill.ID, fields)
 	return plan, err

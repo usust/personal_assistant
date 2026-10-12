@@ -194,7 +194,7 @@ struct AISettingsView: View {
                             Text(config.name).font(.headline)
                             Text(config.provider_name + " · " + config.model_name).font(.subheadline).foregroundStyle(.secondary)
                         }.frame(maxWidth: .infinity, alignment: .leading).padding(.vertical, 4)
-                    }.foregroundStyle(.tint).disabled(!canManage(config) || busy)
+                    }.buttonStyle(.plain).foregroundStyle(.primary).disabled(!canManage(config) || busy)
                         .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                             if canManage(config) {
                                 // 左滑删除只选定目标，确认后才向后端发送删除请求。
@@ -213,8 +213,7 @@ struct AISettingsView: View {
                     Label("添加模型服务", systemImage: "plus")
                         .font(.body).frame(maxWidth: .infinity, minHeight: 60)
                         .contentShape(RoundedRectangle(cornerRadius: 28))
-                }.buttonStyle(.plain).foregroundStyle(.tint).disabled(busy)
-                    .glassEffect(.regular.interactive(), in: RoundedRectangle(cornerRadius: 28))
+                }.buttonStyle(.glass).buttonBorderShape(.roundedRectangle(radius: 28)).tint(.teal).disabled(busy)
                     .listRowInsets(EdgeInsets()).listRowBackground(Color.clear)
             }
             Section {
@@ -229,7 +228,6 @@ struct AISettingsView: View {
             }
         }.listStyle(.insetGrouped).listSectionSpacing(16)
             .navigationTitle("").navigationBarTitleDisplayMode(.inline)
-            .background(ModelServiceNavigationContainer())
             .task { await reload() }.refreshable { await reload() }
             .sheet(isPresented: $creating) { AIConfigEditor(config: nil) }
             .sheet(item: $editing) { AIConfigEditor(config: $0) }
@@ -296,90 +294,31 @@ struct AISettingsView: View {
     }
 }
 
-/// 本页保留 SwiftUI 导航栏，临时隐藏系统 More 的外层导航栏，避免两行按钮。
-private struct ModelServiceNavigationContainer: UIViewControllerRepresentable {
-    /// 创建导航适配控制器；参数：context 为 SwiftUI 生命周期上下文；返回值：不显示内容的控制器。
-    func makeUIViewController(context: Context) -> NavigationController {
-        NavigationController()
-    }
-
-    /// 更新适配控制器；参数：controller 为已创建实例，context 为生命周期上下文；返回值：无。
-    func updateUIViewController(_ controller: NavigationController, context: Context) {
-        controller.hideMoreNavigationBar()
-    }
-
-    /// 离开页面时恢复外层导航；参数：controller 为即将移除实例，coordinator 为默认协调器；返回值：无。
-    static func dismantleUIViewController(_ controller: NavigationController, coordinator: ()) {
-        controller.restoreMoreNavigationBar()
-    }
-
-    final class NavigationController: UIViewController {
-        private weak var moreNavigation: UINavigationController?
-        private var wasHidden = false
-
-        /// 页面出现前适配导航栏；参数：animated 表示系统是否使用动画；返回值：无。
-        override func viewWillAppear(_ animated: Bool) {
-            super.viewWillAppear(animated)
-            hideMoreNavigationBar()
-        }
-
-        /// 挂载后适配导航栏；参数：parent 为父控制器或 nil；返回值：无，未挂载时不修改导航。
-        override func didMove(toParent parent: UIViewController?) {
-            super.didMove(toParent: parent)
-            if parent != nil { hideMoreNavigationBar() }
-        }
-
-        /// 隐藏本页所属 More 外层导航栏；参数：无；返回值：无，其他标签及宽屏导航不受影响。
-        func hideMoreNavigationBar() {
-            guard let more = tabBarController?.moreNavigationController else { return }
-            // 必须确认当前页面在 More 层级内，避免隐藏其他一级菜单的导航栏。
-            var ancestor: UIViewController? = parent
-            while let current = ancestor {
-                if current === more {
-                    if moreNavigation == nil { moreNavigation = more; wasHidden = more.isNavigationBarHidden }
-                    more.setNavigationBarHidden(true, animated: false)
-                    return
-                }
-                ancestor = current.parent
-            }
-        }
-
-        /// 恢复进入前的外层导航状态；参数：无；返回值：无，适配器移除时执行。
-        func restoreMoreNavigationBar() {
-            moreNavigation?.setNavigationBarHidden(wasHidden, animated: false)
-            moreNavigation = nil
-        }
-    }
-}
-
-
-/// 模型服务字段：空值使用完整占位标签，有值时在输入上方显示缩小标签；密钥保持安全输入。
+/// 模型服务字段：复用任务浮动标签布局，聚焦或有值时标签抬升；密钥保持安全输入。
 private struct ModelServiceTextField: View {
     let title: String
     @Binding var text: String
     var keyboard: UIKeyboardType = .default
     var secure = false
+    @FocusState private var focused: Bool
 
     /// 构建浮动标签输入；参数：无；返回值：绑定 text 的输入视图，title 为字段名称，keyboard 指定键盘，secure 决定是否遮盖内容。
     var body: some View {
-        VStack(alignment: .leading, spacing: 5) {
-            // 根据真实值浮动标签，编辑回填立即显示字段名；清空后还原占位，标签不截断长名称。
-            if !text.isEmpty {
-                Text(title).font(.caption).foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .accessibilityHidden(true)
-            }
+        FloatingFieldContainer(title: title, raised: focused || !text.isEmpty) {
             Group {
                 if secure {
-                    SecureField(title, text: $text, prompt: Text(title).foregroundStyle(.secondary))
+                    SecureField(title, text: $text, prompt: Text(""))
                 } else {
-                    TextField(title, text: $text, prompt: Text(title).foregroundStyle(.secondary))
+                    TextField(title, text: $text, prompt: Text(""))
                 }
-            }.font(.body).keyboardType(keyboard)
+            }.font(.body).keyboardType(keyboard).focused($focused)
                 .textInputAutocapitalization(.never).autocorrectionDisabled()
                 .accessibilityLabel(title)
-        }.frame(maxWidth: .infinity, minHeight: 52, alignment: .leading)
-            .animation(.easeInOut(duration: 0.16), value: text.isEmpty)
+        }
+        .contentShape(Rectangle())
+        .background { KeyboardInputRegion() }
+        // 点击回调无输入、返回值无；标签与留白同样获取焦点，只编辑字段草稿。
+        .onTapGesture { focused = true }
     }
 }
 

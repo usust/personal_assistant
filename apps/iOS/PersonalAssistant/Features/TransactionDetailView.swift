@@ -24,7 +24,7 @@ struct TransactionDetailView: View {
     private var refundableExpense: Bool {
         transaction.type == "expense" && transaction.status == "posted" && transaction.refundParentId == nil
     }
-    /// 构建详情页；参数：无；返回值：顶部快捷操作及真实流水字段，不显示未实现的账本、标签或报销开关。
+    /// 构建详情页；参数：无；返回值：顶部快捷操作及真实流水字段，报销进度独立于账户余额。
     var body: some View {
         List {
             Section {
@@ -63,6 +63,10 @@ struct TransactionDetailView: View {
                 LabeledContent("交易对象", value: transaction.counterparty.isEmpty ? "无" : transaction.counterparty)
                 LabeledContent("备注", value: transaction.description.isEmpty ? "无" : transaction.description)
                 if transaction.type == "expense" { LabeledContent("优惠", value: Values.money(transaction.discount ?? "0.00")) }
+                if transaction.type == "expense" && transaction.refundParentId == nil && transaction.status != "installment" {
+                    LabeledContent("需报销", value: transaction.reimbursable == true ? "是" : "否")
+                    if transaction.reimbursable == true { LabeledContent("已报销金额", value: Values.money(transaction.reimbursedAmount ?? "0.00")) }
+                }
                 if transaction.type == "transfer" {
                     LabeledContent("手续费", value: Values.money(transaction.fee ?? "0.00"))
                     LabeledContent("优惠", value: Values.money(transaction.rebate ?? "0.00"))
@@ -142,14 +146,19 @@ private struct TransactionTemplateSheet: View {
                 .disabled(busy).interactiveDismissDisabled(busy)
         }.presentationDetents([.medium])
     }
-    /// 保存模板；参数：无；返回值：无；将净额恢复为含优惠的原价，服务端生成模板时不会再次扣减优惠。
+    /// 保存模板；参数：无；返回值：无；将净额恢复为含优惠的原价，报销意图保留而已报销金额清零，避免后续新流水继承旧进度。
     private func save() async {
         guard !busy else { return }; busy = true; defer { busy = false }
         let gross = (Decimal(string: transaction.amount) ?? 0) + (Decimal(string: transaction.discount ?? "0") ?? 0)
         var value: [String: Any] = ["type": transaction.type, "accountId": transaction.accountId, "amount": NSDecimalNumber(decimal: gross).stringValue, "discount": transaction.discount ?? "0.00", "counterparty": transaction.counterparty, "description": transaction.description, "fee": transaction.fee ?? "0.00"]
+        value["reimbursable"] = transaction.reimbursable ?? false
+        value["reimbursedAmount"] = "0.00"
         if let category = transaction.categoryId { value["categoryId"] = category }
         if let target = transaction.targetAccountId { value["targetAccountId"] = target }
-        if let rebate = transaction.rebate { value["rebate"] = rebate; value["rebateAccountId"] = transaction.rebateAccountId ?? transaction.accountId; value["rebatePending"] = transaction.rebatePending ?? false }
+        // 同步后的普通支出也返回零优惠；仅正数转账返现携带到账设置，防止零优惠模板被服务端拒绝。
+        if transaction.type == "transfer", let rebate = transaction.rebate, (Decimal(string: rebate) ?? 0) > 0 {
+            value["rebate"] = rebate; value["rebateAccountId"] = transaction.rebateAccountId ?? transaction.accountId; value["rebatePending"] = transaction.rebatePending ?? false
+        }
         var body: [String: Any] = ["name": name.trimmingCharacters(in: .whitespacesAndNewlines), "frequency": "", "startDate": Values.day(.now), "transaction": value]
         // 相同内容重试沿用幂等键，修改草稿后换键，避免网络失败时重复保存或键冲突。
         if let submitted, !submitted.isEqual(to: body) { key = UUID().uuidString }

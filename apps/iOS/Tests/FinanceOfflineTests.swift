@@ -84,9 +84,88 @@ final class OfflineSyncServer: @unchecked Sendable {
             CoreTests.check(false, "相同转账账户必须拒绝")
         } catch { CoreTests.check(NSDictionary(dictionary: before).isEqual(to: store.document), "编辑失败完整回滚余额与队列") }
     }
+    /// 验证离线报销闭环；参数：无；返回值：无；使用独立虚构账本验证净额、退款、部分 PATCH、模板与持久化，不访问真实用户数据，失败抛错或断言。
+    static func reimbursements() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent("reimbursement-tests-" + UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let store = try ledger(directory, "reimbursement")
+        let accountID = try account(store, name: "报销测试账户", balance: "100.00")
+        var request = payment(accountID, amount: "100.00", key: "reimbursement-payment-001")
+        request["discount"] = "20.00"; request["reimbursable"] = true; request["reimbursedAmount"] = "30.00"
+        let created = try store.writeLocal("/finance/transactions", method: "POST", body: request) as! [String: Any]
+        let id = FinanceLocalStore.id(created), path = "/finance/transactions/" + String(id)
+        let initial = try store.reimbursementSummary()
+        CoreTests.check(initial["reimbursementTotal"] == "80.00" && initial["reimbursementReceived"] == "30.00" && initial["reimbursementPending"] == "50.00", "报销独立汇总优惠后的净实付金额")
+        balance(store, accountID, "20.00")
+        let before = store.document
+        let invalidUpdates: [[String: Any]] = [["reimbursable": false], ["amount": "10.00", "discount": "0.00"], ["reimbursedAmount": "81.00"], ["reimbursedAmount": "-1.00"]]
+        for fields in invalidUpdates {
+            do {
+                _ = try store.writeLocal(path, method: "PATCH", body: fields)
+                CoreTests.check(false, "非法报销部分更新必须拒绝")
+            } catch { CoreTests.check(NSDictionary(dictionary: before).isEqual(to: store.document), "非法报销更新回滚账户、字段和队列") }
+        }
+        _ = try store.writeLocal(path, method: "PATCH", body: ["description": "修改备注"])
+        let annotated = store.rows("transactions").first { FinanceLocalStore.id($0) == id }!
+        CoreTests.check(annotated["reimbursable"] as? Bool == true && annotated["reimbursedAmount"] as? String == "30.00", "未提交报销字段的 PATCH 保留原进度")
+        _ = try store.writeLocal(path, method: "PATCH", body: ["reimbursedAmount": "0.00"])
+        _ = try store.writeLocal(path, method: "PATCH", body: ["reimbursable": false])
+        CoreTests.check(try store.reimbursementSummary()["reimbursementTotal"] == "0.00", "已报销为零时支持单字段取消标记")
+        _ = try store.writeLocal(path, method: "PATCH", body: ["reimbursable": true, "reimbursedAmount": "20.00"])
+        balance(store, accountID, "20.00")
+        let refund = try store.writeLocal(path + "/refund", method: "POST", body: ["requestId": "reimbursement-refund-001", "amount": "30.00", "transactionDate": "2026-09-30"]) as! [String: Any]
+        let refunded = try store.reimbursementSummary()
+        CoreTests.check(refunded["reimbursementTotal"] == "50.00" && refunded["reimbursementReceived"] == "20.00" && refunded["reimbursementPending"] == "30.00", "有效退款抵减原支出的待报销金额")
+        CoreTests.check(refund["reimbursable"] as? Bool == false && refund["reimbursedAmount"] as? String == "0.00", "退款流水不继承报销进度")
+        let refundBefore = store.document
+        do {
+            _ = try store.writeLocal(path + "/refund", method: "POST", body: ["requestId": "reimbursement-refund-002", "amount": "35.00", "transactionDate": "2026-09-30"])
+            CoreTests.check(false, "超过剩余报销净额的退款必须拒绝")
+        } catch { CoreTests.check(NSDictionary(dictionary: refundBefore).isEqual(to: store.document), "退款净额小于已报销时原子拒绝") }
+        _ = try store.writeLocal(path, method: "PATCH", body: ["reimbursedAmount": "50.00"])
+        CoreTests.check(try store.reimbursementSummary()["reimbursementPending"] == "0.00", "全额报销后待报销归零")
+        _ = try store.writeLocal(path, method: "PATCH", body: ["reimbursable": false, "reimbursedAmount": "0.00"])
+        let clearBody = store.queue.last?["body"] as? [String: Any]
+        CoreTests.check(clearBody?["reimbursable"] as? Bool == false && clearBody?["reimbursedAmount"] as? String == "0.00", "同步队列完整保留显式 false 和零报销金额")
+        balance(store, accountID, "50.00")
+        // 模板提交正到账金额须与服务端一样被拒绝；失败不写入同步队列，正常表单提交零金额保留意图。
+        var template = payment(accountID, amount: "8.00", key: "reimbursement-template-input")
+        template["reimbursable"] = true; template["reimbursedAmount"] = "7.00"
+        let queueBeforeTemplate = (store.space["queue"] as? [[String: Any]])?.count ?? 0
+        do { _ = try store.writeLocal("/finance/presets", method: "POST", body: ["key": "reimbursement-template-001", "name": "差旅", "transaction": template]); CoreTests.check(false, "模板不可预记已报销金额") }
+        catch { CoreTests.check(true, "模板到账金额与服务端一致拒绝") }
+        CoreTests.check(((store.space["queue"] as? [[String: Any]])?.count ?? 0) == queueBeforeTemplate, "无效报销模板不污染同步队列")
+        template["reimbursedAmount"] = "0.00"
+        let preset = try store.writeLocal("/finance/presets", method: "POST", body: ["key": "reimbursement-template-001", "name": "差旅", "transaction": template]) as! [String: Any]
+        let savedTemplate = preset["transaction"] as? [String: Any]
+        CoreTests.check(savedTemplate?["reimbursable"] as? Bool == true && savedTemplate?["reimbursedAmount"] as? String == "0.00", "报销模板保留标记并重置已报销金额")
+        var income = payment(accountID, kind: "income", amount: "5.00", key: "reimbursement-invalid-income")
+        income["reimbursable"] = true
+        do { _ = try store.writeLocal("/finance/transactions", method: "POST", body: income); CoreTests.check(false, "收入不可标记报销") }
+        catch { CoreTests.check(true, "报销字段禁止用于收入") }
+        var pending = created; pending["status"] = "pending"
+        do { try FinanceLocalStore.validateReimbursement(pending, records: []); CoreTests.check(false, "待确认不可登记已报销金额") }
+        catch { CoreTests.check(true, "未入账流水仅允许报销意图") }
+        // 数字与字符串不能冒充 JSON 布尔值；失败不落库，也不会发送服务端拒绝的同步操作。
+        for value in [NSNumber(value: 1), "true", NSNull()] as [Any] {
+            var invalid = created; invalid["reimbursable"] = value
+            do { try FinanceLocalStore.validateReimbursement(invalid, records: []); CoreTests.check(false, "报销标记须为真实布尔值") }
+            catch { CoreTests.check(true, "无效报销标记类型被拒绝") }
+        }
+        // 历史数据缺失新增字段时使用可空模型，避免同步后无法读取旧账本。
+        var historical = created; historical.removeValue(forKey: "reimbursable"); historical.removeValue(forKey: "reimbursedAmount")
+        let legacy = try JSONDecoder().decode(FinanceTransaction.self, from: JSONSerialization.data(withJSONObject: historical))
+        CoreTests.check(legacy.reimbursable == nil && legacy.reimbursedAmount == nil, "历史流水兼容缺失报销字段")
+        _ = try store.writeLocal(path, method: "PATCH", body: ["reimbursable": true, "reimbursedAmount": "20.00"])
+        let restored = try ledger(directory, "reimbursement")
+        let overview = try JSONDecoder().decode(FinanceOverview.self, from: JSONSerialization.data(withJSONObject: restored.overview()))
+        CoreTests.check(overview.reimbursementTotal == "50.00" && overview.reimbursementReceived == "20.00" && overview.reimbursementPending == "30.00" && overview.netWorth == "50.00", "重启恢复报销汇总且净资产不重复增加")
+    }
     /// 执行离线业务、磁盘恢复及真实传输封装测试；参数：无；返回值：无，失败抛错或断言，不访问实际网络和钥匙串。
     static func run() async throws {
         try transactionEditing()
+        try reimbursements()
         // 使用虚构号码验证本机保存、同步脱敏及快照合并，防止保存或下载后丢失完整号码。
         let card = try AccountCard(id: "card-test", name: "测试卡", maskedAccountNumber: "1234-5678 9012 3456").normalized()
         precondition(card.maskedAccountNumber == "1234567890123456")

@@ -68,7 +68,7 @@ struct TransactionsView: View {
             if loading { ProgressView("加载流水…") }
             if hasMore && !loading { Button("加载更多") { Task { await load(reset: false) } } }
         }.listStyle(.insetGrouped).listSectionSpacing(16)
-            .navigationTitle(financeHome ? "财务" : scopedAccountID == nil ? "交易流水" : "账户详情")
+            .navigationTitle(financeHome ? "财务" : scopedAccountID == nil ? "交易流水" : "账户详情").navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 if financeHome {
                     ToolbarItem(placement: .topBarTrailing) {
@@ -291,7 +291,7 @@ struct TransactionsView: View {
         // 分类查找接收目录项并返回 ID 匹配结果；图标映射接收分类并返回对应系统符号。
         let category = store.categories.first { $0.id == transaction.categoryId }
         let symbol = transaction.type == "transfer" ? "arrow.left.arrow.right" : category.map { CategoryCatalog.icon(for: $0) } ?? (transaction.type == "income" ? "plus" : "minus")
-        let color: Color = transaction.type == "transfer" ? .yellow : transaction.type == "income" ? .teal : Color(red: 0.96, green: 0.37, blue: 0.31)
+        let color = FinanceVisualStyle.color(for: transaction.type)
         let signedAmount = transaction.amount.isEmpty ? "金额待补全" : transaction.refundParentId != nil ? "+" + AccountPresentation.money(abs(Decimal(string: transaction.amount) ?? 0)) : (transaction.type == "expense" ? "−" : transaction.type == "income" ? "+" : "") + Values.money(transaction.amount)
         // 过滤回调接收对象名或备注，返回是否非空；仅组合已保存的文本，不补造交易时间。
         let installmentName = transaction.installmentName ?? "消费分期"
@@ -342,6 +342,11 @@ struct TransactionsView: View {
                     }
                     if let rebate = transaction.rebate, (Decimal(string: rebate) ?? 0) > 0 {
                         Text("优惠 " + Values.money(rebate)).font(.caption2)
+                            .padding(.horizontal, 5).padding(.vertical, 2).background(.quaternary, in: RoundedRectangle(cornerRadius: 4))
+                    }
+                    if transaction.reimbursable == true {
+                        Text((Decimal(string: transaction.reimbursedAmount ?? "0") ?? 0) > 0 ? "已报销 " + Values.money(transaction.reimbursedAmount ?? "0.00") : "待报销")
+                            .font(.caption2).foregroundStyle(.secondary)
                             .padding(.horizontal, 5).padding(.vertical, 2).background(.quaternary, in: RoundedRectangle(cornerRadius: 4))
                     }
                     if transaction.status != "posted" && transaction.installmentParentId == nil { Text(statusName(transaction.status)).font(.caption2).foregroundStyle(.secondary) }
@@ -444,6 +449,7 @@ struct TransactionsView: View {
 }
 
 struct TransactionEditor: View {
+    @ScaledMetric(relativeTo: .title2) private var keypadRowHeight: CGFloat = 48
     /// 非空时编辑已有流水；新增和编辑共用所有布局，仅保存方式与可修改字段不同。
     var editingTransaction: FinanceTransaction? = nil
     var initialLoanID: Int? = nil
@@ -467,10 +473,10 @@ struct TransactionEditor: View {
     @State private var rebatePending = false
     @State private var discount = "0.00"
     @State private var showingDiscount = false
-    @State private var showingEntryDate = false
-    @State private var entryDateDraft = Date.now
+    @State private var reimbursable = false
+    @State private var reimbursedAmount = "0.00"
+    @State private var showingReimbursement = false
     @State private var entryDateChanged = false
-    @State private var entryDateContentHeight: CGFloat = 480
     @State private var calculation = AmountCalculation()
     /// 读取入口指定的保存类型；参数：无；返回值：transaction、template 或 recurring，创建过程中不可切换。
     private var saveMode: String { initialMode }
@@ -487,9 +493,9 @@ struct TransactionEditor: View {
     @State private var error: String?
     @State private var requestID = UUID().uuidString
     @State private var submittedBody: [String: Any]?
-    /// 校验主页面；参数：无；返回值：账户、金额、手续费、优惠和周期名称是否有效；模板名称在保存面板另行校验。
+    /// 校验主页面；参数：无；返回值：账户、金额、手续费、优惠、报销进度和周期名称是否有效；模板名称在保存面板另行校验。
     private var valid: Bool {
-        guard counterparty.utf8.count <= 128 && description.utf8.count <= 2000 else { return false }
+        guard counterparty.utf8.count <= 128 && description.utf8.count <= 2000 && reimbursementValid else { return false }
         // 退款子项金额为负数，资料更正仍可保存；财务关联约束由账本事务校验。
         if editingTransaction?.refundParentId != nil { return true }
         return (type != "expense" || (Values.validMoney(discount) && (Decimal(string: discount) ?? -1) >= 0 && (Decimal(string: discount) ?? 0) < (Decimal(string: amount) ?? 0))) && (saveMode != "recurring" || !presetName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty) && (type != "transfer" || (Values.validMoney(rebate) && (Decimal(string: rebate) ?? -1) >= 0 && Values.validMoney(fee) && (Decimal(string: fee) ?? -1) >= 0)) && accountID > 0 && Values.validMoney(amount, positive: true) && (type != "transfer" || (targetID > 0 && targetID != accountID))
@@ -500,10 +506,25 @@ struct TransactionEditor: View {
     @FocusState private var editingFullNote: Bool
     @State private var categoryTemplate: (group: CategoryGroup, item: CategoryTemplate)?
     @State private var saved = false
-    /// 返回记账类型的强调色；参数：无；返回值：支出为珊瑚红、收入为青绿、转账为橙色。
-    private var entryColor: Color { type == "expense" ? Color(red: 0.96, green: 0.37, blue: 0.31) : type == "income" ? .teal : .orange }
+    /// 返回记账类型的强调色；参数：无；返回值：复用流水与首页的系统动态语义色；无业务副作用。
+    private var entryColor: Color { FinanceVisualStyle.color(for: type) }
     /// 返回可记账的账户；参数：无；返回值：未禁用的真实账户，不生成示例账户。
     private var availableAccounts: [FinancialAccount] { store.accounts.filter { $0.selectable != false } }
+    /// 判断当前草稿能否标记报销；参数：无；返回值：正支出及其模板允许标记，退款、返现和分期主项不提供此入口。
+    private var canMarkReimbursement: Bool {
+        type == "expense" && editingTransaction?.refundParentId == nil && editingTransaction?.rebateParentId == nil && editingTransaction?.status != "installment"
+    }
+    /// 判断是否可登记实际报销金额；参数：无；返回值：普通新流水或已入账支出为 true，模板、周期及待确认流水只保存报销意图。
+    private var canRecordReimbursement: Bool {
+        canMarkReimbursement && saveMode == "transaction" && (editingTransaction == nil || editingTransaction?.status == "posted")
+    }
+    /// 校验报销金额草稿；参数：无；返回值：金额格式与实付上限合法时为 true，关联退款后的上限由账本事务最终校验。
+    private var reimbursementValid: Bool {
+        guard canMarkReimbursement && reimbursable && canRecordReimbursement else { return true }
+        let received = Decimal(string: reimbursedAmount) ?? -1
+        let paid = (Decimal(string: amount) ?? 0) - (Decimal(string: discount) ?? 0)
+        return Values.validMoney(reimbursedAmount) && received >= 0 && received <= paid
+    }
     /// 构建分类优先的记账页；参数：无；返回值：分类网格、紧凑字段栏和底部金额键盘，真实保存沿用账本接口。
     var body: some View {
         NavigationStack {
@@ -536,6 +557,7 @@ struct TransactionEditor: View {
                 .interactiveDismissDisabled(busy)
                 .disabled(busy)
                 .sheet(isPresented: $showingDetails) { detailsForm }
+                .sheet(isPresented: $showingReimbursement) { reimbursementForm }
                 .fullScreenCover(isPresented: $showingFullNote) { fullNoteEditor }
                 .sheet(isPresented: $showingTemplateName) { templateNameForm }
                 .sheet(isPresented: $showingDiscount) {
@@ -548,6 +570,8 @@ struct TransactionEditor: View {
                     // 类型切换回调接收新旧类型、返回无；仅清除不匹配分类，保留有效金额与账户。
                     if store.categories.first(where: { $0.id == categoryID })?.type != value { categoryID = 0 }
                     if categoryTemplate?.group.type != value { categoryTemplate = nil }
+                    // 报销仅属于支出；改为收入或转账时显式清零，不将旧进度带入另一类业务。
+                    if value != "expense" { reimbursable = false; reimbursedAmount = "0.00" }
                     saved = false
                 }
                 .task { populate() }
@@ -578,7 +602,7 @@ struct TransactionEditor: View {
         TransactionAccountSelector(title: title, selection: selection, excluding: excluding) { editingNote = false }
 
     }
-    /// 构建底部输入区；参数：无；返回值：账户与日期入口、金额和备注卡片及始终显示的专用键盘；备注使用系统默认输入行为。
+    /// 构建底部输入区；参数：无；返回值：账户入口、原位日期选择、金额和备注卡片及始终显示的专用键盘；备注使用系统默认输入行为。
     private var entryControls: some View {
         VStack(spacing: 4) {
             ScrollView(.horizontal, showsIndicators: false) {
@@ -592,39 +616,30 @@ struct TransactionEditor: View {
                                 .background(Color(uiColor: .secondarySystemGroupedBackground), in: Capsule())
                         }.buttonStyle(.plain).accessibilityLabel("设置优惠")
                     }
+                    if canMarkReimbursement {
+                        // 打开回调无参数、无返回值；用同一胶囊入口进入原生报销表单，关闭后保留当前草稿。
+                        Button { editingNote = false; showingReimbursement = true } label: {
+                            Label(reimbursable ? "需报销" : "报销", systemImage: "receipt").font(.caption).lineLimit(1)
+                                .padding(.horizontal, 8).frame(height: 24)
+                                .background(Color(uiColor: .secondarySystemGroupedBackground), in: Capsule())
+                        }.buttonStyle(.plain).foregroundStyle(reimbursable ? Color.accentColor : Color.primary).accessibilityLabel("设置报销")
+                    }
 
                 }
             }
             VStack(alignment: .leading, spacing: 6) {
                 // 金额回调无参数、无返回值；结束文本输入并回到金额键盘，不调用保存。
                 Button { editingNote = false } label: {
-                    Text("¥" + (amount.isEmpty ? "0.00" : amount)).font(.system(size: 34, weight: .semibold, design: .rounded))
-                        .monospacedDigit().foregroundStyle(entryColor).lineLimit(1).minimumScaleFactor(0.5)
+                    AmountText(value: "¥" + (amount.isEmpty ? "0.00" : amount)).foregroundStyle(entryColor)
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }.buttonStyle(.plain).accessibilityLabel("金额，" + (amount.isEmpty ? "0" : amount) + "元")
                 if type == "expense", (Decimal(string: discount) ?? 0) > 0 {
                     Text("优惠 " + Values.money(discount) + " · 实付 " + AccountPresentation.money((Decimal(string: amount) ?? 0) - (Decimal(string: discount) ?? 0))).font(.caption).foregroundStyle(.secondary)
                 }
                 Divider()
+                SystemDateTimeInput(title: "日期和时间", selection: entryDateSelection)
+                    .font(.caption)
                 HStack(spacing: 10) {
-                    // 点击回调无参数、无返回值；复制当前时间到独立草稿，打开月历浮层，只有确认才修改交易时间。
-                    Button { editingNote = false; entryDateDraft = date; showingEntryDate = true } label: {
-                        Label(!entryDateChanged ? editingTransaction.map { $0.transactionTime ?? $0.transactionDate } ?? Values.time(date) : Values.time(date), systemImage: "clock")
-                            .font(.caption).lineLimit(1)
-                            .padding(.horizontal, 6).padding(.vertical, 3)
-                            .background(.quaternary, in: Capsule())
-                    }
-                    .buttonStyle(.plain)
-                    .fixedSize()
-                    .accessibilityLabel("日期和时间，" + Values.day(date) + " " + Values.time(date))
-
-                    .sheet(isPresented: $showingEntryDate) {
-                        entryDatePicker
-                            .presentationDetents([.height(entryDateContentHeight)])
-                            .presentationCornerRadius(28)
-                            .presentationDragIndicator(.visible)
-                            .presentationCompactAdaptation(.sheet)
-                    }
                     // 备注始终在当前行编辑；焦点直接唤起系统键盘，提交回调无参数、无返回值，仅结束输入并保留草稿。
                     TextField("点击填写备注", text: $description)
                         .font(.subheadline).textFieldStyle(.plain).focused($editingNote)
@@ -641,7 +656,7 @@ struct TransactionEditor: View {
             }
             // 压缩备注行下方的卡片留白，让较大的备注文字与数字键盘衔接更紧凑。
             .padding(.horizontal, 10).padding(.top, 8).padding(.bottom, 6)
-            .background(Color(uiColor: .secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 20))
+            .cardSurface()
             if let error { InlineError(message: error) }
             if saved { Text("已保存").font(.caption).foregroundStyle(.secondary).accessibilityAddTraits(.updatesFrequently) }
             // 数字键盘始终保留，不根据备注焦点、系统键盘通知或应用前后台状态隐藏。
@@ -661,73 +676,33 @@ struct TransactionEditor: View {
                             Group {
                                 if busy { ProgressView().tint(.white) }
                                 else { Text(saveMode == "template" ? "保存\n模板" : saveMode == "recurring" ? "保存\n周期" : "完成").font(.headline) }
-                            }.frame(maxWidth: .infinity).frame(height: 102)
-                                .foregroundStyle(.white).background(entryColor, in: RoundedRectangle(cornerRadius: 20))
-                        }.buttonStyle(.plain).disabled(busy || !valid)
+                            }.frame(maxWidth: .infinity).frame(height: keypadRowHeight * 2 + AppVisualStyle.keypadSpacing)
+                        }.buttonStyle(AmountKeyStyle(accent: entryColor, emphasized: true, foreground: .white)).disabled(busy || !valid)
                             .accessibilityLabel(saveMode == "template" ? "保存模板" : saveMode == "recurring" ? "保存周期记账" : "完成")
                     }.frame(width: (geometry.size.width - 18) / 4)
                 }.frame(width: geometry.size.width)
-            }.frame(height: 210)
+            }.frame(height: keypadRowHeight * 4 + AppVisualStyle.keypadSpacing * 3)
         }.padding(.horizontal, 12).padding(.vertical, 7)
             .frame(maxWidth: .infinity).background(Color(uiColor: .systemGroupedBackground))
     }
-    /// 构建底部日期时间面板；参数：无；返回值：按正常宽度铺开的系统月历、时间与操作按钮，测量完整内容确定最小面板高度，下滑关闭或取消均不修改原值。
-    private var entryDatePicker: some View {
-        VStack(spacing: 8) {
-            DatePicker("日期", selection: $entryDateDraft, displayedComponents: .date)
-                .datePickerStyle(.graphical)
-                .labelsHidden()
-                .frame(maxWidth: .infinity)
-                .fixedSize(horizontal: false, vertical: true)
-            HStack {
-                Text("时间").font(.subheadline)
-                Spacer()
-                // 使用较大的系统控件尺寸增加时间胶囊留白，保持原生时间选择行为。
-                DatePicker("时间", selection: $entryDateDraft, displayedComponents: .hourAndMinute)
-                    .datePickerStyle(.compact)
-                    .labelsHidden()
-                    .controlSize(.large)
-                    .fixedSize()
-            }
-            HStack(spacing: 12) {
-                // 取消回调无参数、无返回值；关闭浮层并丢弃本次时间修改。
-                Button { showingEntryDate = false } label: {
-                    Text("取消").font(.body.weight(.semibold))
-                        .foregroundStyle(colorScheme == .dark ? Color.white : Color.black)
-                        .frame(maxWidth: .infinity, minHeight: 32)
-                }.buttonStyle(.glass)
-                // 确认回调无参数、无返回值；将完整日期和时分一次性写回记账草稿，不提交网络请求。
-                Button {
-                    date = entryDateDraft
-                    entryDateChanged = true
-                    showingEntryDate = false
-                } label: {
-                    Text("确定").font(.body.weight(.semibold))
-                        .foregroundStyle(Color.black)
-                        .frame(maxWidth: .infinity, minHeight: 32)
-                }.buttonStyle(.glassProminent).tint(.cyan)
-            }
-        }
-        .padding(.horizontal, 16).padding(.top, 14).padding(.bottom, 10)
-        .frame(maxWidth: .infinity)
-        .fixedSize(horizontal: false, vertical: true)
-        // 测量回调输入实际布局尺寸、返回完整内容高度；更新回调输入新高度、返回无，仅调整面板尺寸，不缩放或裁剪控件。
-        .onGeometryChange(for: CGFloat.self) { geometry in
-            geometry.size.height
-        } action: { height in
-            if height > 0 { entryDateContentHeight = ceil(height) }
-        }
+    /// 系统日期选择与记账草稿之间的绑定；参数：无；返回值：原位日期时分绑定，仅用户实际修改时标记时间已变更，保留历史流水未提供的时间字段。
+    private var entryDateSelection: Binding<Date> {
+        // 读取回调无参数、返回当前草稿；写入回调接收所选日期时间、返回无，关闭备注焦点且不提交网络请求。
+        Binding(get: { date }, set: { selected in
+            guard selected != date else { return }
+            editingNote = false
+            date = selected
+            entryDateChanged = true
+        })
     }
-    /// 构建金额键；参数：key 为数字、删除或四则运算符；返回值：固定高度的大圆角按钮，仅修改金额草稿，无网络副作用。
+    /// 构建金额键；参数：key 为数字、删除或四则运算符；返回值：共享样式且随字号增长的按键，仅修改金额草稿，无网络副作用。
     private func entryKey(_ key: String) -> some View {
         Button { handleKey(key) } label: {
             Group {
                 if key == "删除" { Image(systemName: "delete.left.fill").font(.title3) }
-                else { Text(key).font(.system(size: 26, weight: .regular)) }
-            }.frame(maxWidth: .infinity).frame(height: 48)
-                .foregroundStyle(colorScheme == .dark ? Color.white : Color.black)
-                .background(Color(uiColor: .secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 18))
-        }.buttonStyle(.plain).disabled(busy)
+                else { Text(key).font(AppVisualStyle.keypadFont) }
+            }.frame(maxWidth: .infinity).frame(height: keypadRowHeight)
+        }.buttonStyle(AmountKeyStyle()).disabled(busy)
             .accessibilityLabel(key == "删除" ? "删除一位金额" : key)
     }
     /// 处理专用键盘；参数：key 为数字、编辑或保存键；返回值：无；模板保存键打开命名面板，其他保存键提交记录，普通键编辑金额。
@@ -831,12 +806,36 @@ struct TransactionEditor: View {
                         TextField("周期记账名称", text: $presetName)
                         Picker("重复周期", selection: $frequency) { Text("每天").tag("daily"); Text("每周").tag("weekly"); Text("每月").tag("monthly"); Text("每年").tag("yearly") }
                         Toggle("截止日期", isOn: $hasEndDate)
-                        if hasEndDate { DatePicker("截止", selection: $endDate, in: date..., displayedComponents: .date) }
+                        if hasEndDate { SystemDateTimeInput(title: "截止", selection: $endDate, displayedComponents: .date, range: date...SystemDateTimeInput.allowedRange.upperBound) }
                     }
                 }
             }.navigationTitle(saveMode == "recurring" ? "创建周期记账" : "记账选项").navigationBarTitleDisplayMode(.inline)
                 .toolbar { ToolbarItem(placement: .confirmationAction) { Button("完成") { showingDetails = false } } }
         }
+    }
+    /// 构建报销选项面板；参数：无；返回值：原生开关与条件金额字段，复用记账选项的标题和关闭行为，不修改账户余额。
+    private var reimbursementForm: some View {
+        NavigationStack {
+            Form {
+                Toggle("需报销", isOn: $reimbursable)
+                    // 开关回调接收新旧标记、返回无；关闭时同步清零草稿，保存会显式提交这两个字段。
+                    .onChange(of: reimbursable) { _, value in if !value { reimbursedAmount = "0.00" } }
+                if reimbursable && canRecordReimbursement {
+                    LabeledContent("已报销金额") {
+                        TextField("0.00", text: $reimbursedAmount).keyboardType(.decimalPad)
+                            .multilineTextAlignment(.trailing).frame(maxWidth: 150)
+                            .accessibilityLabel("已报销金额")
+                    }
+                    if !reimbursementValid { InlineError(message: "已报销金额需在 0 与实付金额之间") }
+                }
+            }.navigationTitle("报销").navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .confirmationAction) {
+                        // 完成回调无参数、无返回值；只关闭选项并保留草稿，实际写入仍由记账完成按钮触发。
+                        Button("完成") { showingReimbursement = false }.disabled(!reimbursementValid)
+                    }
+                }
+        }.presentationDetents([.medium]).presentationDragIndicator(.visible)
     }
     /// 首次预填入口数据；参数：无；返回值：无；恢复已有流水、模板、贷款或还款数据，多次出现不覆盖输入。
     private func populate() {
@@ -850,6 +849,7 @@ struct TransactionEditor: View {
                 amount = NSDecimalNumber(decimal: paid + reduction).stringValue
             }
             rebate = transaction.rebate ?? "0.00"; rebateAccountID = transaction.rebateAccountId ?? 0; rebatePending = transaction.rebatePending ?? false
+            reimbursable = transaction.reimbursable ?? false; reimbursedAmount = transaction.reimbursedAmount ?? "0.00"
             categoryID = transaction.categoryId ?? 0; counterparty = transaction.counterparty; description = transaction.description
             let formatter = DateFormatter()
             formatter.locale = Locale(identifier: "en_US_POSIX")
@@ -863,6 +863,7 @@ struct TransactionEditor: View {
             presetName = initialPreset.name
             let value = initialPreset.transaction
             type = value.type; accountID = value.accountId; targetID = value.targetAccountId ?? 0; amount = value.amount; discount = value.discount ?? "0.00"; fee = value.fee ?? "0.00"; rebate = value.rebate ?? "0.00"; rebateAccountID = value.rebateAccountId ?? 0; rebatePending = value.rebatePending ?? false; counterparty = value.counterparty; description = value.description; categoryID = value.categoryId ?? 0
+            reimbursable = value.reimbursable ?? false; reimbursedAmount = "0.00"
         }
         if let initialLoanID { type = "transfer"; targetID = initialLoanID; description = "贷款本金还款" }
         if let initialRepaymentID { type = "transfer"; targetID = initialRepaymentID; description = "信用卡还款"; amount = initialRepaymentAmount ?? "" }
@@ -875,7 +876,9 @@ struct TransactionEditor: View {
         if let transaction = editingTransaction {
             // 构造与新增一致的财务草稿，仅提交实际变化的白名单字段，保留空值和零值。
             let originalAmount = (Decimal(string: transaction.amount) ?? 0) + (Decimal(string: transaction.discount ?? "0") ?? 0)
-            let current: [String: Any] = ["type": type, "accountId": accountID, "targetAccountId": type == "transfer" ? targetID as Any : NSNull(), "amount": amount, "discount": type == "expense" ? discount : "0.00", "fee": type == "transfer" ? fee : "0.00", "rebate": type == "transfer" ? rebate : "0.00", "rebateAccountId": type == "transfer" && (Decimal(string: rebate) ?? 0) > 0 ? (rebateAccountID == 0 ? accountID : rebateAccountID) as Any : NSNull(), "rebatePending": type == "transfer" && (Decimal(string: rebate) ?? 0) > 0 && rebatePending, "categoryId": type != "transfer" && categoryID > 0 ? categoryID as Any : NSNull(), "counterparty": counterparty, "description": description, "transactionDate": entryDateChanged ? Values.day(date) : transaction.transactionDate, "transactionTime": entryDateChanged ? Values.time(date) : transaction.transactionTime ?? ""]
+            var current: [String: Any] = ["type": type, "accountId": accountID, "targetAccountId": type == "transfer" ? targetID as Any : NSNull(), "amount": amount, "discount": type == "expense" ? discount : "0.00", "fee": type == "transfer" ? fee : "0.00", "rebate": type == "transfer" ? rebate : "0.00", "rebateAccountId": type == "transfer" && (Decimal(string: rebate) ?? 0) > 0 ? (rebateAccountID == 0 ? accountID : rebateAccountID) as Any : NSNull(), "rebatePending": type == "transfer" && (Decimal(string: rebate) ?? 0) > 0 && rebatePending, "categoryId": type != "transfer" && categoryID > 0 ? categoryID as Any : NSNull(), "counterparty": counterparty, "description": description, "transactionDate": entryDateChanged ? Values.day(date) : transaction.transactionDate, "transactionTime": entryDateChanged ? Values.time(date) : transaction.transactionTime ?? ""]
+            current["reimbursable"] = canMarkReimbursement && reimbursable
+            current["reimbursedAmount"] = canRecordReimbursement && reimbursable ? reimbursedAmount : "0.00"
             if let jobID = transaction.screenshotJobID {
                 do {
                     guard let finance = store.finance else { throw APIError(status: 0, message: "本机账本不可用") }
@@ -885,10 +888,12 @@ struct TransactionEditor: View {
                 } catch { self.error = error.localizedDescription }
                 return
             }
-            let original: [String: Any] = ["type": transaction.type, "accountId": transaction.accountId, "targetAccountId": transaction.targetAccountId as Any? ?? NSNull(), "amount": NSDecimalNumber(decimal: originalAmount).stringValue, "discount": transaction.discount ?? "0.00", "fee": transaction.fee ?? "0.00", "rebate": transaction.rebate ?? "0.00", "rebateAccountId": transaction.rebateAccountId as Any? ?? NSNull(), "rebatePending": transaction.rebatePending ?? false, "categoryId": transaction.categoryId as Any? ?? NSNull(), "counterparty": transaction.counterparty, "description": transaction.description, "transactionDate": transaction.transactionDate, "transactionTime": transaction.transactionTime ?? ""]
+            var original: [String: Any] = ["type": transaction.type, "accountId": transaction.accountId, "targetAccountId": transaction.targetAccountId as Any? ?? NSNull(), "amount": NSDecimalNumber(decimal: originalAmount).stringValue, "discount": transaction.discount ?? "0.00", "fee": transaction.fee ?? "0.00", "rebate": transaction.rebate ?? "0.00", "rebateAccountId": transaction.rebateAccountId as Any? ?? NSNull(), "rebatePending": transaction.rebatePending ?? false, "categoryId": transaction.categoryId as Any? ?? NSNull(), "counterparty": transaction.counterparty, "description": transaction.description, "transactionDate": transaction.transactionDate, "transactionTime": transaction.transactionTime ?? ""]
+            original["reimbursable"] = transaction.reimbursable ?? false
+            original["reimbursedAmount"] = transaction.reimbursedAmount ?? "0.00"
             var fields: [String: Any] = [:]
             for (key, value) in current {
-                if ["amount", "discount", "fee", "rebate"].contains(key) {
+                if ["amount", "discount", "fee", "rebate", "reimbursedAmount"].contains(key) {
                     if Decimal(string: value as? String ?? "") != Decimal(string: original[key] as? String ?? "") { fields[key] = value }
                 } else if !NSDictionary(dictionary: [key: value]).isEqual(to: [key: original[key]!]) { fields[key] = value }
             }
@@ -900,6 +905,8 @@ struct TransactionEditor: View {
             return
         }
         var body: [String: Any] = ["type": type, "accountId": accountID, "amount": amount, "transactionDate": Values.day(date), "transactionTime": Values.time(date), "counterparty": counterparty, "description": description, "fee": type == "transfer" ? fee : "0.00"]
+        body["reimbursable"] = canMarkReimbursement && reimbursable
+        body["reimbursedAmount"] = canRecordReimbursement && reimbursable ? reimbursedAmount : "0.00"
         if type == "expense" { body["discount"] = discount }
         if type == "transfer" {
             body["targetAccountId"] = targetID
@@ -923,7 +930,7 @@ struct TransactionEditor: View {
             }
             // 主写入成功即完成本笔，避免后续刷新失败被当作保存失败而重复记账。
             if continueEntry {
-                amount = ""; description = ""; counterparty = ""; discount = "0.00"; fee = "0.00"; rebate = "0.00"; rebateAccountID = 0; rebatePending = false
+                amount = ""; description = ""; counterparty = ""; discount = "0.00"; fee = "0.00"; rebate = "0.00"; rebateAccountID = 0; rebatePending = false; reimbursable = false; reimbursedAmount = "0.00"
                 submittedBody = nil; requestID = UUID().uuidString; saved = true
             } else { dismiss() }
             await store.refreshAfterMutation(.finance)

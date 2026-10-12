@@ -1,5 +1,182 @@
 import XCTest
 
+extension LoanSwipeTests {
+    /// 验证 More 内一级和二级导航一致；参数：无；返回值：无；仅访问只读预览，检查单层栏、可用返回及模型服务样本，不保存或调用 AI。
+    func testVisualMoreNavigation() {
+        continueAfterFailure = false
+        let app = XCUIApplication(bundleIdentifier: "personalassistant.lylab.vip.PersonalAssistant")
+        app.launchArguments = ["--preview", "--tab", "chat"]
+        app.launch()
+        XCTAssertTrue(app.navigationBars["助手"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["返回更多页面"].waitForExistence(timeout: 5))
+        XCTAssertEqual(app.navigationBars.count, 1)
+        app.buttons["返回更多页面"].tap()
+        let settings = app.staticTexts["设置"].firstMatch
+        XCTAssertTrue(settings.waitForExistence(timeout: 5))
+        settings.tap()
+        XCTAssertTrue(app.buttons["返回更多页面"].waitForExistence(timeout: 5))
+        app.buttons["模型服务"].tap()
+        XCTAssertTrue(app.buttons["添加模型服务"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["日常助手"].waitForExistence(timeout: 5))
+        XCTAssertEqual(app.navigationBars.count, 1)
+        XCTAssertFalse(app.buttons["返回更多页面"].exists)
+        app.navigationBars.buttons.firstMatch.tap()
+        XCTAssertTrue(app.buttons["返回更多页面"].waitForExistence(timeout: 5))
+        app.buttons["返回更多页面"].tap()
+        XCTAssertTrue(app.staticTexts["助手"].firstMatch.waitForExistence(timeout: 5))
+    }
+}
+
+extension LoanSwipeTests {
+    /// 验证普通及多行输入的焦点切换与外部收键盘；参数：无；返回值：无；只编辑虚构任务草稿，点击输入内部继续编辑、点击分组标题结束编辑且保留文本。
+    func testKeyboardDismissalOutsideAndFieldSwitching() {
+        let app = launch("v4")
+        app.buttons["新建任务"].tap()
+        let name = app.textFields["名称"].firstMatch
+        name.tap()
+        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5))
+        app.staticTexts["基本信息"].tap()
+        XCTAssertTrue(app.keyboards.firstMatch.waitForNonExistence(timeout: 5))
+        name.tap()
+        name.typeText("键盘草稿")
+        name.tap()
+        XCTAssertTrue(app.keyboards.firstMatch.exists)
+        // 浮动标签位于系统输入框上方，整块输入区域仍应维持焦点，不被误认为外部点击。
+        name.coordinate(withNormalizedOffset: CGVector(dx: 0.2, dy: 0.1)).tap()
+        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5))
+        let remark = app.textFields["备注"].exists ? app.textFields["备注"].firstMatch : app.textViews["备注"].firstMatch
+        remark.tap()
+        remark.typeText("第一行\n第二行")
+        XCTAssertTrue(app.keyboards.firstMatch.exists)
+        XCTAssertEqual(name.value as? String, "键盘草稿")
+        app.staticTexts["基本信息"].tap()
+        XCTAssertTrue(app.keyboards.firstMatch.waitForNonExistence(timeout: 5))
+        XCTAssertEqual(remark.value as? String, "第一行\n第二行")
+        name.tap()
+        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5))
+        app.buttons["取消"].tap()
+        XCTAssertTrue(app.navigationBars["任务"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.keyboards.firstMatch.waitForNonExistence(timeout: 5))
+    }
+
+    /// 验证数字键盘外部点击与按钮透传；参数：无；返回值：无；仅修改虚构进度草稿，增量按钮必须一次生效并收起键盘，不保存业务数据。
+    func testKeyboardDismissalNumberPadAndButton() {
+        let app = launch("v4")
+        app.staticTexts["阅读设计规范"].swipeLeft()
+        app.buttons["编辑"].tap()
+        let increment = button(app, "目标总量.stepper-Increment")
+        let total = app.textFields["目标总量"].firstMatch
+        total.tap()
+        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5))
+        app.navigationBars["编辑任务"].staticTexts["编辑任务"].tap()
+        XCTAssertTrue(app.keyboards.firstMatch.waitForNonExistence(timeout: 5))
+        XCTAssertEqual(total.value as? String, "10")
+        total.tap()
+        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5))
+        increment.tap()
+        XCTAssertTrue(app.keyboards.firstMatch.waitForNonExistence(timeout: 5))
+        XCTAssertEqual(total.value as? String, "11")
+        app.buttons["取消"].tap()
+    }
+
+    /// 验证导航后的清单面板复用窗口收键盘及业务点击；参数：无；返回值：无；只输入清单草稿，点击颜色仍选中颜色且结束编辑，取消不持久化。
+    func testKeyboardDismissalNestedSheet() {
+        let app = launch("v4")
+        app.navigationBars.buttons["我的清单"].tap()
+        app.buttons["新建清单"].tap()
+        let name = app.textFields["清单名称"].firstMatch
+        name.tap()
+        name.typeText("嵌套面板草稿")
+        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5))
+        app.navigationBars["新建清单"].staticTexts["新建清单"].tap()
+        XCTAssertTrue(app.keyboards.firstMatch.waitForNonExistence(timeout: 5))
+        XCTAssertEqual(name.value as? String, "嵌套面板草稿")
+        name.tap()
+        let color = app.buttons["颜色 #EF4444"]
+        color.tap()
+        XCTAssertTrue(color.isSelected)
+        XCTAssertTrue(app.keyboards.firstMatch.waitForNonExistence(timeout: 5))
+        XCTAssertEqual(name.value as? String, "嵌套面板草稿")
+        app.buttons["取消"].tap()
+    }
+
+    /// 验证系统搜索框也能外部结束编辑；参数：无；返回值：无；查询与过滤结果保留，重新点击搜索框继续输入，不修改任务。
+    func testKeyboardDismissalSearch() {
+        let app = launch("v4")
+        app.navigationBars.buttons["我的清单"].tap()
+        let search = app.searchFields.firstMatch
+        // 系统导航栏搜索默认随列表收起；向下展开后才访问输入框，不假定存在独立搜索按钮。
+        if !search.exists { app.swipeDown() }
+        XCTAssertTrue(search.waitForExistence(timeout: 5))
+        search.tap()
+        search.typeText("工作")
+        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5))
+        app.staticTexts["工作"].tap()
+        XCTAssertTrue(app.keyboards.firstMatch.waitForNonExistence(timeout: 5))
+        XCTAssertEqual(search.value as? String, "工作")
+        XCTAssertTrue(app.staticTexts["工作"].exists)
+        search.tap()
+        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5))
+        search.typeText("计划")
+        XCTAssertEqual(search.value as? String, "工作计划")
+    }
+
+    /// 验证 UIKit 卡号输入和卡片手势兼容；参数：无；返回值：无；仅操作虚构钱包，数字键盘可外部收起、分组格式保持、完成按钮仍关闭面板。
+    func testKeyboardDismissalCardNumber() {
+        continueAfterFailure = false
+        let app = XCUIApplication(bundleIdentifier: "personalassistant.lylab.vip.PersonalAssistant")
+        app.launchArguments = ["--preview", "--wallet-ui"]
+        app.launch()
+        let card = app.buttons["wallet-card-preview-three"]
+        XCTAssertTrue(card.waitForExistence(timeout: 15))
+        card.tap()
+        card.swipeLeft()
+        app.buttons["编辑卡片"].tap()
+        let number = app.textFields["卡号或后四位"]
+        number.tap()
+        let originalLength = (number.value as? String ?? "").count
+        number.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: originalLength) + "1234567890123456")
+        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5))
+        // 使用编辑面板的导航栏，避免误点底层钱包导航栏而触发系统 sheet 外部关闭。
+        app.navigationBars.containing(.button, identifier: "完成").firstMatch.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+        XCTAssertTrue(app.keyboards.firstMatch.waitForNonExistence(timeout: 5))
+        XCTAssertEqual(number.value as? String, "1234 5678 9012 3456")
+        number.tap()
+        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5))
+        app.buttons["完成"].tap()
+        XCTAssertTrue(app.keyboards.firstMatch.waitForNonExistence(timeout: 5))
+        XCTAssertFalse(number.exists)
+    }
+
+    /// 验证模型服务的密码与 URL 输入可统一结束编辑；参数：无；返回值：无；使用只读预览和虚构密钥，不保存、不发起模型请求。
+    func testKeyboardDismissalSecureAndURLFields() {
+        continueAfterFailure = false
+        let app = XCUIApplication(bundleIdentifier: "personalassistant.lylab.vip.PersonalAssistant")
+        app.launchArguments = ["--preview", "--tab", "settings"]
+        app.launch()
+        let services = app.buttons["模型服务"]
+        XCTAssertTrue(services.waitForExistence(timeout: 15))
+        services.tap()
+        app.buttons["添加模型服务"].tap()
+        let address = app.textFields["API 地址"].firstMatch
+        address.tap()
+        address.typeText("https://example.test/api")
+        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5))
+        app.navigationBars["添加模型服务"].staticTexts["添加模型服务"].tap()
+        XCTAssertTrue(app.keyboards.firstMatch.waitForNonExistence(timeout: 5))
+        XCTAssertEqual(address.value as? String, "https://example.test/api")
+        let key = app.secureTextFields["API Key"].firstMatch
+        key.tap()
+        key.typeText("preview-only")
+        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5))
+        app.navigationBars["添加模型服务"].staticTexts["添加模型服务"].tap()
+        XCTAssertTrue(app.keyboards.firstMatch.waitForNonExistence(timeout: 5))
+        key.tap()
+        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5))
+        app.buttons["取消"].tap()
+    }
+}
+
 /// 独立验收任务模块，只使用 Debug 内存样本；不登录真实账号或访问服务器。
 @MainActor final class LoanSwipeTests: XCTestCase {
     /// 启动场景；参数 scenario 为固定场景名；返回独立启动的应用，进程重启清空样本。
@@ -156,12 +333,24 @@ import XCTest
         if search.exists { search.tap();search.typeText("设计心理学");XCTAssertFalse(app.staticTexts["读完《设计心理学》第三章"].exists) }
         capture(app,"iphone-cascade-deleted")
     }
-    /// 只读布局验收入口；参数无；返回无，由外部模拟器配置控制尺寸、外观和字号。
+    /// 只读日期布局验收入口；参数：无；返回值：无；使用 v4 虚构样本检查首页、清单筛选及今日复用行的起止日期时间，记录截图，外观及字号由外部模拟器控制，不写真实服务器。
     func testLayoutSnapshot() {
-        let app=launch();XCTAssertTrue(app.staticTexts["为新的一周留点空间"].waitForExistence(timeout: 5))
-        capture(app,"layout-list")
-        app.staticTexts["为新的一周留点空间"].tap();capture(app,"layout-detail")
-        app.buttons["编辑"].tap();capture(app,"layout-edit")
+        let app = launch("v4")
+        let row = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "阅读设计规范")).firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 5))
+        XCTAssertTrue(row.label.contains("开始："))
+        XCTAssertTrue(row.label.contains("结束："))
+        XCTAssertTrue(row.label.contains("18:30"))
+        capture(app, "date-single-line-tree")
+        app.buttons["taskListSwitcher"].tap()
+        app.buttons["工作"].tap()
+        XCTAssertTrue(row.waitForExistence(timeout: 5))
+        capture(app, "date-single-line-list")
+        app.buttons["今日"].tap()
+        XCTAssertTrue(app.staticTexts["今日专注"].waitForExistence(timeout: 10))
+        app.swipeUp()
+        XCTAssertTrue(app.staticTexts["阅读设计规范"].exists)
+        capture(app, "date-single-line-today")
     }
 
     /// 滚动并操作表单开关；参数为应用与标签；返回无，最多六次滚动。
@@ -329,16 +518,128 @@ import XCTest
         back(app);app.staticTexts["工作"].tap();app.staticTexts["历史任务容器"].tap()
         XCTAssertFalse(app.buttons["新建下级"].exists);XCTAssertFalse(app.buttons["减少"].exists);capture(app,"v4-legacy-container")
     }
-    /// 验证push日期子页及清空；参数无；返回无，既有v4日期同日18:30截止。
+    /// 验证液态玻璃数量按钮、按住连续调整、独立边界、直接输入及保存／取消；参数：无；返回值：无；仅修改 v4 内存样本，不访问真实服务器。
+    func testV4ProgressSteppers() {
+        let app = launch("v4")
+        app.staticTexts["阅读设计规范"].swipeLeft()
+        app.buttons["编辑"].tap()
+        let target = app.buttons["目标总量.stepper-Increment"]
+        let targetMinus = app.buttons["目标总量.stepper-Decrement"]
+        for _ in 0..<4 { if target.isHittable { break }; app.swipeUp() }
+        XCTAssertTrue(target.exists)
+        capture(app, "progress-stepper-initial")
+        let done = app.buttons["已完成量.stepper-Increment"]
+        let doneMinus = app.buttons["已完成量.stepper-Decrement"]
+        let step = app.buttons["每次增加.stepper-Increment"]
+        let stepMinus = app.buttons["每次增加.stepper-Decrement"]
+        XCTAssertTrue(targetMinus.exists)
+        XCTAssertTrue(doneMinus.exists)
+        XCTAssertTrue(stepMinus.exists)
+        // 原生玻璃加减按钮保留独立可访问名称；每次仅变更对应字段，不额外弹出键盘。
+        target.tap()
+        XCTAssertEqual(app.textFields["目标总量"].value as? String, "11")
+        XCTAssertEqual(app.textFields["已完成量"].value as? String, "5")
+        targetMinus.tap()
+        done.tap()
+        XCTAssertEqual(app.textFields["已完成量"].value as? String, "6")
+        doneMinus.tap()
+        step.tap()
+        XCTAssertEqual(app.textFields["每次增加"].value as? String, "2")
+        stepMinus.tap()
+        XCTAssertFalse(stepMinus.isEnabled)
+        XCTAssertFalse(app.keyboards.firstMatch.exists)
+        // 按住增加应连续读取最新草稿而非重复写入同一候选值；随后用减少按钮恢复初值。
+        target.press(forDuration: 1.5)
+        let heldTotal = Int(app.textFields["目标总量"].value as? String ?? "") ?? 0
+        XCTAssertGreaterThan(heldTotal, 11)
+        for _ in 10..<max(10, heldTotal) { targetMinus.tap() }
+        // 已完成下界为 0，上界为目标总量；总量不小于已完成量，也不改写其他草稿。
+        for _ in 0..<5 { doneMinus.tap() }
+        XCTAssertEqual(app.textFields["已完成量"].value as? String, "0")
+        XCTAssertFalse(doneMinus.isEnabled)
+        for _ in 0..<10 { done.tap() }
+        XCTAssertFalse(done.isEnabled)
+        XCTAssertFalse(targetMinus.isEnabled)
+        capture(app, "progress-stepper-bounds")
+        doneMinus.tap()
+        app.buttons["保存"].tap()
+        app.staticTexts["阅读设计规范"].swipeLeft()
+        app.buttons["编辑"].tap()
+        for _ in 0..<4 { if target.isHittable { break }; app.swipeUp() }
+        XCTAssertEqual(app.textFields["已完成量"].value as? String, "9")
+        // 直接输入仍可编辑；达到总量上限后增加停用，非法草稿不能保存，取消保留持久化值。
+        let field = app.textFields["目标总量"]
+        field.tap()
+        field.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: 2) + "1000000000")
+        XCTAssertFalse(target.isEnabled)
+        field.typeText("1")
+        XCTAssertFalse(app.buttons["保存"].isEnabled)
+        app.buttons["取消"].tap()
+        app.staticTexts["阅读设计规范"].swipeLeft()
+        app.buttons["编辑"].tap()
+        for _ in 0..<4 { if target.isHittable { break }; app.swipeUp() }
+        XCTAssertEqual(app.textFields["目标总量"].value as? String, "10")
+        XCTAssertEqual(app.textFields["已完成量"].value as? String, "9")
+        capture(app, "progress-stepper-saved")
+    }
+
+    /// 验证全天默认开启、已有时分保留、底部日期时间选择、取消及行内清空；参数：无；返回值：无；仅操作 v4 内存样本，截止为同日 18:30。
     func testV4DateDraft() {
-        let app=launch("v4");app.staticTexts["工作"].tap();app.staticTexts["阅读设计规范"].tap();app.buttons["编辑"].tap()
-        app.buttons.matching(NSPredicate(format:"label BEGINSWITH %@","开始、")).firstMatch.tap();nativeToggle(app,"指定时间")
-        app.buttons["Time Picker"].firstMatch.tap();app.pickerWheels.element(boundBy:0).adjust(toPickerWheelValue:"19");app.navigationBars["开始"].tap();back(app)
-        XCTAssertFalse(app.buttons["保存"].isEnabled);capture(app,"v4-date-reversed")
-        app.buttons.matching(NSPredicate(format:"label BEGINSWITH %@","开始、")).firstMatch.tap();nativeToggle(app,"设置日期");back(app)
-        XCTAssertTrue(app.buttons["保存"].isEnabled);app.buttons["保存"].tap();app.buttons["编辑"].tap()
-        app.buttons.matching(NSPredicate(format:"label BEGINSWITH %@","开始、")).firstMatch.tap();XCTAssertEqual(app.switches["设置日期"].value as? String,"0")
-        nativeToggle(app,"设置日期");XCTAssertEqual(app.switches["指定时间"].value as? String,"0");capture(app,"v4-date-cleared")
+        let app = launch("v4")
+        app.staticTexts["阅读设计规范"].swipeLeft()
+        app.buttons["编辑"].tap()
+        capture(app, "bottom-date-task-form")
+        button(app, "开始.selector").tap()
+        XCTAssertTrue(app.navigationBars["编辑任务"].exists)
+        XCTAssertFalse(app.navigationBars["开始"].exists)
+        // 历史仅日期数据保留全天；关闭全天后，同一个系统控件同时提供日期、小时和分钟滚轮。
+        let allDay = app.switches["全天"].firstMatch
+        XCTAssertEqual(allDay.value as? String, "1")
+        allDay.descendants(matching: .switch).firstMatch.tap()
+        XCTAssertEqual(app.pickerWheels.count, 3)
+        app.pickerWheels.element(boundBy: 1).adjust(toPickerWheelValue: "19")
+        capture(app, "bottom-date-combined-wheel")
+        app.buttons["完成"].tap()
+        XCTAssertFalse(app.buttons["保存"].isEnabled)
+        capture(app, "bottom-date-reversed")
+        button(app, "开始.selector").tap()
+        XCTAssertEqual(app.switches["全天"].firstMatch.value as? String, "0")
+        XCTAssertFalse(app.buttons["清除"].exists)
+        // 底部取消保留已经确认的 19 点；清空操作只在表单行内执行，且不影响截止值。
+        app.pickerWheels.element(boundBy: 1).adjust(toPickerWheelValue: "09")
+        app.buttons["system-date-time-cancel"].tap()
+        XCTAssertTrue(app.buttons["开始.selector"].label.contains("19:00"))
+        XCTAssertFalse(app.buttons["保存"].isEnabled)
+        button(app, "开始.clear").tap()
+        XCTAssertFalse(app.buttons["开始.clear"].exists)
+        XCTAssertTrue(app.buttons["截止.selector"].label.contains("18:30"))
+        XCTAssertTrue(app.buttons["保存"].isEnabled)
+        app.buttons["保存"].tap()
+        app.staticTexts["阅读设计规范"].swipeLeft()
+        app.buttons["编辑"].tap()
+        XCTAssertEqual(app.buttons["开始.selector"].staticTexts["未设置"].label, "未设置")
+        button(app, "开始.selector").tap()
+        XCTAssertEqual(app.switches["全天"].firstMatch.value as? String, "1")
+        capture(app, "bottom-date-all-day-default")
+        app.switches["全天"].firstMatch.descendants(matching: .switch).firstMatch.tap()
+        XCTAssertEqual(app.pickerWheels.count, 3)
+        app.pickerWheels.element(boundBy: 1).adjust(toPickerWheelValue: "09")
+        capture(app, "bottom-date-new-selection")
+        // 底部取消只丢弃选择草稿，表单仍保持未设置；随后确认完整日期时间，再取消整个表单也不写入。
+        app.buttons["system-date-time-cancel"].tap()
+        XCTAssertTrue(app.buttons["开始.selector"].staticTexts["未设置"].exists)
+        button(app, "开始.selector").tap()
+        XCTAssertEqual(app.switches["全天"].firstMatch.value as? String, "1")
+        app.switches["全天"].firstMatch.descendants(matching: .switch).firstMatch.tap()
+        app.pickerWheels.element(boundBy: 1).adjust(toPickerWheelValue: "09")
+        app.buttons["完成"].tap()
+        XCTAssertFalse(app.buttons["开始.selector"].staticTexts["未设置"].exists)
+        capture(app, "bottom-date-confirmed")
+        app.buttons["取消"].tap()
+        app.staticTexts["阅读设计规范"].swipeLeft()
+        app.buttons["编辑"].tap()
+        XCTAssertTrue(app.buttons["开始.selector"].staticTexts["未设置"].exists)
+        capture(app, "bottom-date-cancel-retained")
     }
 
     /// 验证v4菜单排序和共享失败保护；参数无；返回无，不提交真实排序或真实服务器请求。
@@ -414,11 +715,11 @@ import XCTest
         XCTAssertEqual(motion.value as? String,"0");motion.descendants(matching:.switch).firstMatch.tap();XCTAssertEqual(motion.value as? String,"1");capture(settings,"motion-enabled")
         // 恢复回调无输入输出；仅关掉本测试开启的专用模拟器偏好，不改其他设置。
         defer { settings.launch();if !settings.switches["Reduce Motion"].exists {let access=settings.staticTexts["Accessibility"].firstMatch;for _ in 0..<6 {if access.exists && access.isHittable {break};settings.swipeUp()};access.tap();settings.staticTexts["Motion"].tap()};let restore=settings.switches["Reduce Motion"].firstMatch;XCTAssertTrue(restore.waitForExistence(timeout:5));if restore.value as? String == "1" {restore.coordinate(withNormalizedOffset:CGVector(dx:0.9,dy:0.5)).tap()};XCTAssertEqual(restore.value as? String,"0");capture(settings,"motion-restored") }
-        let app=launch("v4");app.staticTexts["工作"].tap();app.buttons["新建任务"].tap();capture(app,"motion-label-empty")
+        let app=launch("v4");app.buttons["新建任务"].tap();capture(app,"motion-label-empty")
         let name=app.textFields["名称"].firstMatch;name.tap();capture(app,"motion-label-focused");name.typeText("减少动态效果草稿")
         app.buttons["类型、具体任务"].tap();app.buttons["主任务"].tap();app.buttons["图标"].tap();app.buttons["目标"].tap();app.buttons["完成"].tap()
         XCTAssertEqual(name.value as? String,"减少动态效果草稿");capture(app,"motion-icon-draft-return")
-        app.buttons.matching(NSPredicate(format:"label BEGINSWITH %@","开始、")).firstMatch.tap();nativeToggle(app,"设置日期");back(app)
+        button(app,"开始.selector").tap();app.buttons["完成"].tap()
         XCTAssertEqual(name.value as? String,"减少动态效果草稿")
         app.buttons["图标"].tap();XCTAssertTrue(app.buttons["目标"].isSelected);app.buttons["完成"].tap();capture(app,"motion-date-draft-return")
         app.buttons["取消"].tap()

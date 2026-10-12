@@ -31,7 +31,7 @@ struct TransactionRefundEditor: View {
                     LabeledContent("原支出", value: Values.money(transaction.amount))
                     LabeledContent("退款账户", value: store.accounts.first { $0.id == transaction.accountId }?.name ?? "已删除账户")
                     TextField("退款金额", text: $amount).keyboardType(.decimalPad)
-                    DatePicker("退款时间", selection: $date, displayedComponents: [.date, .hourAndMinute])
+                    SystemDateTimeInput(title: "退款时间", selection: $date)
                     TextField("备注", text: $notes, axis: .vertical)
                 }
                 if let error { InlineError(message: error) }

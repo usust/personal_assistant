@@ -4,8 +4,10 @@ import WorkspacePanel from '@/components/WorkspacePanel.vue'
 import { computed, reactive, ref, watch, nextTick } from 'vue'
 import { Plus, Search } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
-import { getFinancePresets, createFinancePreset, updateFinancePreset, deleteFinancePreset, materializeRecurring, confirmTransaction, voidTransaction, createCategory, createTransaction, getTransactions } from '@/api/finance'
+import { getFinancePresets, createFinancePreset, updateFinancePreset, deleteFinancePreset, materializeRecurring, confirmTransaction, voidTransaction, createCategory, createTransaction, getTransactions, updateTransactionReimbursement } from '@/api/finance'
 import { money, sumMoney, today } from '@/finance/utils/money'
+import { buildReimbursementFields, canEditReimbursement, reimbursementStatus } from '@/finance/utils/reimbursement'
+import type { ReimbursementFields } from '@/finance/utils/reimbursement'
 import type { FinancePreset, FinanceTransaction, FinancialAccount, TransactionCategory, TransactionFilter, TransactionType } from '@/types/finance'
 import FinanceIcon from './FinanceIcon.vue'
 import ConsumptionInstallmentPanel from './ConsumptionInstallmentPanel.vue'
@@ -22,8 +24,14 @@ const frequencyNames = { daily: '每天', weekly: '每周', monthly: '每月', y
 async function loadPresets() { presets.value = await getFinancePresets() }
 // 打开模板及周期管理；参数无；返回值完成 Promise。
 async function openPresets() { await loadPresets(); presetsVisible.value = true }
-// 应用模板到新流水；参数 item 为自己的模板；返回值完成 Promise，等待类型监听清空后填入关联字段。
-async function usePreset(item: FinancePreset) { openCreate(); draft.type = item.transaction.type || 'expense'; await nextTick(); Object.assign(draft, item.transaction, { transactionDate: today() }); presetsVisible.value = false }
+// 应用模板到新流水；参数：item 为自己的模板；返回值：完成 Promise，等待类型监听清空后填入关联字段；仅支出保留报销标记，到账金额始终从 0 开始。
+async function usePreset(item: FinancePreset) {
+  openCreate()
+  draft.type = item.transaction.type || 'expense'
+  await nextTick()
+  Object.assign(draft, item.transaction, { transactionDate: today(), reimbursable: draft.type === 'expense' && Boolean(item.transaction.reimbursable), reimbursedAmount: '0.00' })
+  presetsVisible.value = false
+}
 // 暂停或恢复周期；参数 item 为计划；返回值完成 Promise，恢复后补齐草稿。
 async function togglePreset(item: FinancePreset) { if (saving.value) return; saving.value = true; try { await updateFinancePreset(item.id, { enabled: !item.enabled }); await materializeRecurring(); await loadPresets(); await load() } finally { saving.value = false } }
 // 删除计划或模板；参数 item 为记录；返回值完成 Promise，确认取消不删除，既有流水保留。
@@ -37,13 +45,17 @@ const loading = ref(false)
 const visible = ref(false)
 const saving = ref(false)
 const acting = ref(false)
+const reimbursementVisible = ref(false)
+const reimbursementSaving = ref(false)
+const reimbursementBill = ref<FinanceTransaction | null>(null)
+const reimbursementDraft = reactive<ReimbursementFields>({ reimbursable: false, reimbursedAmount: '0.00' })
 const page = ref(0)
 const pageSize = 100
 const requestId = ref('')
 const requestPayload = ref('')
 const categoryVisible = ref(false)
 const filter = reactive<TransactionFilter>({ startDate: '', endDate: '', type: '', accountId: undefined, categoryId: undefined, minAmount: '', maxAmount: '', keyword: '' })
-const draft = reactive({ accountId: 0, targetAccountId: undefined as number | undefined, type: 'expense' as TransactionType, amount: '', fee: '0.00', rebate: '0.00', rebateAccountId: undefined as number | undefined, rebatePending: false, categoryId: undefined as number | undefined, counterparty: '', transactionDate: today(), description: '' })
+const draft = reactive({ accountId: 0, targetAccountId: undefined as number | undefined, type: 'expense' as TransactionType, amount: '', fee: '0.00', rebate: '0.00', rebateAccountId: undefined as number | undefined, rebatePending: false, reimbursable: false, reimbursedAmount: '0.00', categoryId: undefined as number | undefined, counterparty: '', transactionDate: today(), description: '' })
 const categoryDraft = reactive({ name: '', type: 'expense' as 'income' | 'expense', color: '#5658cf' })
 const accountMap = computed(() => Object.fromEntries(props.accounts.map(item => [item.id, item.name])))
 const categoryMap = computed(() => Object.fromEntries(props.categories.map(item => [item.id, item.name])))
@@ -67,14 +79,50 @@ async function act(item: FinanceTransaction, action: 'confirm' | 'void') {
   try { action === 'confirm' ? await confirmTransaction(item.id) : await voidTransaction(item.id); await load(); emit('changed'); emit('categoriesChanged') } finally { acting.value = false }
 }
 // 打开第三栏记账表单；参数：无；返回值：无，新的填写流程重置幂等键。
-function openCreate() { saveMode.value = 'transaction'; presetName.value = ''; endDate.value = ''; requestId.value = ''; requestPayload.value = '';  Object.assign(draft, { accountId: props.accounts.find(item => item.selectable !== false)?.id ?? 0, targetAccountId: undefined, type: 'expense', amount: '', fee: '0.00', rebate: '0.00', rebateAccountId: undefined as number | undefined, rebatePending: false, categoryId: undefined, counterparty: '', transactionDate: today(), description: '' }); visible.value = true }
+function openCreate() {
+  saveMode.value = 'transaction'; presetName.value = ''; endDate.value = ''; requestId.value = ''; requestPayload.value = ''
+  // 默认账户回调：item 为账户；返回值：是否允许记账，排除仅供历史查看的账户。
+  const accountId = props.accounts.find(item => item.selectable !== false)?.id ?? 0
+  Object.assign(draft, { accountId, targetAccountId: undefined, type: 'expense', amount: '', fee: '0.00', rebate: '0.00', rebateAccountId: undefined, rebatePending: false, reimbursable: false, reimbursedAmount: '0.00', categoryId: undefined, counterparty: '', transactionDate: today(), description: '' })
+  visible.value = true
+}
+// 打开报销编辑第三栏；参数：item 为待确认或已入账的正支出流水；返回值：无，不兼容流水不展开；复制当前字段，关闭后不写入。
+function openReimbursement(item: FinanceTransaction) {
+  if (reimbursementSaving.value || !canEditReimbursement(item)) return
+  reimbursementBill.value = item
+  Object.assign(reimbursementDraft, { reimbursable: Boolean(item.reimbursable), reimbursedAmount: item.status === 'posted' ? (item.reimbursedAmount || '0.00') : '0.00' })
+  reimbursementVisible.value = true
+}
+// 将表单输入转换为有效报销字段；参数：marked 为标记，received 为到账金额，amount 为支出原额，allowReceived 为是否可填到账；返回值：校验后的字段，失败时提示并返回 null；无写入。
+function validatedReimbursement(marked: boolean, received: string, amount: string, allowReceived: boolean): ReimbursementFields | null {
+  try { return buildReimbursementFields(marked, received, amount, allowReceived) }
+  catch (error) { ElMessage.warning(error instanceof Error ? error.message : '请检查报销金额'); return null }
+}
+// 保存第三栏报销进度；参数：无；返回值：完成 Promise，仅 PATCH 报销两字段；保存期间锁定关闭，成功刷新当前筛选列表与总览，失败保留输入，不调整账户余额。
+async function saveReimbursement() {
+  const item = reimbursementBill.value
+  if (reimbursementSaving.value || !item || !canEditReimbursement(item)) return
+  const fields = validatedReimbursement(reimbursementDraft.reimbursable, reimbursementDraft.reimbursedAmount, item.amount, item.status === 'posted')
+  if (!fields) return
+  reimbursementSaving.value = true
+  try {
+    await updateTransactionReimbursement(item.id, fields)
+    reimbursementVisible.value = false
+    await load()
+    emit('changed')
+    ElMessage.success('报销进度已更新')
+  } finally { reimbursementSaving.value = false }
+}
 // 保存流水、模板或周期计划；参数：无；返回值：完成 Promise，相同载荷失败重试复用幂等键，内容修改生成新键。
 async function save() {
   if (saving.value) return
   if (!draft.accountId || !draft.amount || !draft.transactionDate) { ElMessage.warning('请填写账户、金额和日期'); return }
   if (draft.type === 'transfer' && !draft.targetAccountId) { ElMessage.warning('请选择转入账户'); return }
   if (saveMode.value !== 'transaction' && !presetName.value.trim()) { ElMessage.warning('请填写名称'); return }
-  const payload = { ...draft, rebate: draft.type === 'transfer' ? (draft.rebate || '0.00') : '0.00', rebateAccountId: draft.type === 'transfer' && Number(draft.rebate) > 0 ? (draft.rebateAccountId || draft.accountId) : null, rebatePending: draft.type === 'transfer' && Number(draft.rebate) > 0 && draft.rebatePending, fee: draft.type === 'transfer' ? (draft.fee || '0.00') : '0.00', categoryId: draft.type === 'transfer' ? null : (draft.categoryId ?? null), targetAccountId: draft.type === 'transfer' ? (draft.targetAccountId ?? null) : null, targetCreditCardId: null }
+  // 模板和周期计划仅复制报销意向，实际到账进度属于每笔生成的流水。
+  const reimbursement = validatedReimbursement(draft.type === 'expense' && draft.reimbursable, draft.reimbursedAmount, draft.amount, saveMode.value === 'transaction')
+  if (!reimbursement) return
+  const payload = { ...draft, ...reimbursement, rebate: draft.type === 'transfer' ? (draft.rebate || '0.00') : '0.00', rebateAccountId: draft.type === 'transfer' && Number(draft.rebate) > 0 ? (draft.rebateAccountId || draft.accountId) : null, rebatePending: draft.type === 'transfer' && Number(draft.rebate) > 0 && draft.rebatePending, fee: draft.type === 'transfer' ? (draft.fee || '0.00') : '0.00', categoryId: draft.type === 'transfer' ? null : (draft.categoryId ?? null), targetAccountId: draft.type === 'transfer' ? (draft.targetAccountId ?? null) : null, targetCreditCardId: null }
   const canonical = JSON.stringify({ payload, mode: saveMode.value, name: presetName.value, frequency: frequency.value, endDate: endDate.value })
   if (canonical !== requestPayload.value) { requestId.value = crypto.randomUUID(); requestPayload.value = canonical }
   saving.value = true
@@ -85,8 +133,12 @@ async function save() {
 }
 // 创建个人分类；参数：无；返回值：完成 Promise，成功后刷新父页面选项。
 async function saveCategory() { if (!categoryDraft.name.trim()) return; await createCategory(categoryDraft); ElMessage.success('分类已添加'); categoryVisible.value = false; categoryDraft.name = ''; emit('categoriesChanged') }
-// 类型监听：读取类型并清除不兼容关联；回调无参数、无返回值。
-watch(() => draft.type, () => { draft.categoryId = undefined; draft.targetAccountId = undefined; draft.rebate = '0.00'; draft.rebateAccountId = undefined; draft.rebatePending = false })
+// 类型来源回调：参数无；返回值当前流水类型；类型变更回调接收新旧类型（未使用）、返回值无，清除不兼容关联及报销字段。
+watch(() => draft.type, () => { draft.categoryId = undefined; draft.targetAccountId = undefined; draft.rebate = '0.00'; draft.rebateAccountId = undefined; draft.rebatePending = false; draft.reimbursable = false; draft.reimbursedAmount = '0.00' })
+// 需报销来源回调：参数无；返回值表单标记；变更回调参数 marked 为新标记，返回值无；关闭标记清空隐藏的到账金额。
+watch(() => draft.reimbursable, (marked) => { if (!marked) draft.reimbursedAmount = '0.00' })
+// 编辑报销来源回调：参数无；返回值编辑标记；变更回调参数 marked 为新标记，返回值无；取消标记不能遗留已报销金额。
+watch(() => reimbursementDraft.reimbursable, (marked) => { if (!marked) reimbursementDraft.reimbursedAmount = '0.00' })
 // 账户监听：读取账户数量并选择默认账户；回调无参数、无返回值。
 watch(() => props.accounts.length, () => { if (!draft.accountId) draft.accountId = props.accounts.find(item => item.selectable !== false)?.id ?? 0 }, { immediate: true })
 // 初始化补齐到期草稿后读取列表；回调参数无，返回加载 Promise。
@@ -101,7 +153,7 @@ defineExpose({ openCreate, load })
       <div class="transaction-summary"><span>当前页已入账合计（不含草稿和作废）</span><div><small>收入</small><b class="positive">+{{ money(income) }}</b></div><div><small>支出</small><b class="negative">-{{ money(expense) }}</b></div><div><small>净流入</small><b :class="Number(net) >= 0 ? 'positive' : 'negative'">{{ money(net) }}</b></div></div>
     </div>
     <article class="finance-panel finance-table-panel">
-      <el-table v-if="items.length || loading" v-loading="loading" :data="items" table-layout="fixed"><el-table-column prop="transactionDate" label="日期" width="115" /><el-table-column label="账户" min-width="130"><template #default="scope">{{ accountMap[scope.row.accountId] || '已归档账户' }}<span v-if="scope.row.targetAccountId"> → {{ accountMap[scope.row.targetAccountId] || '已归档账户' }}</span></template></el-table-column><el-table-column label="类型" width="105"><template #default="scope"><span class="transaction-type" :class="scope.row.type"><FinanceIcon :kind="scope.row.type" :size="22" />{{ scope.row.type === 'income' ? '收入' : scope.row.type === 'expense' ? '支出' : '转账' }}</span></template></el-table-column><el-table-column label="分类" width="110"><template #default="scope">{{ scope.row.rebateParentId ? '还款优惠' : scope.row.type === 'transfer' ? '内部转账' : categoryMap[scope.row.categoryId] || '未分类' }}</template></el-table-column><el-table-column label="商户 / 对方" min-width="140"><template #default="scope">{{ scope.row.counterparty || '--' }}</template></el-table-column><el-table-column prop="description" label="说明" min-width="180" show-overflow-tooltip /><el-table-column label="金额" width="140" align="right"><template #default="scope"><strong :class="scope.row.type === 'income' ? 'positive' : scope.row.type === 'expense' ? 'negative' : ''">{{ scope.row.type === 'income' ? '+' : scope.row.type === 'expense' ? '-' : '' }}{{ money(scope.row.amount) }}</strong></template></el-table-column><el-table-column label="手续费" width="110"><template #default="scope">{{ Number(scope.row.fee) ? money(scope.row.fee) : '—' }}</template></el-table-column><el-table-column label="优惠" min-width="160"><template #default="scope"><span v-if="Number(scope.row.rebate)">{{ money(scope.row.rebate) }} → {{ accountMap[scope.row.rebateAccountId || scope.row.accountId] || '已归档账户' }}</span><span v-else-if="scope.row.rebateParentId">转账 #{{ scope.row.rebateParentId }}</span><span v-else>—</span></template></el-table-column><el-table-column label="状态" width="100"><template #default="scope">{{ scope.row.status === 'installment' ? '分期主账单' : scope.row.status === 'pending' ? (scope.row.installmentParentId ? '待入账' : '待确认') : scope.row.status === 'voided' ? '已作废' : '已入账' }}<small v-if="scope.row.source === 'ai'"> · AI</small><small v-if="scope.row.source === 'recurring'"> · 周期</small></template></el-table-column><el-table-column label="操作" width="190"><template #default="scope"><el-button v-if="scope.row.status === 'pending' && !scope.row.installmentParentId" link type="primary" :disabled="acting" @click="act(scope.row, 'confirm')">确认入账</el-button><el-button v-if="scope.row.status !== 'voided' && scope.row.status !== 'installment' && !scope.row.installmentParentId && !scope.row.rebateParentId" link type="danger" :disabled="acting" @click="act(scope.row, 'void')">作废</el-button><el-button v-if="scope.row.status === 'installment' || scope.row.installmentParentId || (scope.row.type === 'expense' && scope.row.status === 'posted')" link type="primary" :disabled="installmentBusy" @click="installmentBill = scope.row">{{ scope.row.status === 'installment' || scope.row.installmentParentId ? '查看分期' : '转为分期' }}</el-button></template></el-table-column></el-table>
+      <el-table v-if="items.length || loading" v-loading="loading" :data="items" table-layout="fixed"><el-table-column prop="transactionDate" label="日期" width="115" /><el-table-column label="账户" min-width="130"><template #default="scope">{{ accountMap[scope.row.accountId] || '已归档账户' }}<span v-if="scope.row.targetAccountId"> → {{ accountMap[scope.row.targetAccountId] || '已归档账户' }}</span></template></el-table-column><el-table-column label="类型" width="105"><template #default="scope"><span class="transaction-type" :class="scope.row.type"><FinanceIcon :kind="scope.row.type" :size="22" />{{ scope.row.type === 'income' ? '收入' : scope.row.type === 'expense' ? '支出' : '转账' }}</span></template></el-table-column><el-table-column label="分类" width="110"><template #default="scope">{{ scope.row.rebateParentId ? '还款优惠' : scope.row.type === 'transfer' ? '内部转账' : categoryMap[scope.row.categoryId] || '未分类' }}</template></el-table-column><el-table-column label="商户 / 对方" min-width="140"><template #default="scope">{{ scope.row.counterparty || '--' }}</template></el-table-column><el-table-column prop="description" label="说明" min-width="180" show-overflow-tooltip /><el-table-column label="金额" width="140" align="right"><template #default="scope"><strong :class="scope.row.type === 'income' ? 'positive' : scope.row.type === 'expense' ? 'negative' : ''">{{ scope.row.type === 'income' ? '+' : scope.row.type === 'expense' ? '-' : '' }}{{ money(scope.row.amount) }}</strong></template></el-table-column><el-table-column label="手续费" width="110"><template #default="scope">{{ Number(scope.row.fee) ? money(scope.row.fee) : '—' }}</template></el-table-column><el-table-column label="优惠" min-width="160"><template #default="scope"><span v-if="Number(scope.row.rebate)">{{ money(scope.row.rebate) }} → {{ accountMap[scope.row.rebateAccountId || scope.row.accountId] || '已归档账户' }}</span><span v-else-if="scope.row.rebateParentId">转账 #{{ scope.row.rebateParentId }}</span><span v-else>—</span></template></el-table-column><el-table-column label="报销" min-width="145"><template #default="scope"><span class="transaction-reimbursement"><span>{{ reimbursementStatus(scope.row) }}</span><small v-if="reimbursementStatus(scope.row) === '已报销'">{{ money(scope.row.reimbursedAmount) }}</small></span></template></el-table-column><el-table-column label="状态" width="100"><template #default="scope">{{ scope.row.status === 'installment' ? '分期主账单' : scope.row.status === 'pending' ? (scope.row.installmentParentId ? '待入账' : '待确认') : scope.row.status === 'voided' ? '已作废' : '已入账' }}<small v-if="scope.row.source === 'ai'"> · AI</small><small v-if="scope.row.source === 'recurring'"> · 周期</small></template></el-table-column><el-table-column label="操作" width="230"><template #default="scope"><el-button v-if="scope.row.status === 'pending' && !scope.row.installmentParentId" link type="primary" :disabled="acting || reimbursementSaving" @click="act(scope.row, 'confirm')">确认入账</el-button><el-button v-if="scope.row.status !== 'voided' && scope.row.status !== 'installment' && !scope.row.installmentParentId && !scope.row.rebateParentId" link type="danger" :disabled="acting || reimbursementSaving" @click="act(scope.row, 'void')">作废</el-button><el-button v-if="scope.row.status === 'installment' || scope.row.installmentParentId || (scope.row.type === 'expense' && scope.row.status === 'posted')" link type="primary" :disabled="installmentBusy || reimbursementSaving" @click="installmentBill = scope.row">{{ scope.row.status === 'installment' || scope.row.installmentParentId ? '查看分期' : '转为分期' }}</el-button><el-button v-if="canEditReimbursement(scope.row)" link type="primary" :disabled="acting || reimbursementSaving || installmentBusy" @click="openReimbursement(scope.row)">报销</el-button></template></el-table-column></el-table>
       <div v-else class="finance-empty"><FinanceIcon kind="transfer" :size="48" /><strong>暂无收支流水</strong><span>记录第一笔收入、支出或内部转账，开始形成现金流分析。</span><el-button type="primary" @click="openCreate">记录流水</el-button></div>
       <div class="finance-inline-summary"><el-button :disabled="page === 0 || loading" @click="turnPage(-1)">上一页</el-button><span>第 {{ page + 1 }} 页 · 每页 {{ pageSize }} 条</span><el-button :disabled="items.length < pageSize || loading" @click="turnPage(1)">下一页</el-button></div>
     </article>
@@ -110,7 +162,7 @@ defineExpose({ openCreate, load })
     <WorkspacePanel v-model="visible" title="记录流水" :show-close="!saving" :close-on-press-escape="!saving"><el-form label-position="top" :disabled="saving">
       <el-form-item label="保存为"><el-radio-group v-model="saveMode"><el-radio-button value="transaction">流水</el-radio-button><el-radio-button value="template">模板</el-radio-button><el-radio-button value="recurring">周期计划</el-radio-button></el-radio-group></el-form-item>
       <el-form-item v-if="saveMode !== 'transaction'" label="名称" required><el-input v-model="presetName" maxlength="40" /></el-form-item>
-      <template v-if="saveMode === 'recurring'"><el-form-item label="重复周期"><el-select v-model="frequency"><el-option v-for="(name, key) in frequencyNames" :key="key" :label="name" :value="key" /></el-select></el-form-item><el-form-item label="截止日期"><el-date-picker v-model="endDate" value-format="YYYY-MM-DD" placeholder="不限" /></el-form-item><p>到期生成待确认流水。</p></template><el-form-item label="类型" required><el-radio-group v-model="draft.type"><el-radio-button value="expense">支出</el-radio-button><el-radio-button value="income">收入</el-radio-button><el-radio-button value="transfer">内部转账</el-radio-button></el-radio-group></el-form-item><div class="finance-form-grid"><el-form-item :label="draft.type === 'transfer' ? '转出账户' : '账户'" required><el-select v-model="draft.accountId"><el-option v-for="item in accounts.filter(item => item.selectable !== false)" :key="item.id" :label="`${item.name} ${item.maskedAccountNumber}`" :value="item.id" /></el-select></el-form-item><el-form-item :label="draft.type === 'transfer' ? '转入金额' : '金额'" required><el-input v-model="draft.amount" inputmode="decimal"><template #prepend>￥</template></el-input></el-form-item><template v-if="draft.type === 'transfer'"><el-form-item label="手续费（转出账户支付）"><el-input v-model="draft.fee" inputmode="decimal" /></el-form-item><el-form-item label="优惠金额"><el-input v-model="draft.rebate" inputmode="decimal" /></el-form-item><template v-if="Number(draft.rebate) > 0"><el-form-item label="优惠到账账户"><el-select v-model="draft.rebateAccountId" clearable placeholder="转出账户"><el-option v-for="item in accounts.filter(item => item.selectable !== false)" :key="item.id" :label="item.name" :value="item.id" /></el-select></el-form-item><el-form-item label="优惠到账状态"><el-radio-group v-model="draft.rebatePending"><el-radio-button :value="false">已到账</el-radio-button><el-radio-button :value="true">待到账</el-radio-button></el-radio-group></el-form-item></template><el-form-item label="转入账户"><el-select v-model="draft.targetAccountId" clearable placeholder="普通内部转账"><el-option v-for="item in accounts.filter(item => item.id !== draft.accountId && item.selectable !== false)" :key="item.id" :label="item.name" :value="item.id" /></el-select></el-form-item></template><template v-else><el-form-item label="分类"><div class="category-field"><el-select v-model="draft.categoryId" clearable><el-option v-for="item in visibleCategories" :key="item.id" :label="item.name" :value="item.id" /></el-select><el-button @click="categoryDraft.type = draft.type as 'income' | 'expense'; categoryVisible = true">自定义</el-button></div></el-form-item><el-form-item label="商户 / 对方"><el-input v-model="draft.counterparty" /></el-form-item></template><el-form-item :label="saveMode === 'recurring' ? '开始日期' : '交易日期'" required><el-date-picker v-model="draft.transactionDate" value-format="YYYY-MM-DD" type="date" /></el-form-item></div><el-form-item label="说明"><el-input v-model="draft.description" type="textarea" :rows="2" /></el-form-item></el-form><template #footer><el-button :disabled="saving" @click="visible = false">取消</el-button><el-button type="primary" :loading="saving" @click="save">保存</el-button></template></WorkspacePanel>
+      <template v-if="saveMode === 'recurring'"><el-form-item label="重复周期"><el-select v-model="frequency"><el-option v-for="(name, key) in frequencyNames" :key="key" :label="name" :value="key" /></el-select></el-form-item><el-form-item label="截止日期"><el-date-picker v-model="endDate" value-format="YYYY-MM-DD" placeholder="不限" /></el-form-item><p>到期生成待确认流水。</p></template><el-form-item label="类型" required><el-radio-group v-model="draft.type"><el-radio-button value="expense">支出</el-radio-button><el-radio-button value="income">收入</el-radio-button><el-radio-button value="transfer">内部转账</el-radio-button></el-radio-group></el-form-item><div class="finance-form-grid"><el-form-item :label="draft.type === 'transfer' ? '转出账户' : '账户'" required><el-select v-model="draft.accountId"><el-option v-for="item in accounts.filter(item => item.selectable !== false)" :key="item.id" :label="`${item.name} ${item.maskedAccountNumber}`" :value="item.id" /></el-select></el-form-item><el-form-item :label="draft.type === 'transfer' ? '转入金额' : '金额'" required><el-input v-model="draft.amount" inputmode="decimal"><template #prepend>￥</template></el-input></el-form-item><template v-if="draft.type === 'transfer'"><el-form-item label="手续费（转出账户支付）"><el-input v-model="draft.fee" inputmode="decimal" /></el-form-item><el-form-item label="优惠金额"><el-input v-model="draft.rebate" inputmode="decimal" /></el-form-item><template v-if="Number(draft.rebate) > 0"><el-form-item label="优惠到账账户"><el-select v-model="draft.rebateAccountId" clearable placeholder="转出账户"><el-option v-for="item in accounts.filter(item => item.selectable !== false)" :key="item.id" :label="item.name" :value="item.id" /></el-select></el-form-item><el-form-item label="优惠到账状态"><el-radio-group v-model="draft.rebatePending"><el-radio-button :value="false">已到账</el-radio-button><el-radio-button :value="true">待到账</el-radio-button></el-radio-group></el-form-item></template><el-form-item label="转入账户"><el-select v-model="draft.targetAccountId" clearable placeholder="普通内部转账"><el-option v-for="item in accounts.filter(item => item.id !== draft.accountId && item.selectable !== false)" :key="item.id" :label="item.name" :value="item.id" /></el-select></el-form-item></template><template v-else><el-form-item label="分类"><div class="category-field"><el-select v-model="draft.categoryId" clearable><el-option v-for="item in visibleCategories" :key="item.id" :label="item.name" :value="item.id" /></el-select><el-button @click="categoryDraft.type = draft.type as 'income' | 'expense'; categoryVisible = true">自定义</el-button></div></el-form-item><el-form-item label="商户 / 对方"><el-input v-model="draft.counterparty" /></el-form-item></template><el-form-item :label="saveMode === 'recurring' ? '开始日期' : '交易日期'" required><el-date-picker v-model="draft.transactionDate" value-format="YYYY-MM-DD" type="date" /></el-form-item></div><el-form-item v-if="draft.type === 'expense'" label="需报销"><el-switch v-model="draft.reimbursable" /></el-form-item><el-form-item v-if="draft.type === 'expense' && draft.reimbursable && saveMode === 'transaction'" label="已报销金额"><el-input v-model="draft.reimbursedAmount" inputmode="decimal"><template #prefix>￥</template></el-input></el-form-item><el-form-item label="说明"><el-input v-model="draft.description" type="textarea" :rows="2" /></el-form-item></el-form><template #footer><el-button :disabled="saving" @click="visible = false">取消</el-button><el-button type="primary" :loading="saving" @click="save">保存</el-button></template></WorkspacePanel>
     <WorkspacePanel v-model="presetsVisible" title="模板与周期" :show-close="!saving" :close-on-press-escape="!saving">
       <el-empty v-if="!presets.length" description="暂无模板或周期计划" />
       <article v-for="item in presets" :key="item.id" class="finance-panel" style="padding:16px;margin-bottom:12px">
@@ -121,6 +173,14 @@ defineExpose({ openCreate, load })
         <el-button type="danger" link :disabled="saving" @click="removePreset(item)">删除</el-button>
       </article>
       <template #footer><el-button :disabled="saving" @click="openCreate(); saveMode = 'template'">新建模板</el-button><el-button type="primary" :disabled="saving" @click="openCreate(); saveMode = 'recurring'">新建周期</el-button></template>
+    </WorkspacePanel>
+    <WorkspacePanel v-model="reimbursementVisible" title="报销" :show-close="!reimbursementSaving" :close-on-press-escape="!reimbursementSaving">
+      <el-form v-if="reimbursementBill" label-position="top" :disabled="reimbursementSaving">
+        <el-form-item label="支出金额"><span>{{ money(reimbursementBill.amount) }}</span></el-form-item>
+        <el-form-item label="需报销"><el-switch v-model="reimbursementDraft.reimbursable" /></el-form-item>
+        <el-form-item v-if="reimbursementDraft.reimbursable && reimbursementBill.status === 'posted'" label="已报销金额"><el-input v-model="reimbursementDraft.reimbursedAmount" inputmode="decimal"><template #prefix>￥</template></el-input></el-form-item>
+      </el-form>
+      <template #footer><el-button :disabled="reimbursementSaving" @click="reimbursementVisible = false">取消</el-button><el-button type="primary" :loading="reimbursementSaving" @click="saveReimbursement">保存</el-button></template>
     </WorkspacePanel>
     <WorkspacePanel v-model="categoryVisible" title="添加自定义分类"><el-form label-position="top"><el-form-item label="分类名称"><el-input v-model="categoryDraft.name" /></el-form-item><el-form-item label="类型"><el-radio-group v-model="categoryDraft.type"><el-radio value="income">收入</el-radio><el-radio value="expense">支出</el-radio></el-radio-group></el-form-item></el-form><template #footer><el-button @click="categoryVisible = false">取消</el-button><el-button type="primary" @click="saveCategory">添加</el-button></template></WorkspacePanel>
   </div>

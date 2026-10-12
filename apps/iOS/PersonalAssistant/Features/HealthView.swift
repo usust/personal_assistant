@@ -12,6 +12,7 @@ struct HealthView: View {
     @State private var analysisConsent = false
     @State private var configID = 0
     @State private var confirmingDelete = false
+    /// 构建健康界面；参数：无；返回值：共享指标布局与原生玻璃操作，读取、上传与删除仍遵循现有明确授权流程。
     var body: some View {
         List {
             Section("同步到服务器") {
@@ -19,7 +20,7 @@ struct HealthView: View {
                 Text(store.api.baseURL).font(.caption).foregroundStyle(.secondary).textSelection(.enabled)
                 Text("读取最近 30 天（含今天，截至同步时刻）的步数、活动能量、步行距离、静息心率及体重。数据仅用于你的健康管理，不写入手机健康数据库。")
                 Button(action: requestSync) { Label("同步到服务器", systemImage: "arrow.triangle.2.circlepath.cloud") }
-                    .buttonStyle(.borderedProminent).disabled(busy)
+                    .buttonStyle(.glassProminent).disabled(busy)
                 Text("点击后读取 iPhone 健康数据并上传；下拉刷新只读取服务器，不会上传手机数据。").font(.caption).foregroundStyle(.secondary)
                 Text("未读取到的数据可能尚未记录或未获授权，不能视为零。权限可在系统健康设置中撤销。再次同步会替换相应日期；请固定使用一台 iPhone。") .font(.caption).foregroundStyle(.secondary)
                 if let message { Text(message).font(.callout) }
@@ -35,31 +36,35 @@ struct HealthView: View {
                     ForEach(store.configs) { config in Text(config.name).tag(config.id) }
                 }
                 Toggle("同意发送日汇总至所选 AI 服务", isOn: $analysisConsent)
-                Button("生成健康报告") { Task { await analyze() } }.disabled(busy || !analysisConsent || configID == 0 || !overview.days.contains(where: { $0.hasData }))
+                Button("生成健康报告") { Task { await analyze() } }.buttonStyle(.glassProminent).disabled(busy || !analysisConsent || configID == 0 || !overview.days.contains(where: { $0.hasData }))
                 Text("仅供生活方式参考，不用于诊断或替代医生。") .font(.caption).foregroundStyle(.secondary)
             }
             Section("历史报告") {
                 if overview.reports.isEmpty { Text("暂无报告") }
                 ForEach(overview.reports) { report in
-                    NavigationLink(report.created_at) { ScrollView { Text(report.content).frame(maxWidth: .infinity, alignment: .leading).padding().textSelection(.enabled) }.navigationTitle("健康报告") }
+                    NavigationLink(report.created_at) { ScrollView { Text(report.content).frame(maxWidth: .infinity, alignment: .leading).padding().textSelection(.enabled) }.navigationTitle("健康报告").navigationBarTitleDisplayMode(.inline) }
                 }
             }
             Section("每日记录") {
                 if overview.days.isEmpty { Text("服务器暂无记录。请点击上方“同步到服务器”，完成健康读取授权。") }
                 ForEach(overview.days) { day in
-                    VStack(alignment: .leading, spacing: 6) {
+                    // 日记录只改变展示层级，缺失数据继续显示占位，时区与所有原指标均保留。
+                    VStack(alignment: .leading, spacing: 12) {
                         Text(day.date).font(.headline)
-                        Text("步数 \(display(day.steps)) · 活动 \(display(day.active_energy)) 千卡")
-                        Text("距离 \(display(day.distance)) 米 · 静息心率 \(display(day.resting_heart_rate))")
-                        Text("体重 \(display(day.weight)) kg · \(day.timezone)").font(.caption)
-                    }
+                        MetricRow(title: "步数", value: display(day.steps), symbol: "figure.walk")
+                        MetricRow(title: "活动", value: display(day.active_energy), symbol: "flame", unit: "千卡")
+                        MetricRow(title: "距离", value: display(day.distance), symbol: "point.topleft.down.to.point.bottomright.curvepath", unit: "米")
+                        MetricRow(title: "静息心率", value: display(day.resting_heart_rate), symbol: "heart")
+                        MetricRow(title: "体重", value: display(day.weight), symbol: "scalemass", unit: "kg")
+                        Text(day.timezone).font(.caption).foregroundStyle(.secondary)
+                    }.padding(.vertical, 8)
                 }
             }
             Section {
                 Button("删除服务器健康数据及报告", role: .destructive) { confirmingDelete = true }.disabled(busy)
             }
         }
-        .navigationTitle("健康管理")
+        .navigationTitle("健康管理").navigationBarTitleDisplayMode(.inline)
         .task { await load() }
         .confirmationDialog("读取并同步健康数据", isPresented: $confirmingUpload, titleVisibility: .visible) {
             Button("同意并开始同步") { uploadConsent = true; Task { await sync() } }

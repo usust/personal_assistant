@@ -164,6 +164,22 @@ test('finance preserves money strings, request IDs and explicit draft confirmati
   ])
 })
 
+// 校验报销 PATCH 的白名单与显式零值；参数：无；返回值：完成 Promise，失败拒绝；仅使用内存 HTTP，不修改账户余额。
+test('finance reimbursement patches only submitted reimbursement fields and preserves false and zero', async () => {
+  const finance = await loadAPI('finance')
+  const posted = { id: 9, type: 'expense', status: 'posted', amount: '100.00', reimbursable: false, reimbursedAmount: '0.00' }
+  replies.push(posted, { ...posted, reimbursable: true, reimbursedAmount: '0.10' })
+  assert.deepEqual(await finance.updateTransactionReimbursement(9, { reimbursable: false, reimbursedAmount: '0.00', amount: '999.00', accountId: 999 }), posted)
+  await finance.updateTransactionReimbursement(9, { reimbursedAmount: '0.10' })
+  assert.deepEqual(calls.splice(0), [
+    { method: 'patch', args: ['/finance/transactions/9', { reimbursable: false, reimbursedAmount: '0.00' }] },
+    { method: 'patch', args: ['/finance/transactions/9', { reimbursedAmount: '0.10' }] },
+  ])
+  replies.push(new Error('已报销金额不能超过可报销金额'))
+  await assert.rejects(finance.updateTransactionReimbursement(9, { reimbursedAmount: '101.00' }), /不能超过/)
+  calls.length = 0
+})
+
 // 验证模型目录和删除使用最新契约；参数：无；返回值：异步完成，失败拒绝，不请求真实模型或删除数据。
 test('AI model catalog forwards saved identity with a bounded timeout and delete preserves failures', async () => {
   const input = { config_id: 7, base_url: 'https://example.com/v1', provider_name: 'custom', api_key: '' }

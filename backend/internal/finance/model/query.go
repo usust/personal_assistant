@@ -16,22 +16,25 @@ type Metric struct {
 }
 
 type Overview struct {
-	TotalAssets       Money      `json:"totalAssets"`
-	TotalLiabilities  Money      `json:"totalLiabilities"`
-	NetWorth          Money      `json:"netWorth"`
-	MonthIncome       Money      `json:"monthIncome"`
-	MonthExpense      Money      `json:"monthExpense"`
-	MonthBalance      Money      `json:"monthBalance"`
-	SavingsRate       *string    `json:"savingsRate"`
-	DebtRatio         *string    `json:"debtRatio"`
-	AccountCount      int        `json:"accountCount"`
-	AssetStructure    []Metric   `json:"assetStructure"`
-	CashFlow          []CashFlow `json:"cashFlow"`
-	ExpenseCategories []Metric   `json:"expenseCategories"`
-	NetWorthTrend     []any      `json:"netWorthTrend"`
-	Upcoming          []any      `json:"upcoming"`
-	Currency          string     `json:"currency"`
-	Timezone          string     `json:"timezone"`
+	ReimbursementTotal    Money      `json:"reimbursementTotal"`
+	ReimbursementReceived Money      `json:"reimbursementReceived"`
+	ReimbursementPending  Money      `json:"reimbursementPending"`
+	TotalAssets           Money      `json:"totalAssets"`
+	TotalLiabilities      Money      `json:"totalLiabilities"`
+	NetWorth              Money      `json:"netWorth"`
+	MonthIncome           Money      `json:"monthIncome"`
+	MonthExpense          Money      `json:"monthExpense"`
+	MonthBalance          Money      `json:"monthBalance"`
+	SavingsRate           *string    `json:"savingsRate"`
+	DebtRatio             *string    `json:"debtRatio"`
+	AccountCount          int        `json:"accountCount"`
+	AssetStructure        []Metric   `json:"assetStructure"`
+	CashFlow              []CashFlow `json:"cashFlow"`
+	ExpenseCategories     []Metric   `json:"expenseCategories"`
+	NetWorthTrend         []any      `json:"netWorthTrend"`
+	Upcoming              []any      `json:"upcoming"`
+	Currency              string     `json:"currency"`
+	Timezone              string     `json:"timezone"`
 }
 
 // TransactionSummary 表示日期范围内已入账收支，不受流水分页影响。

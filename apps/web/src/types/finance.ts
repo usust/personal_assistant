@@ -43,6 +43,9 @@ export interface FinancialAccount extends LoanAccountTerms {
 }
 
 export interface FinanceTransaction {
+  reimbursable?: boolean
+  reimbursedAmount?: string
+  refundParentId?: number
   rebate?: string
   rebateAccountId?: number | null
   rebatePending?: boolean
@@ -104,6 +107,7 @@ export interface CategoryMetric { name: string; amount: string; color: string }
 export interface UpcomingPayment { id: number; name: string; amount: string; date: string; kind: string; status: 'normal' | 'soon' | 'today' | 'overdue' }
 export interface FinanceOverview {
   totalAssets: string; totalLiabilities: string; netWorth: string
+  reimbursementTotal: string; reimbursementReceived: string; reimbursementPending: string
   monthIncome: string; monthExpense: string; monthBalance: string
   savingsRate: string | null; debtRatio: string | null; accountCount: number
   assetStructure: AssetSlice[]; netWorthTrend: NetWorthPoint[]; cashFlow: MonthlyCashFlow[]; expenseCategories: CategoryMetric[]; upcoming: UpcomingPayment[]

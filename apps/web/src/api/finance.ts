@@ -16,6 +16,14 @@ export const archiveAccount = (id: number) => getData<{ transactions: number; sn
 
 export const getTransactions = (params: TransactionFilter = {}) => getData<FinanceTransaction[]>(http.get('/finance/transactions', { params }))
 export const createTransaction = (payload: Partial<FinanceTransaction>) => getData<FinanceTransaction>(http.post('/finance/transactions', payload))
+// 更新自己的流水报销进度；参数：id 为支出流水 ID，payload 仅包含本次提交的报销标记及十进制已报销金额；返回值：服务端更新后的流水 Promise，校验失败拒绝，不调整账户余额。
+export const updateTransactionReimbursement = (id: number, payload: { reimbursable?: boolean; reimbursedAmount?: string }) => {
+  // 明确保留 false 与 0 金额，仅发送白名单内的已提交字段，避免覆盖其他流水资料。
+  const fields: { reimbursable?: boolean; reimbursedAmount?: string } = {}
+  if (payload.reimbursable !== undefined) fields.reimbursable = payload.reimbursable
+  if (payload.reimbursedAmount !== undefined) fields.reimbursedAmount = payload.reimbursedAmount
+  return getData<FinanceTransaction>(http.patch(`/finance/transactions/${id}`, fields))
+}
 export const getCategories = () => getData<TransactionCategory[]>(http.get('/finance/categories'))
 export const createCategory = (payload: Partial<TransactionCategory>) => getData<TransactionCategory>(http.post('/finance/categories', payload))
 

@@ -81,7 +81,24 @@ extension FinanceLocalStore {
         let parts = raw.split(separator: ".", omittingEmptySubsequences: false)
         return String(parts[0]) + "." + (parts.count > 1 ? String((String(parts[1]) + "00").prefix(2)) : "00")
     }
-    /// 生成首页资产及六个月汇总；参数：无；返回值：与现有模型兼容的统计，余额含待同步本机操作。
+    /// 汇总当前累计报销；参数：无；返回值：净报销支出、已报销和待报销的精确金额，不受分页或月份限制；只读本机完整账本，不修改余额。
+    func reimbursementSummary() throws -> [String: String] {
+        let transactions = rows("transactions")
+        var refunds: [Int: Decimal] = [:]
+        // 先按原支出累计有效退款，避免退款流水再次作为独立报销支出计入。
+        for row in transactions where row["status"] as? String == "posted" && Self.id(row, "refundParentId") != 0 {
+            refunds[Self.id(row, "refundParentId"), default: 0] += Decimal(try Self.cents(row["amount"]))
+        }
+        var total = Decimal.zero, received = Decimal.zero
+        for row in transactions where row["status"] as? String == "posted" && row["type"] as? String == "expense" && row["reimbursable"] as? Bool == true && Self.id(row, "refundParentId") == 0 && Self.id(row, "rebateParentId") == 0 {
+            let amount = Decimal(try Self.cents(row["amount"]))
+            guard amount > 0 else { continue }
+            total += max(0, amount + (refunds[Self.id(row)] ?? 0))
+            received += Decimal(try Self.cents(row["reimbursedAmount"] ?? "0.00"))
+        }
+        return ["reimbursementTotal": Self.decimalMoney(total), "reimbursementReceived": Self.decimalMoney(received), "reimbursementPending": Self.decimalMoney(total - received)]
+    }
+    /// 生成首页资产、累计报销及六个月汇总；参数：无；返回值：与现有模型兼容的统计，余额与报销含待同步本机操作，报销金额不并入净资产。
     func overview() throws -> [String: Any] {
         var assets = Decimal.zero, liabilities = Decimal.zero
         var structure: [[String: Any]] = []
@@ -107,7 +124,9 @@ extension FinanceLocalStore {
             let fee = try Self.cents(row["fee"] ?? "0.00")
             if fee != 0 { categories["转账手续费", default: 0] += Decimal(fee) }
         }
-        return ["totalAssets": Self.decimalMoney(assets), "totalLiabilities": Self.decimalMoney(liabilities), "netWorth": Self.decimalMoney(assets-liabilities), "monthIncome": sums["income"]!, "monthExpense": sums["expense"]!, "monthBalance": sums["balance"]!, "accountCount": accounts.count, "assetStructure": structure, "cashFlow": flows, "expenseCategories": categories.sorted { $0.value > $1.value }.map { ["name": $0.key, "amount": Self.decimalMoney($0.value)] }]
+        var result: [String: Any] = ["totalAssets": Self.decimalMoney(assets), "totalLiabilities": Self.decimalMoney(liabilities), "netWorth": Self.decimalMoney(assets-liabilities), "monthIncome": sums["income"]!, "monthExpense": sums["expense"]!, "monthBalance": sums["balance"]!, "accountCount": accounts.count, "assetStructure": structure, "cashFlow": flows, "expenseCategories": categories.sorted { $0.value > $1.value }.map { ["name": $0.key, "amount": Self.decimalMoney($0.value)] }]
+        for (key, value) in try reimbursementSummary() { result[key] = value }
+        return result
     }
 
     /// 计算本地信用账期；参数：accountID 为账户，summary 表示最近应还或历史账单，filters 为历史范围；返回值：原接口兼容结果，未来分期预记本金从计划扣除，非法账户抛错。

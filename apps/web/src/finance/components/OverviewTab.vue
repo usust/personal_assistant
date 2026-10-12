@@ -18,11 +18,12 @@ const cashFlow = computed(() => props.overview.cashFlow.map(
 <template>
   <div class="finance-tab-stack">
     <el-alert title="统计范围：CNY 账户；月份按 UTC+8。仅统计已入账流水，转账不计入收支。贷款、房贷和信用卡账单尚未接入。" type="info" :closable="false" />
-    <div class="finance-stat-grid">
+    <div class="finance-stat-grid finance-overview-stat-grid">
       <article class="finance-stat-card"><FinanceIcon kind="wallet" :size="43" /><div><p>账户总资产</p><strong>{{ money(overview.totalAssets) }}</strong><small>{{ overview.accountCount }} 个账户，仅含勾选计入净资产的余额</small></div></article>
       <article class="finance-stat-card"><FinanceIcon kind="credit-card" :size="43" /><div><p>账户负余额合计</p><strong>{{ money(overview.totalLiabilities) }}</strong><small>不包含未接入的贷款及信用卡负债</small></div></article>
       <article class="finance-stat-card"><FinanceIcon kind="investment" :size="43" /><div><p>账户净资产</p><strong>{{ money(overview.netWorth) }}</strong><small>正余额减去负余额</small></div></article>
       <article class="finance-stat-card"><FinanceIcon kind="cash" :size="43" /><div><p>本月结余</p><strong>{{ money(overview.monthBalance) }}</strong><small>收入 {{ money(overview.monthIncome) }} · 支出 {{ money(overview.monthExpense) }} · 储蓄率 {{ percent(overview.savingsRate) }}</small></div></article>
+      <article class="finance-stat-card"><FinanceIcon kind="expense" label="报销" :size="43" /><div><p>待报销 · 累计</p><strong>{{ money(overview.reimbursementPending) }}</strong><small>已报销 {{ money(overview.reimbursementReceived) }}</small><small>报销总额 {{ money(overview.reimbursementTotal) }}</small></div></article>
     </div>
     <div class="finance-dashboard-grid">
       <article class="finance-panel finance-wide-panel"><header class="finance-panel-heading"><h3>近 6 个月收支</h3><el-button link type="primary" @click="emit('addTransaction')">记录流水</el-button></header><FinanceBarChart :data="cashFlow" /></article>

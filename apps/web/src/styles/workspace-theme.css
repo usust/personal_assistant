@@ -35,6 +35,14 @@
 .admin-shell .account-card-top strong { font-size: 15px; }
 .admin-shell .account-card footer { flex-wrap: wrap; gap: 8px; line-height: 1.6; }
 .admin-shell .finance-table-panel .el-table { font-size: 13px; }
+/* 总览卡片按实际工作区宽度换行，展开第三栏后仍保留金额与辅助统计的阅读宽度。 */
+.admin-shell .finance-overview-stat-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); }
+.admin-shell .finance-stat-card { border-color: var(--ui-line); border-radius: var(--ui-radius); background: var(--ui-surface); box-shadow: 0 2px 8px rgb(25 30 50 / 2%); }
+.admin-shell .finance-stat-card > div { min-width: 0; }
+.admin-shell .finance-stat-card strong { font-family: inherit; font-weight: 600; font-variant-numeric: tabular-nums; }
+.admin-shell .finance-stat-card small { white-space: normal; overflow-wrap: anywhere; }
+.transaction-reimbursement { display: flex; flex-direction: column; gap: 4px; }
+.transaction-reimbursement small { color: var(--ui-muted); font-variant-numeric: tabular-nums; }
 .admin-shell .el-table { --el-table-border-color: var(--ui-line); --el-table-header-bg-color: #fafafb; --el-table-row-hover-bg-color: #f6f6fc; border-radius: 12px; }
 .admin-shell .el-table .el-table__cell { padding-block: 14px; }
 .admin-shell .finance-tabs { width: fit-content; max-width: 100%; background: #eaeaef; padding: 4px; border: 0; box-shadow: none; }

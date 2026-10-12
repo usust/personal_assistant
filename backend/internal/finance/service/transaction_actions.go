@@ -15,7 +15,7 @@ import (
 	"personal_assistant_server/internal/finance/repository"
 )
 
-// refundTransaction 记录关联原支出的部分或全额退款；参数：db 为已锁定用户的事务，owner 为当前身份，in 含原流水 ID 和退款金额、日期、备注、幂等键；返回值：负支出流水或校验错误，失败由外层回滚，退款返回原账户且不计收入。
+// refundTransaction 记录关联原支出的部分或全额退款；参数：db 为已锁定用户的事务，owner 为当前身份，in 含原流水 ID 和退款金额、日期、备注、幂等键；返回值：负支出流水或校验、权限、数据库错误；失败由外层回滚，退款返回原账户且不计收入，不能使剩余实付低于已报销金额。
 func (s *Service) refundTransaction(db *gorm.DB, owner uint64, in Input) (domain.Transaction, error) {
 	var row domain.Transaction
 	var body struct {
@@ -73,6 +73,10 @@ func (s *Service) refundTransaction(db *gorm.DB, owner uint64, in Input) (domain
 	if body.Amount > parent.Amount+refunded {
 		// 拒绝本次操作：退款金额超过剩余可退金额。
 		return row, Invalid("退款金额超过剩余可退金额")
+	}
+	// 已到账报销是独立资料，退款不能隐式覆盖；用户先调整报销金额，再记录退款。
+	if parent.ReimbursedAmount > parent.Amount+refunded-body.Amount {
+		return row, Invalid("请先调整已报销金额，再退款")
 	}
 	// 按所属用户读取账户并检查可用状态。
 	if _, err = account(db, owner, parent.AccountID, true); err != nil {

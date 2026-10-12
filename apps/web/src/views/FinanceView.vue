@@ -13,7 +13,7 @@ const activeTab = ref('overview')
 const loading = ref(true)
 const accounts = ref<FinancialAccount[]>([])
 const categories = ref<TransactionCategory[]>([])
-const overview = ref<FinanceOverview>({ totalAssets: '0.00', totalLiabilities: '0.00', netWorth: '0.00', monthIncome: '0.00', monthExpense: '0.00', monthBalance: '0.00', savingsRate: null, debtRatio: null, accountCount: 0, assetStructure: [], netWorthTrend: [], cashFlow: [], expenseCategories: [], upcoming: [] })
+const overview = ref<FinanceOverview>({ totalAssets: '0.00', totalLiabilities: '0.00', netWorth: '0.00', reimbursementTotal: '0.00', reimbursementReceived: '0.00', reimbursementPending: '0.00', monthIncome: '0.00', monthExpense: '0.00', monthBalance: '0.00', savingsRate: null, debtRatio: null, accountCount: 0, assetStructure: [], netWorthTrend: [], cashFlow: [], expenseCategories: [], upcoming: [] })
 const accountsTab = ref<InstanceType<typeof AccountsTab>>()
 const transactionsTab = ref<InstanceType<typeof TransactionsTab>>()
 
