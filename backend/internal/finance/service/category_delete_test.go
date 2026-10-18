@@ -20,6 +20,10 @@ func TestCategoryDeleteOwnershipAndAudit(t *testing.T) {
 	body := transactionBody("category-delete-history", account.ID, "expense", "10")
 	body["categoryId"] = category.ID
 	transaction := must(t, s, "finance.transaction.create", 0, body).(domain.Transaction)
+	// 读取持久化后的基线，避免数据库时间精度及位置信息转换造成误报。
+	if err := s.db.First(&transaction, transaction.ID).Error; err != nil {
+		t.Fatal(err)
+	}
 	var before []domain.Snapshot
 	if err := s.db.Order("id").Find(&before).Error; err != nil {
 		t.Fatal(err)
@@ -210,6 +214,10 @@ func TestCategoryCreateAfterDeletePreservesHistory(t *testing.T) {
 	body := transactionBody("category-recreate-history", account.ID, "expense", "10")
 	body["categoryId"] = category.ID
 	transaction := must(t, s, "finance.transaction.create", 0, body).(domain.Transaction)
+	// 读取持久化后的基线，避免数据库时间精度及位置信息转换造成误报。
+	if err := s.db.First(&transaction, transaction.ID).Error; err != nil {
+		t.Fatal(err)
+	}
 	var before []domain.Snapshot
 	if err := s.db.Order("id").Find(&before).Error; err != nil {
 		t.Fatal(err)

@@ -237,7 +237,7 @@ func newLegacyCategoryMigrationDB(t *testing.T, categories []domain.Category) *g
 		}
 	})
 
-	// 显式还原无 name_version 的旧结构，避免使用新模型建表而遗漏真实升级路径。
+	// 显式还原无 name_version 的旧结构；末列紧接右括号以匹配 GORM 建表格式，避免 SQLite DDL 解析器遗漏后续新增列。
 	if err := db.Exec(`CREATE TABLE finance_categories_v2 (
 		id integer PRIMARY KEY AUTOINCREMENT,
 		owner_id integer NOT NULL,
@@ -247,8 +247,7 @@ func newLegacyCategoryMigrationDB(t *testing.T, categories []domain.Category) *g
 		icon text,
 		color text,
 		is_default numeric,
-		deleted numeric NOT NULL DEFAULT false
-	)`).Error; err != nil {
+		deleted numeric NOT NULL DEFAULT false)`).Error; err != nil {
 		t.Fatalf("创建旧版分类表失败：%v", err)
 	}
 	if err := db.Exec(`CREATE UNIQUE INDEX finance_category_name

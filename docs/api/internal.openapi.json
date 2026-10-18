@@ -3153,6 +3153,107 @@
             "description": "当前用户所属分类 ID。"
           }
         ]
+      },
+      "delete": {
+        "operationId": "finance_category_delete",
+        "summary": "删除记账分类并保留历史记录",
+        "tags": [
+          "finance"
+        ],
+        "description": "需要 Bearer JWT，仅允许删除本人分类。软删除保留名称、图标和历史流水引用，释放名称以供重新创建；重复删除幂等返回原分类墓碑。资源不存在或不属于本人返回 404。成功返回 FinanceCategory，deleted 为 true；同步 operation 为 finance.category.delete。",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "enum": [
+                        200
+                      ]
+                    },
+                    "message": {
+                      "type": "string",
+                      "enum": [
+                        "ok"
+                      ]
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/FinanceCategory"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "message",
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求或业务字段无效",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "未登录或登录失效",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "资源不存在或不属于当前用户",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "服务器内部错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "x-apifox-folder": "记账管理/记账分类",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "description": "当前用户所属分类 ID。"
+          }
+        ]
       }
     },
     "/api/finance/transactions/{id}/refund": {
@@ -7971,6 +8072,10 @@
           },
           "type": {
             "type": "string"
+          },
+          "deleted": {
+            "type": "boolean",
+            "description": "是否已删除；已删除分类保留历史展示资料，不可用于新增流水。"
           }
         },
         "required": [
@@ -7980,7 +8085,8 @@
           "name",
           "type",
           "color",
-          "isDefault"
+          "isDefault",
+          "deleted"
         ],
         "type": "object"
       },
