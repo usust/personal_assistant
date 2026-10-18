@@ -46,6 +46,54 @@ final class OfflineSyncServer: @unchecked Sendable {
     }
 }
 
+/// 固定脚本同步替身；逐项核对上传身份并返回预置回执和快照，不实现后端业务，不调用本地 apply。
+final class CategoryRecreationSyncServer: @unchecked Sendable {
+    struct Step {
+        let operation: String
+        let id: Int
+        let categoryID: Int?
+        let result: [String: Any]
+    }
+    private let lock = NSLock()
+    private let steps: [Step]
+    private let snapshots: [[String: Any]]
+    private var commandIndex = 0
+    private var snapshotIndex = 0
+    var snapshotHook: ((Int) -> Void)?
+
+    /// 构造静态协议脚本；参数：steps 为按上传顺序预置的操作与回执，snapshots 为每次下载的完整快照；返回值：替身实例；无副作用，不读取真实数据。
+    init(steps: [Step], snapshots: [[String: Any]]) {
+        self.steps = steps; self.snapshots = snapshots
+    }
+
+    /// 核对请求并返回固定结果；参数：request 为客户端编码请求；返回值：HTTP 状态与信封字节；脚本越界或身份不符终止测试，JSON 错误抛出；快照钩子在生成响应后执行。
+    func respond(_ request: URLRequest) throws -> (Int, Data) {
+        lock.lock(); defer { lock.unlock() }
+        if request.url?.path.hasSuffix("/snapshot") == true {
+            precondition(request.httpMethod == "GET" && snapshotIndex < snapshots.count, "意外快照请求")
+            let index = snapshotIndex; snapshotIndex += 1
+            let data = try JSONSerialization.data(withJSONObject: ["data": snapshots[index]])
+            snapshotHook?(index)
+            return (200, data)
+        }
+        precondition(request.url?.path.hasSuffix("/commands") == true && request.httpMethod == "POST" && commandIndex < steps.count, "意外上传请求")
+        let payload = try CoreTests.body(request), step = steps[commandIndex]
+        precondition(payload["operation"] as? String == step.operation && (payload["id"] as? NSNumber)?.intValue == step.id, "同名分类命令不得映射至其他身份")
+        if let expected = step.categoryID {
+            let body = payload["body"] as! [String: Any]
+            precondition((body["categoryId"] as? NSNumber)?.intValue == expected, "新流水必须上传新分类 ID，不能引用同名墓碑")
+        }
+        commandIndex += 1
+        return (200, try JSONSerialization.data(withJSONObject: ["data": step.result]))
+    }
+
+    /// 核对所有静态脚本已消费；参数：无；返回值：无；加锁读取计数，遗漏任何命令或快照即终止测试。
+    func checkComplete() {
+        lock.lock(); defer { lock.unlock() }
+        precondition(commandIndex == steps.count && snapshotIndex == snapshots.count, "分类重建上传及快照脚本完整执行")
+    }
+}
+
 @MainActor enum FinanceOfflineTests {
     /// 新建独立临时账本；参数：directory 为测试目录，name 为文件名；返回值：账本；失败抛错，不读取真实用户数据。
     static func ledger(_ directory: URL, _ name: String) throws -> FinanceLocalStore { try FinanceLocalStore(url: directory.appendingPathComponent(name + ".sqlite")) }
@@ -135,10 +183,260 @@ final class OfflineSyncServer: @unchecked Sendable {
             CoreTests.check(false, "收入不能标记报销")
         } catch { CoreTests.check(NSDictionary(dictionary: before).isEqual(to: store.document), "非法报销回滚余额和队列") }
     }
+    /// 验证同步贷款摘要不会冒充完整计划；参数：无；返回值：无；在隔离账本验证明细联网回退、断网报错及完整缓存读取，不访问真实数据。
+    static func loanPlanReading() async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent("loan-reading-tests-" + UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let store = try ledger(directory, "loan")
+        try store.enable(server: "https://test.invalid/api", profile: Profile(id: 1, account: "loan", nickname: "测试", role: "user"))
+        let configuration = URLSessionConfiguration.ephemeral; configuration.protocolClasses = [StubProtocol.self]
+        let api = APIClient(baseURL: "https://test.invalid/api", session: URLSession(configuration: configuration))
+        api.token = "test"; api.localFinance = store
+        defer { StubProtocol.handler = nil }
+        let server = OfflineSyncServer()
+        let summary: [String: Any] = ["remainingPrincipal": "565138.68", "totalInterest": "325000.00", "paidPeriods": 47, "revision": 3, "next": NSNull()]
+        server.account["institution"] = "贷款"; server.account["loanPrincipal"] = "650000.00"
+        server.account["loanPeriods"] = 360; server.account["loanPaidPeriods"] = 47; server.account["loanPlan"] = summary
+        // 快照回调输入请求、返回独立服务端数据；账户只含摘要，与生产同步协议一致。
+        StubProtocol.handler = { request in try server.respond(request) }
+        try await store.synchronize(api: api)
+        let accounts: [FinancialAccount] = try await api.request("/finance/accounts")
+        CoreTests.check(accounts.first?.loanPaidPeriods == 47 && accounts.first?.loanPlan?.remainingPrincipal == "565138.68", "摘要仍可展示已有贷款及还款进度")
+        let path = "/finance/accounts/7/loan-plan"
+        let summaryResult = try store.readLocal(path, query: [])
+        CoreTests.check(summaryResult == nil, "缺少明细的同步摘要应回退完整计划接口")
+        // 期次映射输入期数，返回仅用于读取契约的固定金额明细，不验证贷款计算公式。
+        let schedule: [[String: Any]] = (1...360).map { period in
+            ["period": period, "date": "2026-10-18", "principal": "2000.00", "interest": "1312.60", "payment": "3312.60", "remaining": "565138.68"]
+        }
+        var full = summary; full["schedule"] = schedule
+        let response = try FinanceLocalStore.envelope(full)
+        // 完整计划回调输入请求、返回完整明细；端点或方法错误立即让测试失败。
+        StubProtocol.handler = { request in
+            precondition(request.url?.path == "/api/finance/accounts/7/loan-plan" && request.httpMethod == "GET", "贷款明细应调用专用读取端点")
+            return (200, response)
+        }
+        let plan: LoanPlanSummary = try await api.request(path)
+        CoreTests.check(plan.schedule?.count == 360 && plan.paidPeriods == 47 && plan.revision == 3, "摘要缓存存在时仍能读取完整360期计划及原版本")
+        // 断网回调输入请求并抛出网络错误；摘要不能让失败请求伪装为成功的空计划。
+        StubProtocol.handler = { _ in throw URLError(.notConnectedToInternet) }
+        do {
+            let _: LoanPlanSummary = try await api.request(path)
+            CoreTests.check(false, "只有摘要且断网时应抛出明细加载错误")
+        } catch {
+            CoreTests.check((error as? URLError)?.code == .notConnectedToInternet, "完整计划网络失败保留真实错误")
+        }
+        // 缓存边界仍接受空明细数组；null、缺失或错误类型均不是完整计划。
+        for value in [NSNull(), "invalid"] as [Any] {
+            var incomplete = summary; incomplete["schedule"] = value
+            var account = server.account; account["loanPlan"] = incomplete
+            var next = store.space; next["accounts"] = [account]; try store.saveSpace(next)
+            let local = try store.readLocal(path, query: [])
+            CoreTests.check(local == nil, "无效明细缓存不能冒充完整贷款计划")
+        }
+        for rows in [schedule, [[String: Any]]()] {
+            var cached = summary; cached["schedule"] = rows
+            var account = server.account; account["loanPlan"] = cached
+            var next = store.space; next["accounts"] = [account]; try store.saveSpace(next)
+            let local: LoanPlanSummary = try await api.request(path)
+            CoreTests.check(local.schedule?.count == rows.count && local.paidPeriods == 47, "完整缓存和合法空明细均可离线读取")
+        }
+        CoreTests.check(store.queue.isEmpty, "读取计划不重新填写贷款或产生写入队列")
+    }
+    /// 验证分类墓碑、同名重建和临时 ID 重映射；参数：无；返回值：无；隔离账本验证新 ID、历史引用与外观、多轮重建和活动名称唯一，失败抛错或断言，不访问真实数据。
+    static func categoryTombstones() throws {
+        let legacy = Data(#"{"id": 3, "name": "旧分类", "type": "expense", "color": "#123456"}"#.utf8)
+        let decoded = try JSONDecoder().decode(TransactionCategory.self, from: legacy)
+        CoreTests.check(decoded.deleted == false, "旧分类 JSON 缺少 deleted 时默认为未删除")
+
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent("category-tombstone-tests-" + UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let store = try ledger(directory, "references")
+        let accountID = try account(store, name: "墓碑测试钱包", balance: "100.00")
+        let created = try store.writeLocal("/finance/categories", method: "POST", body: ["name": "墓碑午餐", "type": "expense", "groupKey": "food", "icon": "fork.knife", "color": "#123456"]) as! [String: Any]
+        let categoryID = FinanceLocalStore.id(created)
+        CoreTests.check(categoryID >= 1_000_000_000_000 && store.supportsLocal("/finance/categories/\(categoryID)", method: "DELETE", body: [:]), "删除支持正数临时分类 ID")
+        var paymentBody = payment(accountID, key: "tombstone-old-001"); paymentBody["categoryId"] = categoryID
+        let oldTransaction = try store.writeLocal("/finance/transactions", method: "POST", body: paymentBody) as! [String: Any]
+        let oldTransactionID = FinanceLocalStore.id(oldTransaction)
+        _ = try store.writeLocal("/finance/categories/\(categoryID)", method: "DELETE", body: [:])
+        let deleted = store.rows("categories").first { FinanceLocalStore.id($0) == categoryID }
+        CoreTests.check(deleted?["deleted"] as? Bool == true, "本地分类删除写入墓碑")
+        _ = try store.writeLocal("/finance/categories/\(categoryID)", method: "DELETE", body: [:])
+        CoreTests.check(store.rows("categories").filter { FinanceLocalStore.id($0) == categoryID }.count == 1, "重复删除墓碑幂等且不复制分类")
+        do {
+            _ = try store.writeLocal("/finance/categories/\(categoryID)", method: "PATCH", body: ["name": "不应修改"])
+            CoreTests.check(false, "已删除分类禁止 PATCH")
+        } catch { CoreTests.check(true, "已删除分类禁止 PATCH") }
+        let rebuilt = try store.writeLocal("/finance/categories", method: "POST", body: ["name": "墓碑午餐", "type": "expense", "groupKey": "food", "icon": "cup.and.saucer", "color": "#654321"]) as! [String: Any]
+        let rebuiltID = FinanceLocalStore.id(rebuilt)
+        CoreTests.check(rebuiltID != categoryID && rebuilt["deleted"] as? Bool == false, "同名重建分配新 ID，不恢复墓碑")
+        let oldCategory = store.rows("categories").first { FinanceLocalStore.id($0) == categoryID }!
+        CoreTests.check(NSDictionary(dictionary: oldCategory).isEqual(to: deleted!), "重建不改写墓碑的任何字段")
+        CoreTests.check(oldCategory["name"] as? String == "墓碑午餐" && oldCategory["icon"] as? String == "fork.knife" && oldCategory["color"] as? String == "#123456", "旧分类名称与图标颜色保留")
+        let queued = store.queue.count
+        let duplicate = try store.writeLocal("/finance/categories", method: "POST", body: ["name": "墓碑午餐", "type": "expense"]) as! [String: Any]
+        CoreTests.check(FinanceLocalStore.id(duplicate) == rebuiltID && store.queue.count == queued, "墓碑排在前面时仍复用活动同名分类且不重复排队")
+        let spacedDuplicate = try store.writeLocal("/finance/categories", method: "POST", body: ["name": " 墓碑午餐 ", "type": "expense"]) as! [String: Any]
+        CoreTests.check(FinanceLocalStore.id(spacedDuplicate) == rebuiltID && store.queue.count == queued, "首尾空白规范化后仍复用活动同名分类")
+        var rebuiltPayment = payment(accountID, amount: "1.00", key: "tombstone-rebuilt-001"); rebuiltPayment["categoryId"] = rebuiltID
+        let newTransaction = try store.writeLocal("/finance/transactions", method: "POST", body: rebuiltPayment) as! [String: Any]
+        CoreTests.check(FinanceLocalStore.id(newTransaction, "categoryId") == rebuiltID, "新流水引用重建后的新 ID")
+
+        // 同名只约束活动记录；改名冲突回滚，其他收支类型仍可使用同名。
+        let other = try store.writeLocal("/finance/categories", method: "POST", body: ["name": "另一分类", "type": "expense"]) as! [String: Any]
+        let otherID = FinanceLocalStore.id(other)
+        let beforeConflict = store.document
+        do {
+            _ = try store.writeLocal("/finance/categories/\(otherID)", method: "PATCH", body: ["name": "墓碑午餐"])
+            CoreTests.check(false, "活动同名冲突必须拒绝")
+        } catch { CoreTests.check(NSDictionary(dictionary: beforeConflict).isEqual(to: store.document), "活动名称冲突不改账本或队列") }
+        _ = try store.writeLocal("/finance/categories", method: "POST", body: ["name": "墓碑午餐", "type": "income"])
+        _ = try store.writeLocal("/finance/categories/\(rebuiltID)", method: "DELETE", body: [:])
+        _ = try store.writeLocal("/finance/categories/\(otherID)", method: "PATCH", body: ["name": "墓碑午餐"])
+        CoreTests.check(store.rows("categories").first { FinanceLocalStore.id($0) == otherID }?["name"] as? String == "墓碑午餐", "允许活动分类重命名为墓碑名称")
+        var lastID = otherID
+        var historicalIDs = Set([categoryID, rebuiltID, otherID])
+        for round in 1...3 {
+            _ = try store.writeLocal("/finance/categories/\(lastID)", method: "DELETE", body: [:])
+            let next = try store.writeLocal("/finance/categories", method: "POST", body: ["name": "墓碑午餐", "type": "expense", "icon": "cup.and.saucer", "color": "#654321"]) as! [String: Any]
+            lastID = FinanceLocalStore.id(next)
+            CoreTests.check(historicalIDs.insert(lastID).inserted, "第 \(round) 轮删除重建不复用旧 ID")
+            let sameName = store.rows("categories").filter { $0["name"] as? String == "墓碑午餐" && $0["type"] as? String == "expense" }
+            CoreTests.check(sameName.count == round + 3 && sameName.filter { $0["deleted"] as? Bool != true }.count == 1, "多轮重建保留所有墓碑且仅一个活动分类")
+        }
+        let restored = try ledger(directory, "references")
+        CoreTests.check(restored.rows("categories").count == store.rows("categories").count && restored.rows("transactions").first { FinanceLocalStore.id($0) == oldTransactionID }?["categoryId"] as? Int == categoryID, "重新打开后保留多轮墓碑及原流水引用")
+        CoreTests.check(restored.rows("transactions").first { FinanceLocalStore.id($0) == FinanceLocalStore.id(newTransaction) }?["categoryId"] as? Int == rebuiltID, "多轮重建不迁移前轮新流水的原分类引用")
+        var newBody = payment(accountID, key: "tombstone-new-001"); newBody["categoryId"] = categoryID
+        do {
+            _ = try store.writeLocal("/finance/transactions", method: "POST", body: newBody)
+            CoreTests.check(false, "新流水禁止引用墓碑分类")
+        } catch { CoreTests.check(true, "新流水禁止引用墓碑分类") }
+        _ = try store.writeLocal("/finance/transactions/\(oldTransactionID)", method: "PATCH", body: ["description": "保留历史分类"])
+        CoreTests.check(store.rows("transactions").first { FinanceLocalStore.id($0) == oldTransactionID }?["categoryId"] as? Int == categoryID, "旧流水编辑保留墓碑分类引用")
+        _ = try store.writeLocal("/finance/transactions/\(oldTransactionID)/refund", method: "POST", body: ["requestId": "tombstone-refund-001", "amount": "1.00", "transactionDate": "2026-09-29", "description": ""])
+        CoreTests.check(store.rows("transactions").contains { FinanceLocalStore.id($0, "refundParentId") == oldTransactionID && FinanceLocalStore.id($0, "categoryId") == categoryID }, "旧流水退款保留墓碑分类引用")
+
+        var pendingSpace = store.space
+        pendingSpace["transactions"] = [["id": 9_000_000_000_000, "accountId": accountID, "type": "expense", "amount": "1.00", "fee": "0.00", "counterparty": "", "description": "", "transactionDate": "2026-09-29", "status": "pending", "categoryId": categoryID]]
+        _ = try FinanceLocalStore.apply("/finance/transactions/9000000000000/confirm", method: "POST", body: [:], newID: 9_000_000_000_002, space: &pendingSpace)
+        CoreTests.check((pendingSpace["transactions"] as? [[String: Any]])?.first?["status"] as? String == "posted", "确认旧流水允许保留墓碑分类")
+
+        let sync = try ledger(directory, "remap")
+        let syncCategory = try sync.writeLocal("/finance/categories", method: "POST", body: ["name": "待删分类", "type": "expense", "color": "#123456"]) as! [String: Any]
+        let syncLocalID = FinanceLocalStore.id(syncCategory)
+        _ = try sync.writeLocal("/finance/categories/\(syncLocalID)", method: "DELETE", body: [:])
+        let createCommand = sync.queue.first!
+        try sync.acknowledge(createCommand, result: ["id": 77, "name": "待删分类", "type": "expense", "color": "#123456"])
+        CoreTests.check(sync.mappedPath("/finance/categories/\(syncLocalID)") == "/finance/categories/77", "分类 create 回执映射后 delete 使用服务器 ID")
+        CoreTests.check(sync.rows("categories").first { FinanceLocalStore.id($0) == 77 }?["deleted"] as? Bool == true, "分类 ID 重映射保留本地墓碑")
+        let deleteCommand = sync.queue.first!
+        try sync.acknowledge(deleteCommand, result: ["id": 77, "deleted": true])
+        CoreTests.check(sync.queue.isEmpty && sync.rows("categories").first { FinanceLocalStore.id($0) == 77 }?["deleted"] as? Bool == true, "分类删除回执保留墓碑并清空队列")
+    }
+
+    /// 验证同名重建的真实传输封装与下载期间重放；参数：无；返回值：无；固定 fake 核对旧建→删→新建→流水的独立 ID，多个墓碑不合并，失败抛错或断言，不访问线上。
+    static func categoryRecreationSync() async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent("category-recreation-sync-" + UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let store = try ledger(directory, "sync")
+        let localAccount = try account(store, name: "现金", balance: "100.00")
+        let input: [String: Any] = ["name": "同名午餐", "type": "expense", "groupKey": "food", "icon": "fork.knife", "color": "#123456"]
+        let old = try store.writeLocal("/finance/categories", method: "POST", body: input) as! [String: Any]
+        let oldID = FinanceLocalStore.id(old)
+        _ = try store.writeLocal("/finance/categories/\(oldID)", method: "DELETE", body: [:])
+        var nextInput = input; nextInput["icon"] = "cup.and.saucer"; nextInput["color"] = "#654321"
+        let current = try store.writeLocal("/finance/categories", method: "POST", body: nextInput) as! [String: Any]
+        let currentID = FinanceLocalStore.id(current)
+        var body = payment(localAccount, key: "recreation-before-download"); body["categoryId"] = currentID
+        _ = try store.writeLocal("/finance/transactions", method: "POST", body: body)
+        CoreTests.check(oldID != currentID && store.queue.count == 5, "旧建删与新建流水分别排队")
+        try store.enable(server: "https://test.invalid/api", profile: Profile(id: 1, account: "categories", nickname: "测试", role: "user"))
+        let configuration = URLSessionConfiguration.ephemeral; configuration.protocolClasses = [StubProtocol.self]
+        let api = APIClient(baseURL: "https://test.invalid/api", session: URLSession(configuration: configuration)); api.token = "test"
+        defer { StubProtocol.handler = nil }
+
+        // 以下是独立预置的云端资料与命令回执；不从本地 apply 生成结果，避免以被测实现验证自身。
+        let remoteAccount: [String: Any] = ["id": 7, "name": "现金", "accountType": "cash", "balance": "100.00", "availableBalance": "100.00", "currency": "CNY", "archived": false]
+        var remoteOld = input; remoteOld["id"] = 71; remoteOld["deleted"] = false
+        var deletedOld = remoteOld; deletedOld["deleted"] = true
+        var ancient = deletedOld; ancient["id"] = 70; ancient["icon"] = "carrot"; ancient["color"] = "#ABCDEF"
+        var remoteCurrent = nextInput; remoteCurrent["id"] = 73; remoteCurrent["deleted"] = false
+        var deletedCurrent = remoteCurrent; deletedCurrent["deleted"] = true
+        var remoteNewest = remoteCurrent; remoteNewest["id"] = 74; remoteNewest["icon"] = "takeoutbag.and.cup.and.straw"
+        var remoteTransaction = payment(7, key: "recreation-before-download")
+        remoteTransaction["id"] = 91; remoteTransaction["categoryId"] = 73; remoteTransaction["status"] = "posted"
+        remoteTransaction["fee"] = "0.00"; remoteTransaction["counterparty"] = ""; remoteTransaction["description"] = ""
+        var newestTransaction = remoteTransaction
+        newestTransaction["id"] = 92; newestTransaction["categoryId"] = 74; newestTransaction["requestId"] = "recreation-during-download"; newestTransaction["amount"] = "5.00"
+        var firstAccount = remoteAccount; firstAccount["balance"] = "80.00"; firstAccount["availableBalance"] = "80.00"
+        var lastAccount = firstAccount; lastAccount["balance"] = "75.00"; lastAccount["availableBalance"] = "75.00"
+        let firstSnapshot: [String: Any] = ["schemaVersion": 1, "accounts": [firstAccount], "categories": [ancient, deletedOld, remoteCurrent], "transactions": [remoteTransaction], "presets": [], "plans": [:], "installments": []]
+        let lastSnapshot: [String: Any] = ["schemaVersion": 1, "accounts": [lastAccount], "categories": [ancient, deletedOld, deletedCurrent, remoteNewest], "transactions": [remoteTransaction, newestTransaction], "presets": [], "plans": [:], "installments": []]
+        let server = CategoryRecreationSyncServer(steps: [
+            .init(operation: "finance.account.create", id: 0, categoryID: nil, result: remoteAccount),
+            .init(operation: "finance.category.create", id: 0, categoryID: nil, result: remoteOld),
+            .init(operation: "finance.category.delete", id: 71, categoryID: nil, result: deletedOld),
+            .init(operation: "finance.category.create", id: 0, categoryID: nil, result: remoteCurrent),
+            .init(operation: "finance.transaction.create", id: 0, categoryID: 73, result: remoteTransaction),
+            .init(operation: "finance.category.delete", id: 73, categoryID: nil, result: deletedCurrent),
+            .init(operation: "finance.category.create", id: 0, categoryID: nil, result: remoteNewest),
+            .init(operation: "finance.transaction.create", id: 0, categoryID: 74, result: newestTransaction)
+        ], snapshots: [firstSnapshot, lastSnapshot])
+        // 传输回调输入真实编码请求，返回静态脚本回执；身份或顺序错误由替身立即拒绝。
+        StubProtocol.handler = { request in try server.respond(request) }
+        // 下载钩子输入快照序号、返回值无；首份快照生成后在主线程写入删、建、流水，以触发实际 synchronize 重放。
+        server.snapshotHook = { index in
+            guard index == 0 else { return }
+            let completed = DispatchSemaphore(value: 0)
+            Task { @MainActor in
+                defer { completed.signal() }
+                do {
+                    let duplicate = try store.writeLocal("/finance/categories", method: "POST", body: nextInput) as! [String: Any]
+                    CoreTests.check(FinanceLocalStore.id(duplicate) == 73 && store.queue.isEmpty, "上传后活动同名去重忽略较早墓碑")
+                    _ = try store.writeLocal("/finance/categories/73", method: "DELETE", body: [:])
+                    var newestInput = nextInput; newestInput["icon"] = "takeoutbag.and.cup.and.straw"
+                    let newest = try store.writeLocal("/finance/categories", method: "POST", body: newestInput) as! [String: Any]
+                    var paymentBody = payment(7, amount: "5.00", key: "recreation-during-download")
+                    paymentBody["categoryId"] = FinanceLocalStore.id(newest)
+                    _ = try store.writeLocal("/finance/transactions", method: "POST", body: paymentBody)
+                } catch { preconditionFailure("下载期间同名重建失败：\(error)") }
+            }
+            precondition(completed.wait(timeout: .now() + 5) == .success, "下载期间写入未完成")
+        }
+        try await store.synchronize(api: api)
+        CoreTests.check(store.mappedID(oldID, table: "categories") == 71 && store.mappedID(currentID, table: "categories") == 73, "旧墓碑与新分类分别映射服务器 ID")
+        let replayed = store.rows("categories")
+        let newest = replayed.first { $0["deleted"] as? Bool != true }!
+        let newestID = FinanceLocalStore.id(newest)
+        CoreTests.check(newestID >= 1_000_000_000_000 && replayed.count == 4 && store.queue.count == 3, "多个同名墓碑和活动快照上重放后保留新临时 ID 与全部墓碑")
+        for expected in [ancient, deletedOld, deletedCurrent] {
+            let actual = replayed.first { FinanceLocalStore.id($0) == FinanceLocalStore.id(expected) }!
+            CoreTests.check(NSDictionary(dictionary: actual).isEqual(to: expected), "重放不合并或恢复墓碑，保留各自名称图标颜色")
+        }
+        let replayedPayment = store.rows("transactions").first { $0["requestId"] as? String == "recreation-during-download" }!
+        CoreTests.check(FinanceLocalStore.id(replayedPayment, "categoryId") == newestID && store.rows("transactions").first { FinanceLocalStore.id($0) == 91 }?["categoryId"] as? Int == 73, "重放中新流水引用新 ID，旧流水仍引用原分类")
+        balance(store, 7, "75.00")
+        let reopened = try ledger(directory, "sync")
+        try await reopened.synchronize(api: api)
+        server.checkComplete()
+        CoreTests.check(reopened.queue.isEmpty && reopened.mappedID(newestID, table: "categories") == 74, "重启后新分类回执只重映射新身份并清空队列")
+        CoreTests.check(reopened.rows("categories").count == 4 && reopened.rows("categories").filter { $0["deleted"] as? Bool != true }.count == 1, "完整快照保留三个同名墓碑和唯一活动分类")
+        CoreTests.check(reopened.rows("transactions").first { FinanceLocalStore.id($0) == 91 }?["categoryId"] as? Int == 73 && reopened.rows("transactions").first { FinanceLocalStore.id($0) == 92 }?["categoryId"] as? Int == 74, "快照下载后新旧流水仍分别引用原 ID")
+        balance(reopened, 7, "75.00")
+    }
+
     /// 执行离线业务、磁盘恢复及真实传输封装测试；参数：无；返回值：无，失败抛错或断言，不访问实际网络和钥匙串。
     static func run() async throws {
+        try categoryTombstones()
+        try await categoryRecreationSync()
         try transactionEditing()
         try reimbursementAndCategoryEditing()
+        try await loanPlanReading()
         // 使用虚构号码验证本机保存、同步脱敏及快照合并，防止保存或下载后丢失完整号码。
         let card = try AccountCard(id: "card-test", name: "测试卡", maskedAccountNumber: "1234-5678 9012 3456").normalized()
         precondition(card.maskedAccountNumber == "1234567890123456")

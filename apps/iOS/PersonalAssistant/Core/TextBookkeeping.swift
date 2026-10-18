@@ -148,7 +148,7 @@ nonisolated enum TextBookkeepingParser {
     /// 从已有同类型分类中提出唯一建议；参数：text 为用户原文，type 为 expense/income/transfer，categories 为真实分类；返回值：唯一匹配 ID 或 0，不生成分类，转账不建议分类。
     static func suggestedCategory(in text: String, type: String, categories: [TransactionCategory]) -> Int {
         guard ["expense", "income"].contains(type) else { return 0 }
-        let available = categories.filter { $0.type == type }
+        let available = categories.filter { !$0.deleted && $0.type == type }
         let explicit = available.filter { !$0.name.isEmpty && text.contains($0.name) }
         if !explicit.isEmpty { return explicit.count == 1 ? explicit[0].id : 0 }
         let names: [String]

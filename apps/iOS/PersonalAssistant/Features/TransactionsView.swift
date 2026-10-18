@@ -632,6 +632,7 @@ struct TransactionEditor: View {
     /// 返回可记账的账户；参数：无；返回值：未禁用的真实账户，不生成示例账户。
     private var availableAccounts: [FinancialAccount] { store.accounts.filter { $0.selectable != false } }
     /// 构建分类优先的记账页；参数：无；返回值：分类网格、紧凑字段栏和底部金额键盘，真实保存沿用账本接口。
+    /// 副作用：交互更新本页草稿，切换收支类型时清除不匹配分类，仅编辑原流水时允许保留原已删除分类；错误由保存流程呈现，本属性不抛错。
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -672,8 +673,10 @@ struct TransactionEditor: View {
                         .presentationCompactAdaptation(.sheet)
                 }
                 .onChange(of: type) { _, value in
-                    // 类型切换回调接收新旧类型、返回无；仅清除不匹配分类，保留有效金额与账户。
-                    if store.categories.first(where: { $0.id == categoryID })?.type != value { categoryID = 0 }
+                    // 类型切换回调接收新旧类型、返回值无；编辑预填收入也会触发，不能清空原流水的历史分类引用。
+                    let category = store.categories.first(where: { $0.id == categoryID })
+                    let retainingOriginal = editingTransaction?.categoryId == categoryID && editingTransaction?.type == value
+                    if category?.type != value || (category?.deleted == true && !retainingOriginal) { categoryID = 0 }
                     if categoryTemplate?.group.type != value { categoryTemplate = nil }
                     if value != "expense" { reimbursementStatus = "" }
                     saved = false
@@ -681,18 +684,23 @@ struct TransactionEditor: View {
                 .task { populate() }
         }
     }
-    /// 返回当前分类名称；参数：无；返回值：待保存模板或已有分类名，未选择时显示选择提示。
+    /// 返回当前分类名称；参数：无；返回值：待保存模板或已有分类名，编辑时原墓碑仍显示历史名称，未选择时显示选择提示。
     private var selectedCategoryName: String {
-        categoryTemplate?.item.name ?? store.categories.first(where: { $0.id == categoryID })?.name ?? "请选择分类"
+        categoryTemplate?.item.name ?? store.categories.first(where: {
+            $0.id == categoryID && (!$0.deleted || (editingTransaction?.categoryId == $0.id && editingTransaction?.type == type))
+        })?.name ?? "请选择分类"
     }
-    /// 解析待保存分类；参数：无；返回值：无；模板先复用同类型同名分类，否则保存目录字段并取得真实 ID，失败抛错且保留草稿供重试。
+    /// 解析待保存分类；参数：无；返回值：无；仅处理非转账的目录草稿，并要求模板分组与当前收支类型一致。
+    /// 副作用：刷新分类缓存，复用同类型同名活动分类；只有同名墓碑时 POST 创建新 ID 并追加缓存，保留原墓碑，成功后更新 categoryID 并清除模板草稿。
+    /// 错误：读取或创建失败向调用方抛出，保留模板供重试；无模板或当前为转账时直接返回。
     private func resolveCategory() async throws {
         guard let choice = categoryTemplate, type != "transfer" else { return }
         // 每次保存先读最新列表，覆盖从分类管理返回或网络超时重试时的新增分类，避免重复创建。
         let latest: [TransactionCategory] = try await store.api.request("/finance/categories")
         store.categories = latest
         let category: TransactionCategory
-        if let existing = latest.first(where: { $0.type == choice.group.type && $0.name == choice.item.name }) {
+        // 在 first 内排除墓碑，避免较早的历史同名记录遮蔽活动分类；没有活动分类时允许用新 ID 重建。
+        if let existing = latest.first(where: { !$0.deleted && $0.type == choice.group.type && $0.name.compare(choice.item.name, options: .caseInsensitive) == .orderedSame }) {
             category = existing
         } else {
             category = try await store.api.request("/finance/categories", method: "POST", body: ["name": choice.item.name, "type": choice.group.type, "color": choice.group.color, "groupKey": choice.group.id, "icon": choice.item.icon])
@@ -957,7 +965,7 @@ struct TransactionEditor: View {
             let value = initialPreset.transaction
             // 模板表示报销意向，使用模板创建的新支出仍需重新确认是否已经报销。
             reimbursementStatus = initialMode == "transaction" && !(value.reimbursementStatus ?? "").isEmpty ? "pending" : value.reimbursementStatus ?? ""
-            type = value.type; accountID = value.accountId; targetID = value.targetAccountId ?? 0; amount = value.amount; discount = value.discount ?? "0.00"; fee = value.fee ?? "0.00"; rebate = value.rebate ?? "0.00"; rebateAccountID = value.rebateAccountId ?? 0; rebatePending = value.rebatePending ?? false; counterparty = value.counterparty; description = value.description; categoryID = value.categoryId ?? 0
+            type = value.type; accountID = value.accountId; targetID = value.targetAccountId ?? 0; amount = value.amount; discount = value.discount ?? "0.00"; fee = value.fee ?? "0.00"; rebate = value.rebate ?? "0.00"; rebateAccountID = value.rebateAccountId ?? 0; rebatePending = value.rebatePending ?? false; counterparty = value.counterparty; description = value.description; categoryID = store.categories.first(where: { !$0.deleted && $0.id == (value.categoryId ?? 0) })?.id ?? 0
         }
         if let initialLoanID { type = "transfer"; targetID = initialLoanID; description = "贷款本金还款" }
         if let initialRepaymentID { type = "transfer"; targetID = initialRepaymentID; description = "信用卡还款"; amount = initialRepaymentAmount ?? "" }

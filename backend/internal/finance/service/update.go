@@ -12,7 +12,7 @@ import (
 	"personal_assistant_server/internal/finance/repository"
 )
 
-// updateTransaction 更正流水，财务变更原子重算余额；参数：db 为持用户锁的事务，owner 为身份，in 含流水 ID 和部分字段；返回值：更新后的流水或校验/数据库错误；失败必须回滚，白名单 map 保留零值，报销等资料更正不冲销余额且允许分期子单，关联分期及退款子项的财务字段由原业务维护。
+// updateTransaction 更正流水，财务变更原子重算余额；参数：db 为持用户锁的事务，owner 为身份，in 含流水 ID 和部分字段；返回值：更新后的流水或校验/数据库错误；失败必须回滚，白名单 map 保留零值，仅原分类 ID 可沿用墓碑，报销等资料更正不冲销余额且允许分期子单，关联分期及退款子项的财务字段由原业务维护。
 func (s *Service) updateTransaction(db *gorm.DB, owner uint64, in Input) (domain.Transaction, error) {
 	var row domain.Transaction
 	// 读取满足条件的目标记录。
@@ -65,7 +65,8 @@ func (s *Service) updateTransaction(db *gorm.DB, owner uint64, in Input) (domain
 	}
 	// 序列化业务数据，供存储或响应使用。
 	encoded, _ = json.Marshal(merged)
-	// 严格解析业务输入，避免无效字段进入操作流程。
+	// 重新解码到独立 DTO；指针字段不能与原记录共享，否则改选分类会同时篡改用于墓碑校验的原 ID。
+	candidate = domain.TransactionInput{}
 	if e := Decode(encoded, &candidate); e != nil {
 		return row, e
 	}
@@ -79,7 +80,7 @@ func (s *Service) updateTransaction(db *gorm.DB, owner uint64, in Input) (domain
 			return row, e
 		}
 		// 确认交易引用的账户与分类属于当前用户。
-		if e := validateReferences(db, owner, candidate); e != nil {
+		if e := validateReferences(db, owner, candidate, row.CategoryID); e != nil {
 			return row, e
 		}
 	} else {
@@ -88,19 +89,9 @@ func (s *Service) updateTransaction(db *gorm.DB, owner uint64, in Input) (domain
 			// 拒绝本次操作：流水文本无效。
 			return row, Invalid("流水文本无效")
 		}
-		if candidate.CategoryID != nil {
-			var category domain.Category
-			// 读取满足条件的目标记录。
-			var e error
-			category, e = repository.ReadCategory(db, owner, *candidate.CategoryID)
-			if e != nil {
-				// 将数据库查询失败转换为业务错误。
-				return row, missing(e)
-			}
-			if candidate.Type == "transfer" || category.Type != candidate.Type {
-				// 拒绝本次操作：分类类型不匹配。
-				return row, Invalid("分类类型不匹配")
-			}
+		// 资料更正可沿用原墓碑，改选分类必须有效；不额外校验未更改的历史账户状态。
+		if err := validateCategoryReference(db, owner, candidate.CategoryID, candidate.Type, row.CategoryID); err != nil {
+			return row, err
 		}
 	}
 	next := row

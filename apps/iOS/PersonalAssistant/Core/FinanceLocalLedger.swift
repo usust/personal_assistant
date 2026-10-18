@@ -15,7 +15,7 @@ extension FinanceLocalStore {
             if parts.count > 2, let id = Int(parts[2]), let preset = rows("presets").first(where: { Self.id($0) == id }), (preset["frequency"] as? String ?? "") != "" { return false }
             return parts.count <= 3
         }
-        if parts[1] == "categories" { return (parts.count == 2 && method == "POST") || (parts.count == 3 && Int(parts[2]).map { $0 > 0 } == true && method == "PATCH") }
+        if parts[1] == "categories" { return (parts.count == 2 && method == "POST") || (parts.count == 3 && Int(parts[2]).map { $0 > 0 } == true && ["PATCH", "DELETE"].contains(method)) }
         if parts[1] == "transactions" {
             // 报销仅更正资料，分期子单也可离线更新；其他关联财务变更仍交由云端处理。
             if parts.count == 3, method == "PATCH", !body.isEmpty, Set(body.keys).isSubset(of: ["reimbursementStatus"]),
@@ -40,7 +40,14 @@ extension FinanceLocalStore {
             guard let original = existing["localInput"] as? [String: Any], NSDictionary(dictionary: original).isEqual(to: body) else { throw Self.failure("模板标识冲突") }
             return existing
         }
-        if path == "/finance/categories", let existing = rows("categories").first(where: { $0["name"] as? String == body["name"] as? String && $0["type"] as? String == body["type"] as? String }) { return existing }
+        // 与同步端一致地去除首尾空白，只复用活动同名分类；墓碑的历史身份不参与去重。
+        if path == "/finance/categories", method == "POST", let name = body["name"] as? String,
+           let existing = rows("categories").first(where: {
+               $0["deleted"] as? Bool != true && $0["type"] as? String == body["type"] as? String &&
+               ($0["name"] as? String ?? "").trimmingCharacters(in: .whitespacesAndNewlines).compare(name.trimmingCharacters(in: .whitespacesAndNewlines), options: .caseInsensitive) == .orderedSame
+           }) {
+            return existing
+        }
         let operationID = UUID().uuidString
         var payload = body
         if path == "/finance/transactions", payload["requestId"] == nil { payload["requestId"] = operationID }
@@ -57,8 +64,8 @@ extension FinanceLocalStore {
         return result
     }
 
-    /// 在账本副本执行原子业务操作；参数：path/method 为端点，body 为请求，newID 为稳定本机 ID，space 为可变副本；返回值：结果或校验错误；调用者必须丢弃失败副本，不执行网络请求。
-    static func apply(_ path: String, method: String, body: [String: Any], newID: Int, space: inout [String: Any]) throws -> Any {
+    /// 在账本副本执行原子业务操作；参数：path/method 为端点，body 为请求，newID 为稳定本机 ID，space 为可变副本，preservingCategoryID 仅供旧流水财务编辑的内部验证保留原分类，新增调用必须为 0；返回值：结果或校验错误；调用者必须丢弃失败副本，不执行网络请求。
+    static func apply(_ path: String, method: String, body: [String: Any], newID: Int, space: inout [String: Any], preservingCategoryID: Int = 0) throws -> Any {
         let parts = path.split(separator: "/").map(String.init)
         guard parts.count >= 2 else { throw failure("操作无效") }
         let table = parts[1], target = parts.count > 2 ? Int(parts[2]) ?? 0 : 0
@@ -107,19 +114,24 @@ extension FinanceLocalStore {
             space[table] = records; return row
         }
         if table == "categories" {
+            let index = records.firstIndex(where: { id($0) == target })
+            if method == "DELETE" {
+                // 分类删除只写墓碑，不移除记录；重复删除直接返回同一墓碑，保证历史流水仍能按 ID 找到原分类。
+                guard parts.count == 3, target > 0, body.isEmpty, let index else { throw failure("分类不存在或删除请求无效") }
+                if records[index]["deleted"] as? Bool != true { records[index]["deleted"] = true }
+                space[table] = records; return records[index]
+            }
             let allowed: Set<String> = ["name", "type", "groupKey", "icon", "color"]
             guard !body.isEmpty, Set(body.keys).isSubset(of: allowed), body.values.allSatisfy({ $0 is String }) else { throw failure("分类字段无效") }
             var row: [String: Any]
-            let index: Int?
             if method == "POST", parts.count == 2 {
-                row = ["id": newID, "color": "#808080"]
-                index = nil
-            } else if method == "PATCH", parts.count == 3, let found = records.firstIndex(where: { id($0) == target }) {
-                row = records[found]; index = found
+                row = ["id": newID, "color": "#808080", "deleted": false]
+            } else if method == "PATCH", parts.count == 3, let index, records[index]["deleted"] as? Bool != true {
+                row = records[index]
                 // type 仅兼容同值输入，绝不更新，避免历史流水及模板的分类引用跨收支类型。
                 if let type = body["type"] as? String, type != row["type"] as? String { throw failure("不能修改分类的收支类型") }
             } else { throw failure("分类不存在或操作无效") }
-            // 在副本合并经过白名单校验的字段；不覆盖 id、用户归属及未提交的展示资料。
+            // 在副本合并经过白名单校验的字段；不覆盖 id、删除墓碑及未提交的展示资料。
             for (key, value) in body where key != "type" || method == "POST" { row[key] = value }
             guard let rawName = row["name"] as? String, let type = row["type"] as? String,
                   ["expense", "income"].contains(type) else { throw failure("分类名称或类型无效") }
@@ -130,8 +142,8 @@ extension FinanceLocalStore {
             guard groupKey.isEmpty || CategoryCatalog.groups(for: type).contains(where: { $0.id == groupKey }) else { throw failure("分组与收支类型不匹配") }
             guard icon.isEmpty || icon.range(of: #"\A[a-z][a-z0-9.]{0,63}\z"#, options: .regularExpression) != nil else { throw failure("分类图标无效") }
             guard let color = row["color"] as? String, color.range(of: #"\A#[0-9A-Fa-f]{6}\z"#, options: .regularExpression) != nil else { throw failure("颜色格式无效") }
-            // 同类型名称按大小写不敏感比较并排除自身；全部验证成功后才写回账本，保留所有业务引用。
-            guard !records.contains(where: { id($0) != id(row) && $0["type"] as? String == type && ($0["name"] as? String ?? "").trimmingCharacters(in: .whitespacesAndNewlines).compare(name, options: .caseInsensitive) == .orderedSame }) else { throw failure("分类名称重复") }
+            // 名称仅在同类型的活动分类间唯一；墓碑保留原名称和外观，不阻止新建或重命名。
+            guard !records.contains(where: { $0["deleted"] as? Bool != true && id($0) != id(row) && $0["type"] as? String == type && ($0["name"] as? String ?? "").trimmingCharacters(in: .whitespacesAndNewlines).compare(name, options: .caseInsensitive) == .orderedSame }) else { throw failure("分类名称重复") }
             if let index { records[index] = row } else { records.append(row) }
             space[table] = records; return row
         }
@@ -176,7 +188,8 @@ extension FinanceLocalStore {
             let kind = row["type"] as? String ?? ""
             guard ["income", "expense", "transfer"].contains(kind), amount > 0, discount >= 0, discount < amount, fee >= 0, (kind == "expense" || discount == 0), (kind == "transfer" || fee == 0) else { throw failure("金额、优惠或手续费无效") }
             row["amount"] = money(amount - discount)
-            try validateTransaction(row, space: space)
+            // 内部财务更正只允许沿用原分类；普通新建调用保持默认 0，不能引用删除项。
+            try validateTransaction(row, space: space, preservingCategoryID: preservingCategoryID)
             try adjustBalances(row, direction: 1, space: &space)
             records.append(row)
             let rebate = try cents(body["rebate"] ?? "0.00")
@@ -212,7 +225,7 @@ extension FinanceLocalStore {
                 for child in records where id(child, "rebateParentId") == target && child["status"] as? String == "posted" {
                     try adjustBalances(child, direction: -1, space: &validationSpace)
                 }
-                let validated = try apply("/finance/transactions", method: "POST", body: input, newID: newID, space: &validationSpace) as! [String: Any]
+                let validated = try apply("/finance/transactions", method: "POST", body: input, newID: newID, space: &validationSpace, preservingCategoryID: id(previous, "categoryId")) as! [String: Any]
                 for key in body.keys { row[key] = validated[key] ?? NSNull() }
                 if body["amount"] != nil || body["discount"] != nil { row["amount"] = validated["amount"] }
                 let refunds = records.filter { id($0, "refundParentId") == target && $0["status"] as? String == "posted" }
@@ -243,8 +256,9 @@ extension FinanceLocalStore {
                     if let childIndex { records[childIndex] = child } else { records.append(child) }
                 }
             } else {
+                let originalCategoryID = id(row, "categoryId")
                 for (key, value) in body { row[key] = value }
-                try validateCategory(row, space: space)
+                try validateCategory(row, space: space, preservingCategoryID: originalCategoryID)
                 try validateReimbursement(row)
             }
         } else if parts.last == "refund" {
@@ -260,7 +274,7 @@ extension FinanceLocalStore {
             for (key, value) in body { refund[key] = value }
             refund["localInput"] = body
             refund["id"] = newID; refund["refundParentId"] = target; refund["amount"] = money(-amount); refund["fee"] = "0.00"
-            try validateTransaction(refund, space: space)
+            try validateTransaction(refund, space: space, preservingCategoryID: id(refund, "categoryId"))
             try adjustBalances(refund, direction: 1, space: &space)
             records.append(refund); space[table] = records; return refund
         } else if parts.last == "confirm" {
@@ -268,7 +282,7 @@ extension FinanceLocalStore {
             if row["status"] as? String == "pending" {
                 // 转账草稿确认可能生成返现子项，留给服务端原子处理，避免本机漏记关联收入。
                 guard try cents(row["rebate"] ?? "0.00") == 0 else { throw failure("含返现的草稿请联网确认") }
-                try validateTransaction(row, space: space); try adjustBalances(row, direction: 1, space: &space); row["status"] = "posted"
+                try validateTransaction(row, space: space, preservingCategoryID: id(row, "categoryId")); try adjustBalances(row, direction: 1, space: &space); row["status"] = "posted"
             }
         } else if parts.last == "void" || method == "DELETE" {
             let state = method == "DELETE" ? "deleted" : "voided"
@@ -281,15 +295,16 @@ extension FinanceLocalStore {
         records[index] = row; space[table] = records; return row
     }
 
-    /// 校验分类归属与收支类型；参数：row 为流水，space 为本机账本；返回值：无；非法分类或转账分类抛错。
-    static func validateCategory(_ row: [String: Any], space: [String: Any]) throws {
+    /// 校验分类归属与收支类型；参数：row 为流水，space 为本机账本，preservingCategoryID 为允许原流水继续使用的已删除分类 ID；返回值：无；非法分类、新引用墓碑或转账分类抛错。
+    static func validateCategory(_ row: [String: Any], space: [String: Any], preservingCategoryID: Int = 0) throws {
         for (key, limit) in [("counterparty", 128), ("description", 2000)] {
             guard let value = row[key] as? String, value.utf8.count <= limit else { throw failure("流水文本无效") }
         }
         let categoryID = id(row, "categoryId")
         if categoryID == 0 { return }
         let categories = space["categories"] as? [[String: Any]] ?? []
-        guard categories.contains(where: { id($0) == categoryID && $0["type"] as? String == row["type"] as? String }) else { throw failure("分类与收支类型不匹配") }
+        guard let category = categories.first(where: { id($0) == categoryID && $0["type"] as? String == row["type"] as? String }) else { throw failure("分类与收支类型不匹配") }
+        guard category["deleted"] as? Bool != true || categoryID == preservingCategoryID else { throw failure("分类已删除，不能新建引用") }
     }
     /// 校验报销资料；参数：row 为含收支类型及关联身份的流水；返回值：无；非法状态、非原始支出或非正金额标记抛错，不改变余额。
     static func validateReimbursement(_ row: [String: Any]) throws {
@@ -301,14 +316,14 @@ extension FinanceLocalStore {
                   try cents(row["amount"]) > 0 else { throw failure("仅原支出可标记报销") }
         }
     }
-    /// 校验交易日期、报销和关联账户；参数：row 为流水，space 为当前账本；返回值：无；引用、报销状态或日期无效抛错。
-    static func validateTransaction(_ row: [String: Any], space: [String: Any]) throws {
+    /// 校验交易日期、报销、分类墓碑和关联账户；参数：row 为流水，space 为当前账本，preservingCategoryID 为旧流水允许保留的已删除分类 ID；返回值：无；引用、报销状态或日期无效抛错。
+    static func validateTransaction(_ row: [String: Any], space: [String: Any], preservingCategoryID: Int = 0) throws {
         try validateReimbursement(row)
         guard let date = row["transactionDate"] as? String, date.count == 10, Values.day(Values.date(date)) == date else { throw failure("交易日期无效") }
         if let time = row["transactionTime"] as? String, !time.isEmpty,
            time.range(of: #"^([01][0-9]|2[0-3]):[0-5][0-9]$"#, options: .regularExpression) == nil { throw failure("交易时间无效") }
         if row["type"] as? String != "transfer", id(row, "targetAccountId") != 0 { throw failure("仅转账可指定转入账户") }
-        try validateCategory(row, space: space)
+        try validateCategory(row, space: space, preservingCategoryID: preservingCategoryID)
         let accounts = space["accounts"] as? [[String: Any]] ?? []
         var ids = [id(row, "accountId")]
         if row["type"] as? String == "transfer" {

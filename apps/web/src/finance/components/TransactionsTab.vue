@@ -22,8 +22,15 @@ const frequencyNames = { daily: '每天', weekly: '每周', monthly: '每月', y
 async function loadPresets() { presets.value = await getFinancePresets() }
 // 打开模板及周期管理；参数无；返回值完成 Promise。
 async function openPresets() { await loadPresets(); presetsVisible.value = true }
-// 应用模板到新流水；参数 item 为自己的模板；返回值完成 Promise，等待类型监听清空后填入关联字段。
-async function usePreset(item: FinancePreset) { openCreate(); draft.type = item.transaction.type || 'expense'; await nextTick(); Object.assign(draft, item.transaction, { transactionDate: today() }); presetsVisible.value = false }
+// 应用模板到新流水；参数 item 为自己的模板；返回值完成 Promise，等待类型监听后填入字段，已删除分类留空供重新选择。
+async function usePreset(item: FinancePreset) {
+  openCreate()
+  draft.type = item.transaction.type || 'expense'
+  await nextTick()
+  const categoryId = props.categories.find(category => !category.deleted && category.type === draft.type && category.id === item.transaction.categoryId)?.id
+  Object.assign(draft, item.transaction, { categoryId, transactionDate: today() })
+  presetsVisible.value = false
+}
 // 暂停或恢复周期；参数 item 为计划；返回值完成 Promise，恢复后补齐草稿。
 async function togglePreset(item: FinancePreset) { if (saving.value) return; saving.value = true; try { await updateFinancePreset(item.id, { enabled: !item.enabled }); await materializeRecurring(); await loadPresets(); await load() } finally { saving.value = false } }
 // 删除计划或模板；参数 item 为记录；返回值完成 Promise，确认取消不删除，既有流水保留。
@@ -47,7 +54,8 @@ const draft = reactive({ accountId: 0, targetAccountId: undefined as number | un
 const categoryDraft = reactive({ name: '', type: 'expense' as 'income' | 'expense', color: '#5658cf' })
 const accountMap = computed(() => Object.fromEntries(props.accounts.map(item => [item.id, item.name])))
 const categoryMap = computed(() => Object.fromEntries(props.categories.map(item => [item.id, item.name])))
-const visibleCategories = computed(() => props.categories.filter(item => item.type === draft.type))
+// 分类候选回调无参数，返回当前类型且未删除的分类；历史名称映射保留全部记录。
+const visibleCategories = computed(() => props.categories.filter(item => !item.deleted && item.type === draft.type))
 // 收支派生回调：无参数，返回当前页已入账收入；筛选回调接收流水、返回布尔值，映射回调接收流水、返回金额。
 const income = computed(() => sumMoney(items.value.filter(item => item.type === 'income' && item.status === 'posted').map(item => item.amount)))
 // 支出派生回调：无参数，返回当前页已入账支出；筛选和映射回调分别返回状态匹配值与金额。

@@ -40,19 +40,19 @@ struct TransactionCategoryPicker: View {
     }
     /// 判断分组是否有下级；参数：group 为一级目录；返回值：有推荐子项或非同名已添加分类时为 true，无副作用。
     private func hasSubcategories(_ group: CategoryGroup) -> Bool {
-        !group.items.isEmpty || store.categories.contains { $0.type == group.type && CategoryCatalog.group(for: $0).id == group.id && $0.name != group.name }
+        !group.items.isEmpty || store.categories.contains { !$0.deleted && $0.type == group.type && CategoryCatalog.group(for: $0).id == group.id && $0.name != group.name }
     }
     /// 选择一级分类；参数：group 为点击目录；返回值：无；有下级打开底部选择器，无下级直接暂存对应分类。
     private func selectGroup(_ group: CategoryGroup) {
         if hasSubcategories(group) { choosingGroup = group }
-        else if let category = store.categories.first(where: { $0.type == group.type && CategoryCatalog.group(for: $0).id == group.id }) { categoryID = category.id; categoryTemplate = nil }
+        else if let category = store.categories.first(where: { !$0.deleted && $0.type == group.type && CategoryCatalog.group(for: $0).id == group.id }) { categoryID = category.id; categoryTemplate = nil }
         else { categoryID = 0; categoryTemplate = (group, CategoryTemplate(name: group.name, icon: group.icon)) }
         if !hasSubcategories(group) { onSelection() }
     }
-    /// 返回选中分类对应的一级目录；参数：无；返回值：分类管理的分组 ID，未分类返回 nil。
+    /// 返回选中分类对应的一级目录；参数：无；返回值：分类管理的分组 ID，已删除或未分类返回 nil。
     private var selectedCategoryGroup: String? {
         if let categoryTemplate { return categoryTemplate.group.id }
-        guard let category = store.categories.first(where: { $0.id == categoryID }) else { return nil }
+        guard let category = store.categories.first(where: { !$0.deleted && $0.id == categoryID }) else { return nil }
         return CategoryCatalog.group(for: category).id
     }
     /// 构建统一分类图标；参数：name 为名称，symbol 为系统图标，selected 为选中状态，hasChildren 表示有下级分类；返回值：圆形图标、下级标记和名称，无副作用。
@@ -74,9 +74,14 @@ struct TransactionCategoryPicker: View {
     }
     /// 展示底部分类选择面板；参数：group 为当前收支的一级分组；返回值：默认横向网格、可切换列表的半屏内容，选择只暂存草稿且不离开记账页。
     private func categoryChoices(_ group: CategoryGroup) -> some View {
-        // 过滤回调接收已有分类或目录项，返回所属分组或是否尚未添加，口径与分类管理一致。
-        let existing = store.categories.filter { $0.type == group.type && CategoryCatalog.group(for: $0).id == group.id }
-        let suggested = group.items.filter { item in !store.categories.contains { $0.type == group.type && $0.name == item.name } }
+        // 过滤回调接收已有分类或目录项，返回所属分组或是否尚未添加，墓碑只保留历史查询用途。
+        let existing = store.categories.filter { !$0.deleted && $0.type == group.type && CategoryCatalog.group(for: $0).id == group.id }
+        let suggested = group.items.filter { item in
+            // 同类型同名墓碑也排除，避免保存推荐项时再次创建已删除分类。
+            !store.categories.contains {
+                $0.type == group.type && $0.name.compare(item.name, options: .caseInsensitive) == .orderedSame
+            }
+        }
         let choices = Group {
             ForEach(existing) { category in
                 // 选择回调无参数、无返回值；保存真实 ID 并收起底部面板，保留其他记账草稿。

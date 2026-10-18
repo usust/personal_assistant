@@ -162,7 +162,7 @@ extension FinanceLocalStore {
     func screenshotSuggestedCategory(_ suggestion: String) -> Int {
         let text = suggestion.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty else { return 0 }
-        let categories = rows("categories").filter { $0["type"] as? String == "expense" }
+        let categories = rows("categories").filter { $0["type"] as? String == "expense" && $0["deleted"] as? Bool != true }
         // 优先精确名称；旧识别结果可能组合了父子名称，仅在唯一命中时兼容包含关系。
         let exact = categories.filter { ($0["name"] as? String ?? "").caseInsensitiveCompare(text) == .orderedSame }
         if exact.count == 1 { return Self.id(exact[0]) }
@@ -247,7 +247,8 @@ extension FinanceLocalStore {
         var next = space
         let newID = document["nextLocalID"] as? Int ?? 1_000_000_000_000
         guard newID < 4_000_000_000_000 else { throw Self.failure("本机编号已用尽") }
-        let result = try Self.apply("/finance/transactions", method: "POST", body: fields, newID: newID, space: &next)
+        let preservingCategoryID = Self.id(fields, "categoryId") == book.jobs[index].categoryID ? book.jobs[index].categoryID : 0
+        let result = try Self.apply("/finance/transactions", method: "POST", body: fields, newID: newID, space: &next, preservingCategoryID: preservingCategoryID)
         var commands = next["queue"] as? [[String: Any]] ?? []
         commands.append(["operationId": operationID, "path": "/finance/transactions", "method": "POST", "body": fields, "localID": newID])
         book.jobs[index].state = "posted"; book.jobs[index].image = nil; book.jobs[index].message = "已入账"
@@ -278,7 +279,8 @@ extension FinanceLocalStore {
         var next = space
         let newID = document["nextLocalID"] as? Int ?? 1_000_000_000_000
         guard newID < 4_000_000_000_000 else { throw Self.failure("本机编号已用尽") }
-        let result = try Self.apply("/finance/transactions", method: "POST", body: body, newID: newID, space: &next)
+        let preservingCategoryID = mappedID(book.jobs[index].categoryID, table: "categories") == categoryID ? categoryID : 0
+        let result = try Self.apply("/finance/transactions", method: "POST", body: body, newID: newID, space: &next, preservingCategoryID: preservingCategoryID)
         var commands = next["queue"] as? [[String: Any]] ?? []
         commands.append(["operationId": operationID, "path": "/finance/transactions", "method": "POST", "body": body, "localID": newID])
         var completed = job; completed.state = "posted"; completed.message = "已记账 ¥" + extraction.amount; completed.image = nil
@@ -302,7 +304,7 @@ extension FinanceLocalStore {
         let spaceKey = activeKey, token = api.token, server = api.baseURL
         job.state = "processing"; job.message = "正在识别"; try self.updateScreenshot(job)
         do {
-            let result: ScreenshotExtraction = try await api.request("/ai/screenshot", method: "POST", body: ["configId": settings.configID, "configVersion": settings.configVersion, "image": "data:image/jpeg;base64," + image, "categories": rows("categories").filter { $0["type"] as? String == "expense" }.compactMap { $0["name"] as? String }])
+            let result: ScreenshotExtraction = try await api.request("/ai/screenshot", method: "POST", body: ["configId": settings.configID, "configVersion": settings.configVersion, "image": "data:image/jpeg;base64," + image, "categories": rows("categories").filter { $0["type"] as? String == "expense" && $0["deleted"] as? Bool != true }.compactMap { $0["name"] as? String }])
             guard isCurrent(), self.activeKey == spaceKey, api.baseURL == server, api.token == token,
                   try self.screenshotBook().settings == settings else { throw APIError(status: 0, message: "账号或截图设置已变化，请重新处理") }
             job.extraction = result

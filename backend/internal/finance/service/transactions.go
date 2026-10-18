@@ -12,8 +12,8 @@ import (
 	"personal_assistant_server/internal/finance/repository"
 )
 
-// validateReferences 校验账户和分类均属于操作者；参数：db 为事务，owner 为身份，in 为已通过结构校验的流水；返回值：权限或状态错误，无写入。
-func validateReferences(db *gorm.DB, owner uint64, in domain.TransactionInput) error {
+// validateReferences 校验账户和分类归属及状态；参数：db 为事务，owner 为身份，in 为已通过结构校验的流水，previousCategoryID 可省略或仅传一个从原记录读取的分类 ID，仅该原 ID 允许沿用墓碑；返回值：权限、状态或数据库错误，无写入。
+func validateReferences(db *gorm.DB, owner uint64, in domain.TransactionInput, previousCategoryID ...*uint64) error {
 	// 按所属用户读取账户并检查可用状态。
 	if _, e := account(db, owner, in.AccountID, true); e != nil {
 		return e
@@ -30,19 +30,25 @@ func validateReferences(db *gorm.DB, owner uint64, in domain.TransactionInput) e
 			return e
 		}
 	}
-	if in.CategoryID != nil {
-		var c domain.Category
-		// 读取满足条件的目标记录。
-		var e error
-		c, e = repository.ReadCategory(db, owner, *in.CategoryID)
-		if e != nil {
-			// 将数据库查询失败转换为业务错误。
-			return missing(e)
-		}
-		if c.Type != in.Type {
-			// 拒绝本次操作：分类与收支类型不匹配。
-			return Invalid("分类与收支类型不匹配")
-		}
+	return validateCategoryReference(db, owner, in.CategoryID, in.Type, previousCategoryID...)
+}
+
+// validateCategoryReference 校验分类引用；参数：db 为事务，owner 为可信归属，id 为可空分类，kind 为收支类型，previousID 可省略或仅传一个来自原记录的 ID；返回值：归属、类型、删除状态或数据库错误，无写入；仅沿用原 ID 时允许墓碑。
+func validateCategoryReference(db *gorm.DB, owner uint64, id *uint64, kind string, previousID ...*uint64) error {
+	if id == nil {
+		return nil
+	}
+	// 历史查询不全局过滤墓碑，此处针对新引用执行状态约束。
+	category, err := repository.ReadCategory(db, owner, *id)
+	if err != nil {
+		return missing(err)
+	}
+	if category.Type != kind {
+		return Invalid("分类与收支类型不匹配")
+	}
+	retained := len(previousID) == 1 && previousID[0] != nil && *previousID[0] == *id
+	if category.Deleted && !retained {
+		return Invalid("分类已删除，不能用于新引用")
 	}
 	return nil
 }
@@ -112,7 +118,7 @@ func apply(db *gorm.DB, owner uint64, row domain.Transaction, direction domain.M
 	return nil
 }
 
-// transition 确认草稿或作废流水，关联优惠随转账整体冲销、待到账优惠确认日为实际入账日；参数：db 为事务，owner 为身份，op 为固定动作，id 为目标；返回值：流水或状态错误，重复相同动作不重复改余额，分期主账单及分期子账单作废均拒绝。
+// transition 确认草稿或作废流水，关联优惠随转账整体冲销、待到账优惠确认日为实际入账日；参数：db 为事务，owner 为身份，op 为固定动作，id 为目标；返回值：流水或状态错误，重复相同动作不重复改余额，确认可沿用原已删除分类以保持历史分期入账，分期主账单及分期子账单作废均拒绝。
 func (s *Service) transition(db *gorm.DB, owner uint64, op string, id uint64) (domain.Transaction, error) {
 	var row domain.Transaction
 	// 读取满足条件的目标记录。
@@ -145,7 +151,7 @@ func (s *Service) transition(db *gorm.DB, owner uint64, op string, id uint64) (d
 		}
 		in := domain.TransactionInput{RebateAccountID: row.RebateAccountID, AccountID: row.AccountID, TargetAccountID: row.TargetAccountID, CategoryID: row.CategoryID, Type: row.Type}
 		// 确认交易引用的账户与分类属于当前用户。
-		if e := validateReferences(db, owner, in); e != nil {
+		if e := validateReferences(db, owner, in, row.CategoryID); e != nil {
 			return row, e
 		}
 		if row.RebateParentID != nil {

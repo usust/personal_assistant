@@ -67,7 +67,7 @@ export interface FinanceTransaction {
   updatedAt: string
 }
 
-export interface TransactionCategory { id: number; name: string; type: 'income' | 'expense'; color: string; isDefault: boolean }
+export interface TransactionCategory { id: number; name: string; type: 'income' | 'expense'; color: string; isDefault: boolean; deleted?: boolean }
 
 export interface CreditCard {
   id: number; name: string; institution: string; maskedAccountNumber: string

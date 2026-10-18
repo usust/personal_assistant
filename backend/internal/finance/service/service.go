@@ -141,6 +141,9 @@ func (s *Service) Execute(ctx context.Context, actor capability.Actor, op string
 		case "finance.category.update":
 			// 按归属校验并更新已提交的分类资料，保持收支类型及历史引用不变。
 			out, e = s.updateCategory(tx, actor.UserID, in)
+		case "finance.category.delete":
+			// 仅写入删除墓碑，沿用用户锁、事务和统一审计，保留所有历史引用。
+			out, e = s.deleteCategory(tx, actor.UserID, in.ID)
 		case "finance.transaction.get":
 			// 读取当前用户可访问的目标流水。
 			out, e = getTransaction(tx, actor.UserID, in.ID)

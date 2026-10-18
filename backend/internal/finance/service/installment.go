@@ -115,7 +115,7 @@ func calculateInstallment(principal domain.Money, terms domain.InstallmentTerms)
 	return plan, nil
 }
 
-// installment 读取、试算或原子转换支出；参数：db 为已锁定用户的事务，owner 为身份，op 为操作，in 含原账单 ID 和规则（可选报销状态覆盖原单并传给子单）；返回值：计划或错误，失败全部回滚，报销仅为分类资料。
+// installment 读取、试算或原子转换支出；参数：db 为已锁定用户的事务，owner 为身份，op 为操作，in 含原账单 ID 和规则（可选报销状态覆盖原单并传给子单）；返回值：计划或错误，失败全部回滚，新转换必须引用有效分类，已保存计划保留历史墓碑，报销仅为分类资料。
 func installment(db *gorm.DB, owner uint64, op string, in Input) (domain.InstallmentPlan, error) {
 	var bill domain.Transaction
 	var plan domain.InstallmentPlan
@@ -188,17 +188,9 @@ func installment(db *gorm.DB, owner uint64, op string, in Input) (domain.Install
 	if terms.CategoryID != nil {
 		bill.CategoryID = nil
 		if *terms.CategoryID != 0 {
-			var category domain.Category
-			// 读取满足条件的目标记录。
-			var err error
-			category, err = repository.ReadCategory(db, owner, *terms.CategoryID)
-			if err != nil {
-				// 将数据库查询失败转换为业务错误。
-				return plan, missing(err)
-			}
-			if category.Type != "expense" {
-				// 拒绝本次操作：分类类型不匹配。
-				return plan, Invalid("分类类型不匹配")
+			// 新转换分期不能为墓碑建立新的期次引用。
+			if err := validateCategoryReference(db, owner, terms.CategoryID, "expense"); err != nil {
+				return plan, err
 			}
 			bill.CategoryID = terms.CategoryID
 		}
@@ -222,6 +214,10 @@ func installment(db *gorm.DB, owner uint64, op string, in Input) (domain.Install
 	if bill.Type != "expense" || bill.Status != "posted" || bill.InstallmentParentID != nil || bill.RefundParentID != nil || refundCount > 0 {
 		// 拒绝本次操作：仅普通已入账支出可以转分期。
 		return plan, Invalid("仅普通已入账支出可以转分期")
+	}
+	// 即使省略 categoryId，也必须检查原账单继承的分类；已保存计划读取和幂等重试已在前面返回。
+	if err := validateCategoryReference(db, owner, bill.CategoryID, "expense"); err != nil {
+		return plan, err
 	}
 	// 按所属用户读取账户并检查可用状态。
 	if _, err := account(db, owner, bill.AccountID, true); err != nil {

@@ -16,7 +16,7 @@ struct CategoriesView: View {
     }
     /// 当前分组已有分类；参数：无；返回值：真实保存的分类，不包含目录模板。
     private var categories: [TransactionCategory] {
-        store.categories.filter { $0.type == type && CategoryCatalog.group(for: $0).id == group.id }
+        store.categories.filter { !$0.deleted && $0.type == type && CategoryCatalog.group(for: $0).id == group.id }
     }
     /// 构建顶部收支切换和独立滚动的左右分类栏；参数：无；返回值：适配深色与动态字号的分类管理页面。
     var body: some View {
@@ -170,18 +170,23 @@ private struct CategoryEditor: View {
     @Environment(AppStore.self) private var store
     @Environment(\.dismiss) private var dismiss
     @State var draft: CategoryDraft
-    @State private var iconGroup = ""
-    @State private var iconSearch = ""
+    @State private var choosingIcon = false
+    @State private var confirmingDelete = false
     @State private var busy = false
     @State private var error: String?
 
-    /// 编辑分类资料；参数：无；返回值：固定收支类型的名称、分组、颜色及图标表单，保存时锁定关闭。
+    /// 编辑分类资料；参数：无；返回值：固定收支类型的资料表单、独立图标选择入口和已有分类的删除操作，提交时锁定关闭。
     var body: some View {
         NavigationStack {
             Form {
                 Section {
                     HStack(spacing: 14) {
-                        SymbolTile(symbol: draft.icon, color: .listColor(draft.color)).accessibilityHidden(true)
+                        // 点击回调无参数、返回无；打开选择弹窗，仅在选中图标后修改草稿。
+                        Button { choosingIcon = true } label: {
+                            SymbolTile(symbol: draft.icon, color: .listColor(draft.color))
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("选择图标，\(CategoryCatalog.iconName(for: draft.icon, type: draft.type))")
                         TextField("分类名称", text: $draft.name).accessibilityLabel("分类名称")
                     }
                     Picker("分组", selection: $draft.groupKey) {
@@ -192,42 +197,26 @@ private struct CategoryEditor: View {
                     LabeledContent("类型", value: draft.type == "income" ? "收入" : "支出")
                     ColorPicker("颜色", selection: customColor, supportsOpacity: false)
                 }
-                Section("图标") {
-                    // 显式组合为一个表单行，避免嵌套 LabeledContent / Label 的自动样式产生额外占位。
-                    // 当前图标独立展示，不受目录筛选和搜索结果影响，库外的已保存符号也予以保留。
-                    HStack(spacing: 12) {
-                        Text("当前图标")
-                        Spacer(minLength: 0)
-                        HStack(spacing: 8) {
+                Section {
+                    Button { choosingIcon = true } label: {
+                        HStack(spacing: 12) {
+                            Text("图标").foregroundStyle(.primary)
+                            Spacer(minLength: 0)
                             Image(systemName: draft.icon)
-                            Text(CategoryCatalog.iconName(for: draft.icon))
+                            Text(CategoryCatalog.iconName(for: draft.icon, type: draft.type))
+                                .lineLimit(1)
+                            Image(systemName: "chevron.right")
+                                .font(.footnote.weight(.semibold)).foregroundStyle(.tertiary)
                         }
                         .foregroundStyle(Color.listColor(draft.color))
+                        .contentShape(Rectangle())
                     }
-                    .accessibilityElement(children: .ignore)
-                    .accessibilityLabel("当前图标，\(CategoryCatalog.iconName(for: draft.icon))")
-                    .accessibilityAddTraits(.isSelected)
-                    // 搜索控件使用普通文本框并由横向容器确定行高，随系统字号自然伸缩。
-                    HStack(spacing: 8) {
-                        Image(systemName: "magnifyingglass")
-                            .foregroundStyle(.secondary).accessibilityHidden(true)
-                        TextField("搜索图标", text: $iconSearch)
-                            .textFieldStyle(.plain)
-                            .textInputAutocapitalization(.never).autocorrectionDisabled()
-                            .accessibilityLabel("搜索图标")
-                    }
-                    Picker("图标分组", selection: $iconGroup) {
-                        Text("全部图标").tag("")
-                        ForEach(CategoryCatalog.groups) { group in
-                            Text("\(group.type == "income" ? "收入" : "支出") · \(group.name)").tag(group.id)
-                        }
-                    }
-                    if visibleIcons.isEmpty {
-                        Text("没有匹配图标").foregroundStyle(.secondary)
-                    } else {
-                        LazyVGrid(columns: [GridItem(.adaptive(minimum: 56))], spacing: 14) {
-                            ForEach(visibleIcons) { option in iconButton(option) }
-                        }.padding(.vertical, 8)
+                    .accessibilityLabel("选择图标，\(CategoryCatalog.iconName(for: draft.icon, type: draft.type))")
+                }
+                if draft.businessID != nil {
+                    Section {
+                        Button("删除分类", role: .destructive) { confirmingDelete = true }
+                            .frame(maxWidth: .infinity, minHeight: 44)
                     }
                 }
                 if let error { InlineError(message: error) }
@@ -238,11 +227,17 @@ private struct CategoryEditor: View {
                 // 保存回调无参数、返回无；有效输入只提交一次，空差异直接关闭。
                 SaveToolbar(busy: busy, valid: validName) { Task { await save() } }
             }
+            .sheet(isPresented: $choosingIcon) {
+                CategoryIconPicker(selection: $draft.icon, type: draft.type, color: .listColor(draft.color))
+            }
+            .alert("删除“\(draft.original?.name ?? draft.name)”？", isPresented: $confirmingDelete) {
+                Button("删除分类", role: .destructive) { Task { await delete() } }
+                Button("取消", role: .cancel) { }
+            } message: {
+                Text("历史流水保留原分类，删除后不可再选用。")
+            }
         }
     }
-
-    /// 图标搜索结果；参数：无；返回值：按选定目录与中文搜索词筛选的去重图标，当前选择不受结果影响。
-    private var visibleIcons: [CategoryIcon] { CategoryCatalog.icons(groupID: iconGroup, matching: iconSearch) }
 
     /// 校验名称；参数：无；返回值：去除首尾空白后非空且 UTF-8 不超过服务端 64 字节限制时为 true。
     private var validName: Bool {
@@ -250,17 +245,15 @@ private struct CategoryEditor: View {
         return !name.isEmpty && name.utf8.count <= 64
     }
 
-    /// 构建图标按钮；参数：option 为目录生成的有效系统符号与中文名称；返回值：至少 44 点点击区域、支持 VoiceOver 选中状态的按钮，仅更新草稿。
-    private func iconButton(_ option: CategoryIcon) -> some View {
-        let selected = draft.icon == option.symbol
-        // 点击回调无参数、返回无；只更新图标，不联动改写颜色和目录归属。
-        return Button { draft.icon = option.symbol } label: {
-            Image(systemName: option.symbol).font(.title2).frame(maxWidth: .infinity, minHeight: 52)
-                .background(selected ? Color.listColor(draft.color).opacity(0.16) : .clear, in: RoundedRectangle(cornerRadius: 14))
-                .overlay { RoundedRectangle(cornerRadius: 14).stroke(selected ? Color.listColor(draft.color) : .clear, lineWidth: 2) }
-                .contentShape(Rectangle())
-        }.buttonStyle(.plain).foregroundStyle(Color.listColor(draft.color))
-            .accessibilityLabel(option.name).accessibilityAddTraits(selected ? .isSelected : [])
+    /// 删除已有分类；参数：无；返回值：无；仅提交持久化 ID，失败保留表单，成功关闭并刷新，历史流水引用由账本保留。
+    private func delete() async {
+        guard !busy, let businessID = draft.businessID else { return }
+        busy = true; error = nil; defer { busy = false }
+        do {
+            try await store.api.mutate("/finance/categories/\(businessID)", method: "DELETE")
+            dismiss()
+            await store.refreshAfterMutation(.finance)
+        } catch { self.error = error.localizedDescription }
     }
 
     /// 系统颜色盘绑定；参数：无；返回值：将不透明 RGB 转为 #RRGGBB 的草稿绑定，无法转换的颜色保持原值。
@@ -289,5 +282,121 @@ private struct CategoryEditor: View {
             dismiss()
             await store.refreshAfterMutation(.finance)
         } catch { self.error = error.localizedDescription }
+    }
+}
+
+/// 分类图标独立选择弹窗；选择仅写入父表单草稿，关闭不提交分类资料。
+private struct CategoryIconPicker: View {
+    @Environment(\.dismiss) private var dismiss
+    @Binding var selection: String
+    let color: Color
+    @State private var scope: String
+    @State private var groupKey = ""
+    @State private var query = ""
+
+    /// 创建图标弹窗；参数：selection 为草稿系统符号绑定，type 为初始收入或支出范围，color 为当前分类颜色；返回值：优先展示对应收支图标的选择器，无持久化副作用。
+    init(selection: Binding<String>, type: String, color: Color) {
+        _selection = selection
+        _scope = State(initialValue: type)
+        self.color = color
+    }
+
+    /// 可选目录；参数：无；返回值：当前收支范围内的目录，全部范围时包含所有目录。
+    private var groups: [CategoryGroup] {
+        scope.isEmpty ? CategoryCatalog.groups : CategoryCatalog.groups(for: scope)
+    }
+
+    /// 当前搜索结果；参数：无；返回值：按收支、分组及关键词筛选的去重图标，保持目录顺序。
+    private var icons: [CategoryIcon] {
+        CategoryCatalog.icons(groupID: groupKey, matching: query, type: scope)
+    }
+
+    /// 构建图标筛选与搜索网格；参数：无；返回值：支持动态字号和 VoiceOver 的独立导航弹窗。
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 20) {
+                    HStack {
+                        Picker("图标范围", selection: $scope) {
+                            Text("收入图标").tag("income")
+                            Text("支出图标").tag("expense")
+                            Text("全部图标").tag("")
+                        }
+                        .onChange(of: scope) { _, _ in
+                            // 范围变化回调输入旧值和新值、返回无；清除旧分组，防止筛选条件互斥。
+                            groupKey = ""
+                        }
+                        Spacer(minLength: 0)
+                        Picker("图标分组", selection: $groupKey) {
+                            Text("全部分组").tag("")
+                            ForEach(groups) { group in
+                                Text(scope.isEmpty ? "\(group.type == "income" ? "收入" : "支出") · \(group.name)" : group.name)
+                                    .tag(group.id)
+                            }
+                        }
+                    }
+                    .pickerStyle(.menu)
+                    .tint(color)
+                    HStack(spacing: 10) {
+                        Text("当前图标").foregroundStyle(.secondary)
+                        Spacer(minLength: 0)
+                        Image(systemName: selection).foregroundStyle(color)
+                        Text(CategoryCatalog.iconName(for: selection, type: scope))
+                    }
+                    .font(.subheadline)
+                    .accessibilityElement(children: .combine)
+                    if icons.isEmpty {
+                        ContentUnavailableView {
+                            Label("没有匹配图标", systemImage: "magnifyingglass")
+                        } description: {
+                            Text("试试其他关键词或图标分组")
+                        }
+                    } else {
+                        LazyVGrid(columns: [GridItem(.adaptive(minimum: 72), spacing: 12)], spacing: 14) {
+                            ForEach(icons) { option in iconButton(option) }
+                        }
+                    }
+                }
+                .padding(20)
+            }
+            .scrollDismissesKeyboard(.interactively)
+            .background(Color(uiColor: .systemGroupedBackground))
+            .navigationTitle("选择图标").navigationBarTitleDisplayMode(.inline)
+            .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always), prompt: "搜索图标")
+            .textInputAutocapitalization(.never).autocorrectionDisabled()
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("取消") { dismiss() }
+                }
+            }
+        }
+        .presentationDetents([.large])
+    }
+
+    /// 构建带名称的图标按钮；参数：option 为去重后的目录符号；返回值：至少 44 点点击区域和可朗读选中态，点击只更新草稿符号并关闭弹窗，不改颜色及分类分组。
+    private func iconButton(_ option: CategoryIcon) -> some View {
+        let selected = selection == option.symbol
+        let name = CategoryCatalog.iconName(for: option.symbol, type: scope)
+        // 点击回调无输入、返回无；父表单保存前选择只存在于草稿中。
+        return Button {
+            selection = option.symbol
+            dismiss()
+        } label: {
+            VStack(spacing: 9) {
+                Image(systemName: option.symbol).font(.system(size: 26))
+                    .frame(height: 34).foregroundStyle(color)
+                Text(name).font(.caption).foregroundStyle(.primary)
+                    .multilineTextAlignment(.center).lineLimit(2)
+            }
+            .frame(maxWidth: .infinity, minHeight: 80).padding(6)
+            .background(selected ? color.opacity(0.12) : Color(uiColor: .secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 16))
+            .overlay {
+                RoundedRectangle(cornerRadius: 16).stroke(selected ? color : .clear, lineWidth: 2)
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(name)
+        .accessibilityAddTraits(selected ? .isSelected : [])
     }
 }

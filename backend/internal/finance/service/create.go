@@ -124,7 +124,7 @@ func (s *Service) saveAccount(db *gorm.DB, owner uint64, op string, in Input) (d
 	return a, e
 }
 
-// createCategory 新建个人分类；参数：db 为事务，owner 为身份，raw 为 name/type/color 及可选 groupKey/icon 对象；返回值：分类或错误，同名同类型冲突。
+// createCategory 新建个人分类；参数：db 为持用户锁的事务，owner 为可信身份，raw 为 name/type/color 及可选 groupKey/icon 对象；返回值：全新 ID 的活动分类或校验、数据库错误，同名同类型活动分类返回冲突；同名墓碑保持原状。
 func (s *Service) createCategory(db *gorm.DB, owner uint64, raw json.RawMessage) (domain.Category, error) {
 	var in struct {
 		GroupKey string `json:"groupKey"`
@@ -156,13 +156,12 @@ func (s *Service) createCategory(db *gorm.DB, owner uint64, raw json.RawMessage)
 		// 拒绝本次操作：颜色必须为 #RRGGBB。
 		return domain.Category{}, Invalid("颜色必须为 #RRGGBB")
 	}
-	var count int64
-	// 统计符合条件的业务记录。
-	if e := repository.CountCategoryByName(db, owner, in.Name, in.Type, &count); e != nil {
-		return domain.Category{}, e
-	}
-	if count > 0 {
+	var existing domain.Category
+	// 仅活动分类占用名称；删除后创建全新 ID，不能恢复或覆盖历史墓碑。
+	if e := repository.FindCategoryByName(db, owner, in.Name, in.Type, &existing); e == nil {
 		return domain.Category{}, ErrConflict
+	} else if !errors.Is(e, gorm.ErrRecordNotFound) {
+		return domain.Category{}, e
 	}
 	row := domain.Category{OwnerID: owner, Name: in.Name, Type: in.Type, Color: in.Color, GroupKey: in.GroupKey, Icon: in.Icon}
 	// 保存新建的业务记录。
@@ -225,7 +224,7 @@ func (s *Service) createTransaction(db *gorm.DB, owner uint64, raw json.RawMessa
 	return row, e
 }
 
-// ensureCategories 补齐内置收支分类；参数：db 为已锁定用户记录的事务，owner 为身份；返回值：数据库错误或 nil；仅插入缺失的同类型同名分类，不覆盖已有 ID、图标或自定义资料。
+// ensureCategories 补齐内置收支分类；参数：db 为已锁定用户记录的事务，owner 为身份；返回值：数据库错误或 nil；仅插入缺失的同类型同名分类，墓碑也视为已存在，不覆盖已有 ID、删除状态、图标或自定义资料。
 func ensureCategories(db *gorm.DB, owner uint64) error {
 	var existing []domain.Category
 	// 读取符合业务条件的记录集合。

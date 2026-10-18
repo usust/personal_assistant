@@ -172,17 +172,19 @@ struct LoanAccountPlan: View {
             }
         }
     }
-    /// 加载完整计划；参数：无；返回值：无；会话切换或取消时丢弃响应，失败显示错误，不伪造数据。
+    /// 加载完整计划；参数：无；返回值：无；已有摘要时仍请求明细，缺少明细按加载失败处理；会话切换或取消时丢弃响应，不伪造数据。
     private func load() async {
         guard !loading else { return }
         guard let account else { plan = nil; return }
         let draft = LoanAccountDraft(account: account)
-        guard draft.enabled else { plan = nil; return }
+        guard draft.enabled || account.loanPlan != nil else { plan = nil; return }
         loading = true; error = nil; plan = nil; defer { loading = false }
         let generation = store.sessionID
         do {
             let result: LoanPlanSummary = try await store.api.request("/finance/accounts/\(accountID)/loan-plan")
             guard generation == store.sessionID, !Task.isCancelled else { return }
+            // 已配置但响应只有摘要属于读取失败，不能引导用户重新填写贷款资料。
+            guard result.schedule != nil else { throw APIError(status: 0, message: "贷款计划明细加载失败，请重试") }
             plan = result
         } catch { if generation == store.sessionID && !Task.isCancelled { self.error = error.localizedDescription } }
     }

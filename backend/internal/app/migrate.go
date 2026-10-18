@@ -8,13 +8,14 @@ import (
 
 	aiconfigmodel "personal_assistant_server/internal/aiconfig/model"
 	financemodel "personal_assistant_server/internal/finance/model"
+	financerepository "personal_assistant_server/internal/finance/repository"
 	healthmodel "personal_assistant_server/internal/health/model"
 	taskmodel "personal_assistant_server/internal/task/model"
 	"personal_assistant_server/internal/user/model"
 )
 
 // migrate 集中声明当前应用拥有的表，已删除的个人设置表不再迁移，也不删除历史数据。
-// 接收者：a 为已组装应用；参数：ctx 控制数据库操作；返回值：迁移错误，成功为 nil；可能创建表或补充字段。
+// 接收者：a 为已组装应用；参数：ctx 控制数据库操作；返回值：结构或分类索引迁移错误，成功为 nil；可能创建表、补充字段、回填墓碑版本并移除旧索引，失败阻止启动。
 func (a *App) migrate(ctx context.Context) error {
 	// 将应用负责的表迁移到当前模型结构。
 	if err := a.db.WithContext(ctx).AutoMigrate(
@@ -52,6 +53,10 @@ func (a *App) migrate(ctx context.Context) error {
 	); err != nil {
 		// 为失败补充当前操作的错误上下文。
 		return fmt.Errorf("迁移业务表失败: %w", err)
+	}
+	// AutoMigrate 先建立版本列和新唯一索引，再回填全部旧墓碑，最后删除旧索引；失败不得启动服务。
+	if err := financerepository.MigrateCategoryNameVersions(a.db.WithContext(ctx)); err != nil {
+		return fmt.Errorf("迁移分类名称唯一约束失败: %w", err)
 	}
 	return nil
 }

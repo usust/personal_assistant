@@ -184,7 +184,35 @@ nonisolated struct FinanceTransaction: Codable, Identifiable {
         return transactionDate + " " + transactionTime
     }
 }
-nonisolated struct TransactionCategory: Codable, Identifiable { let id: Int; let name: String; let type: String; let color: String; var groupKey: String? = nil; var icon: String? = nil }
+nonisolated struct TransactionCategory: Codable, Identifiable {
+    let id: Int
+    let name: String
+    let type: String
+    let color: String
+    var groupKey: String?
+    var icon: String?
+    var deleted: Bool
+
+    enum CodingKeys: String, CodingKey { case id, name, type, color, groupKey, icon, deleted }
+
+    /// 构造分类；参数：id 为稳定标识，name/type/color 为名称、收支类型和颜色，groupKey/icon 为可选目录资料，deleted 为墓碑且默认 false；返回值：分类，兼容旧调用。
+    init(id: Int, name: String, type: String, color: String, groupKey: String? = nil, icon: String? = nil, deleted: Bool = false) {
+        self.id = id; self.name = name; self.type = type; self.color = color
+        self.groupKey = groupKey; self.icon = icon; self.deleted = deleted
+    }
+
+    /// 解码分类；参数：decoder 为云端或本机编码器；返回值：分类，旧数据缺少 deleted 时默认为 false；字段类型错误继续抛出解码错误。
+    init(from decoder: Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        id = try values.decode(Int.self, forKey: .id)
+        name = try values.decode(String.self, forKey: .name)
+        type = try values.decode(String.self, forKey: .type)
+        color = try values.decode(String.self, forKey: .color)
+        groupKey = try values.decodeIfPresent(String.self, forKey: .groupKey)
+        icon = try values.decodeIfPresent(String.self, forKey: .icon)
+        deleted = try values.decodeIfPresent(Bool.self, forKey: .deleted) ?? false
+    }
+}
 nonisolated struct FinanceMetric: Codable { let name: String; let amount: String }
 nonisolated struct CashFlow: Codable { let month: String; let income: String; let expense: String; let net: String }
 nonisolated struct FinanceOverview: Codable {

@@ -15,7 +15,13 @@ extension FinanceLocalStore {
                 let related = rows("transactions").filter { Self.id($0, "accountId") == target || Self.id($0, "targetAccountId") == target }
                 return ["transactions": related.count, "snapshots": 0, "pending": related.filter { $0["status"] as? String == "pending" }.count]
             }
-            if parts.last == "loan-plan", let account = rows("accounts").first(where: { Self.id($0) == target }), let plan = account["loanPlan"], !(plan is NSNull) { return plan }
+            if parts.last == "loan-plan" {
+                // 同步账户只携带贷款摘要；缺少逐期明细时交由完整计划接口读取，不能把摘要当作未配置的计划。
+                guard let account = rows("accounts").first(where: { Self.id($0) == target }),
+                      let plan = account["loanPlan"] as? [String: Any],
+                      plan["schedule"] is [[String: Any]] else { return nil }
+                return plan
+            }
             if parts.last == "statement" || parts.last == "statements" { return try statement(target, summary: parts.last == "statement", filters: filters) }
         case "categories", "presets": return rows(table)
         case "transactions":

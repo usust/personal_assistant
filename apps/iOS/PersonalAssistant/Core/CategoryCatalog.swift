@@ -329,18 +329,85 @@ nonisolated enum CategoryCatalog {
             CategoryTemplate(name: "更多", icon: "ellipsis"), CategoryTemplate(name: "待定", icon: "questionmark.circle"),
             CategoryTemplate(name: "临时支出", icon: "exclamationmark.circle"),
         ],
+        // 收入按真实来源扩展图标与中文搜索别名，复用已有分组；不新增默认分类或修改历史资料。
         "salary": [
             CategoryTemplate(name: "现金", icon: "banknote.fill"), CategoryTemplate(name: "外币", icon: "dollarsign.circle"),
             CategoryTemplate(name: "人民币", icon: "yensign.circle"), CategoryTemplate(name: "钱包", icon: "wallet.pass"),
             CategoryTemplate(name: "银行", icon: "building.columns"),
+            CategoryTemplate(name: "发薪日", icon: "calendar.badge.clock"),
+            CategoryTemplate(name: "绩效提成", icon: "checkmark.seal"),
+            CategoryTemplate(name: "全勤奖励", icon: "calendar.badge.checkmark"),
+            CategoryTemplate(name: "员工福利", icon: "person.crop.rectangle"),
+            CategoryTemplate(name: "加班费", icon: "clock.badge.checkmark"),
+            CategoryTemplate(name: "餐补", icon: "fork.knife"),
+            CategoryTemplate(name: "交通补贴", icon: "bus"),
+            CategoryTemplate(name: "住房补贴", icon: "house"),
+            CategoryTemplate(name: "退休养老金", icon: "person.crop.circle.badge.checkmark"),
         ],
-        "side-job": [CategoryTemplate(name: "劳务", icon: "hammer.fill"), CategoryTemplate(name: "手工", icon: "wrench")],
+        "side-job": [
+            CategoryTemplate(name: "劳务", icon: "hammer.fill"), CategoryTemplate(name: "手工", icon: "wrench"),
+            CategoryTemplate(name: "专家咨询", icon: "person.crop.square"),
+            CategoryTemplate(name: "咨询服务", icon: "bubble.left.and.bubble.right"),
+            CategoryTemplate(name: "讲课培训", icon: "person.2.wave.2"),
+            CategoryTemplate(name: "家教辅导", icon: "graduationcap"),
+            CategoryTemplate(name: "写作稿酬", icon: "doc.text"),
+            CategoryTemplate(name: "翻译", icon: "character.bubble"),
+            CategoryTemplate(name: "设计接单", icon: "paintpalette"),
+            CategoryTemplate(name: "摄影约拍", icon: "camera.aperture"),
+            CategoryTemplate(name: "视频创作", icon: "video"),
+            CategoryTemplate(name: "直播收入", icon: "dot.radiowaves.left.and.right"),
+            CategoryTemplate(name: "音乐演出", icon: "music.mic"),
+            CategoryTemplate(name: "软件开发", icon: "chevron.left.forwardslash.chevron.right"),
+            CategoryTemplate(name: "技术服务", icon: "wrench.and.screwdriver"),
+            CategoryTemplate(name: "配送跑腿", icon: "bicycle"),
+            CategoryTemplate(name: "网约车", icon: "car.side"),
+            CategoryTemplate(name: "经营销售", icon: "storefront"),
+            CategoryTemplate(name: "电商收入", icon: "cart"),
+            CategoryTemplate(name: "商品订单", icon: "shippingbox"),
+            CategoryTemplate(name: "推广佣金", icon: "megaphone"),
+            CategoryTemplate(name: "版权授权", icon: "c.circle"),
+        ],
         "investment": [
             CategoryTemplate(name: "收益", icon: "chart.bar"), CategoryTemplate(name: "理财", icon: "chart.bar.fill"),
             CategoryTemplate(name: "资产配置", icon: "chart.pie.fill"), CategoryTemplate(name: "行情", icon: "chart.line.downtrend.xyaxis"),
+            CategoryTemplate(name: "存款利息", icon: "building.columns.circle"),
+            CategoryTemplate(name: "股票收益", icon: "chart.xyaxis.line"),
+            CategoryTemplate(name: "基金收益", icon: "chart.bar.xaxis"),
+            CategoryTemplate(name: "债券收益", icon: "doc.plaintext"),
+            CategoryTemplate(name: "股息分红", icon: "chart.pie"),
+            CategoryTemplate(name: "房屋租金", icon: "house.lodge"),
+            CategoryTemplate(name: "车位出租", icon: "parkingsign.circle"),
+            CategoryTemplate(name: "设备出租", icon: "desktopcomputer"),
+            CategoryTemplate(name: "资产增值", icon: "arrow.up.right.circle"),
+            CategoryTemplate(name: "投资回款", icon: "arrow.down.to.line"),
         ],
-        "gifts": [CategoryTemplate(name: "奖励", icon: "star.fill"), CategoryTemplate(name: "奖牌", icon: "medal.fill")],
-        "other-income": [CategoryTemplate(name: "入账", icon: "plus.circle"), CategoryTemplate(name: "收款", icon: "arrow.down.circle")],
+        "gifts": [
+            CategoryTemplate(name: "奖励", icon: "star.fill"), CategoryTemplate(name: "奖牌", icon: "medal.fill"),
+            CategoryTemplate(name: "红包礼金", icon: "envelope.open"),
+            CategoryTemplate(name: "亲友赠予", icon: "giftcard"),
+            CategoryTemplate(name: "节日礼金", icon: "party.popper"),
+            CategoryTemplate(name: "生日礼金", icon: "birthday.cake"),
+            CategoryTemplate(name: "婚礼礼金", icon: "heart.circle"),
+            CategoryTemplate(name: "比赛奖金", icon: "trophy"),
+            CategoryTemplate(name: "奖学金", icon: "graduationcap.fill"),
+            CategoryTemplate(name: "赞赏打赏", icon: "hands.clap"),
+            CategoryTemplate(name: "家人支持", icon: "person.2"),
+            CategoryTemplate(name: "公益资助", icon: "hands.sparkles"),
+        ],
+        "other-income": [
+            CategoryTemplate(name: "入账", icon: "plus.circle"), CategoryTemplate(name: "收款", icon: "arrow.down.circle"),
+            CategoryTemplate(name: "退款退货", icon: "arrow.uturn.backward.circle"),
+            CategoryTemplate(name: "返现返利", icon: "creditcard.and.123"),
+            CategoryTemplate(name: "报销到账", icon: "doc.text.viewfinder"),
+            CategoryTemplate(name: "押金退还", icon: "lock.open"),
+            CategoryTemplate(name: "税费退税", icon: "doc.text.fill"),
+            CategoryTemplate(name: "保险理赔", icon: "shield.lefthalf.filled"),
+            CategoryTemplate(name: "政府补助", icon: "building.columns.fill"),
+            CategoryTemplate(name: "二手转卖", icon: "tag"),
+            CategoryTemplate(name: "闲置出售", icon: "shippingbox.fill"),
+            CategoryTemplate(name: "赔偿补偿", icon: "checkmark.shield"),
+            CategoryTemplate(name: "意外所得", icon: "sparkles"),
+        ],
     ]
 
     static let iconLibrary: [CategoryIcon] = makeIconLibrary()
@@ -367,19 +434,33 @@ nonisolated enum CategoryCatalog {
         return result
     }
 
-    /// 搜索并筛选图标；参数：groupID 为目录键，nil 或空串表示全部，未知键返回空数组；query 为中文名称、目录、收支或符号名，空白分隔词须全部匹配；返回值：保持目录顺序的去重图标，无副作用。
-    static func icons(groupID: String? = nil, matching query: String = "") -> [CategoryIcon] {
+    /// 搜索并筛选图标；参数：groupID 为目录键，nil 或空串表示全部，未知键返回空数组；query 为中文名称、目录、收支或符号名，空白分隔词须全部匹配；type 为收入或支出范围，nil 或空串表示全部；返回值：保持目录顺序的去重图标，无副作用。
+    static func icons(groupID: String? = nil, matching query: String = "", type: String? = nil) -> [CategoryIcon] {
         let terms = query.split(whereSeparator: { $0.isWhitespace }).map(String.init)
-        // 筛选回调输入一个图标，返回是否同时符合目录和所有搜索词；合并的别名保证共享图标可从各原目录搜到。
+        let typeGroups = Set(groups.filter { $0.type == type }.map(\.id))
+        // 不兼容的范围与分组直接返回空集合，不能因餐具等共享符号泄漏支出分组。
+        if let type, !type.isEmpty, let groupID, !groupID.isEmpty, !typeGroups.contains(groupID) { return [] }
+        // 筛选回调输入一个图标，返回是否同时符合收支、目录和所有搜索词；共享图标合并别名，收入检索不丢失咨询或租金等中文关键词。
         return iconLibrary.filter { option in
+            if let type, !type.isEmpty, typeGroups.isDisjoint(with: option.groupIDs) { return false }
             if let groupID, !groupID.isEmpty, !option.groupIDs.contains(groupID) { return false }
             let text = ([option.name, option.symbol] + option.keywords).joined(separator: " ")
             return terms.allSatisfy { text.localizedStandardContains($0) }
         }
     }
 
-    /// 获取图标中文名称；参数：symbol 为已保存或候选系统符号；返回值：库内中文名称，库外符号返回“自定义图标”，不替换原始符号。
-    static func iconName(for symbol: String) -> String { iconLibrary.first { $0.symbol == symbol }?.name ?? "自定义图标" }
+    /// 获取图标中文名称；参数：symbol 为已保存或候选系统符号，type 为可选收支范围；返回值：优先返回该收支中的用途名，未指定时使用库内名称，库外返回“自定义图标”，不改原始符号。
+    static func iconName(for symbol: String, type: String? = nil) -> String {
+        if let type, !type.isEmpty {
+            for group in groups(for: type) {
+                if let item = (group.items + (additionalIcons[group.id] ?? [])).first(where: { $0.icon == symbol }) {
+                    return item.name
+                }
+                if group.icon == symbol { return group.name }
+            }
+        }
+        return iconLibrary.first { $0.symbol == symbol }?.name ?? "自定义图标"
+    }
 
     /// 获取收支分组；参数：type 为 expense 或 income；返回值：该类型有序分组，未知类型返回空数组。
     static func groups(for type: String) -> [CategoryGroup] { groups.filter { $0.type == type } }

@@ -157,7 +157,7 @@ nonisolated private final class ScreenshotUploadDelegate: NSObject, URLSessionDa
             guard let url = URL(string: server + "/ai/screenshot") else { throw APIError(status: 0, message: "服务器地址无效") }
             let context = ScreenshotUploadContext(id: job.id, spaceKey: finance.activeKey, server: server, tokenHash: Self.hash(token), settings: settings)
             let payload: [String: Any] = ["configId": settings.configID, "configVersion": settings.configVersion, "image": "data:image/jpeg;base64," + image,
-                                          "categories": finance.rows("categories").filter { $0["type"] as? String == "expense" }.compactMap { $0["name"] as? String }]
+                                          "categories": finance.rows("categories").filter { $0["type"] as? String == "expense" && $0["deleted"] as? Bool != true }.compactMap { $0["name"] as? String }]
             try ScreenshotUploadFiles.write(JSONEncoder().encode(context), id: job.id, suffix: "context")
             try ScreenshotUploadFiles.write(JSONSerialization.data(withJSONObject: payload), id: job.id, suffix: "payload")
             var request = URLRequest(url: url)

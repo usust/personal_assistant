@@ -162,7 +162,10 @@ private struct TransactionTemplateSheet: View {
         guard !busy else { return }; busy = true; defer { busy = false }
         let gross = (Decimal(string: transaction.amount) ?? 0) + (Decimal(string: transaction.discount ?? "0") ?? 0)
         var value: [String: Any] = ["type": transaction.type, "accountId": transaction.accountId, "amount": NSDecimalNumber(decimal: gross).stringValue, "discount": transaction.discount ?? "0.00", "counterparty": transaction.counterparty, "description": transaction.description, "fee": transaction.fee ?? "0.00"]
-        if let category = transaction.categoryId { value["categoryId"] = category }
+        if let category = transaction.categoryId, store.categories.contains(where: { !$0.deleted && $0.id == category }) {
+            // 新模板是新的分类引用；历史流水的墓碑分类不能随模板复制。
+            value["categoryId"] = category
+        }
         // 模板只继承需报销的意向，新生成支出不能直接继承上一笔的已报销结果。
         if !(transaction.reimbursementStatus ?? "").isEmpty { value["reimbursementStatus"] = "pending" }
         if let target = transaction.targetAccountId { value["targetAccountId"] = target }

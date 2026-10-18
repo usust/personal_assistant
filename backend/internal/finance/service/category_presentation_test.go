@@ -209,17 +209,43 @@ func TestCategoryPatchNamesAndReferences(t *testing.T) {
 	}
 }
 
+// TestCategoryPatchIgnoresTombstoneNames 验证活动分类可以改用墓碑名称且墓碑拒绝编辑；参数：t 为隔离数据库测试上下文；返回值：无，活动重名仍冲突，墓碑名称和图标保持不变。
+func TestCategoryPatchIgnoresTombstoneNames(t *testing.T) {
+	s := fixture(t)
+	old := must(t, s, "finance.category.create", 0, map[string]any{"name": "可再使用名称", "type": "expense", "icon": "star", "color": "#123456"}).(domain.Category)
+	deleted := must(t, s, "finance.category.delete", old.ID, nil).(domain.Category)
+	row := must(t, s, "finance.category.create", 0, map[string]any{"name": "另一活动分类", "type": "expense", "icon": "bag"}).(domain.Category)
+	got := must(t, s, "finance.category.update", row.ID, map[string]any{"name": "  " + old.Name + "  "}).(domain.Category)
+	if got.ID != row.ID || got.Name != old.Name || got.Icon != row.Icon || got.NameVersion != 0 || got.Deleted {
+		t.Fatalf("墓碑拦截活动改名或覆盖资料: %+v", got)
+	}
+	other := must(t, s, "finance.category.create", 0, map[string]any{"name": "仍需活动去重", "type": "expense"}).(domain.Category)
+	if _, err := execute(s, 1, "finance.category.update", other.ID, map[string]any{"name": old.Name}, "http"); !errors.Is(err, ErrConflict) {
+		t.Fatalf("改名未拒绝活动重名: %v", err)
+	}
+	for _, body := range []map[string]any{{"name": "不得编辑"}, {"icon": "leaf"}} {
+		if _, err := execute(s, 1, "finance.category.update", old.ID, body, "http"); !errors.Is(err, ErrConflict) || !strings.Contains(err.Error(), "分类已删除，不能编辑") {
+			t.Fatalf("墓碑编辑未按约定拒绝: %v", err)
+		}
+	}
+	var saved domain.Category
+	if err := s.db.First(&saved, old.ID).Error; err != nil || saved != deleted {
+		t.Fatalf("重命名或失败编辑覆盖墓碑: %+v %v", saved, err)
+	}
+}
+
 // TestCategoryPatchCaseInsensitiveName 验证大小写不敏感排序规则下只与其他分类冲突；参数：t 为测试上下文；返回值：无，使用临时 SQLite 表模拟常见 MySQL 排序行为，不访问真实数据库。
 func TestCategoryPatchCaseInsensitiveName(t *testing.T) {
 	s := fixture(t)
-	// 临时分类表为名称设置 NOCASE，使仅改大小写的查询也命中自身。
+	// 临时分类表为名称设置 NOCASE，使仅改大小写的查询也命中自身；保留墓碑版本唯一约束。
 	if err := s.db.Migrator().DropTable(&domain.Category{}); err != nil {
 		t.Fatal(err)
 	}
 	if err := s.db.Exec(`CREATE TABLE finance_categories_v2 (
 		id INTEGER PRIMARY KEY, owner_id INTEGER NOT NULL, name TEXT COLLATE NOCASE,
 		type TEXT, group_key TEXT, icon TEXT, color TEXT, is_default NUMERIC,
-		UNIQUE(owner_id, name, type)
+		deleted NUMERIC NOT NULL DEFAULT 0, name_version INTEGER NOT NULL DEFAULT 0,
+		UNIQUE(owner_id, name, type, name_version)
 	)`).Error; err != nil {
 		t.Fatal(err)
 	}

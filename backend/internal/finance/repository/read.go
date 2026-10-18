@@ -75,14 +75,19 @@ func FindRequestTransaction(db *gorm.DB, owner uint64, key string, row *domain.T
 	return db.Where("owner_id = ? AND request_id = ?", owner, key).First(row).Error
 }
 
-// FindCategoryByName 按名称读取分类；参数：db 为 已绑定上下文的数据库或事务，owner 为 可信用户归属，name 为 分类名称，kind 为 收支类型，row 为 非 nil 结果指针；返回值：数据库错误或 nil；沿用调用方事务，输出指针成功时写入结果。
+// FindCategoryByName 按名称读取活动分类；参数：db 为已绑定上下文的数据库或事务，owner 为可信用户归属，name 为分类名称，kind 为收支类型，row 为非 nil 结果指针；返回值：无活动匹配时为 gorm.ErrRecordNotFound，否则为数据库错误或 nil；成功时写入结果，不匹配墓碑。
 func FindCategoryByName(db *gorm.DB, owner uint64, name string, kind string, row *domain.Category) error {
-	return db.Where("owner_id = ? AND name = ? AND type = ?", owner, name, kind).First(row).Error
+	return db.Where("owner_id = ? AND name = ? AND type = ? AND deleted = ?", owner, name, kind, false).First(row).Error
 }
 
-// CountCategoryByName 统计同名同类型分类；参数：db 为 已绑定上下文的数据库或事务，owner 为 可信用户归属，name 为 分类名称，kind 为 收支类型，count 为 非 nil 计数结果指针；返回值：数据库错误或 nil；沿用调用方事务，输出指针成功时写入结果。
+// CountCategoryByName 统计同名同类型活动分类；参数：db 为已绑定上下文的数据库或事务，owner 为可信用户归属，name 为分类名称，kind 为收支类型，count 为非 nil 计数结果指针；返回值：数据库错误或 nil；成功时写入排除墓碑的计数，沿用调用方事务。
 func CountCategoryByName(db *gorm.DB, owner uint64, name string, kind string, count *int64) error {
-	return db.Model(&domain.Category{}).Where("owner_id = ? AND name = ? AND type = ?", owner, name, kind).Count(count).Error
+	return db.Model(&domain.Category{}).Where("owner_id = ? AND name = ? AND type = ? AND deleted = ?", owner, name, kind, false).Count(count).Error
+}
+
+// CountDeletedCategoryByName 统计同名历史墓碑；参数：db 为事务，owner 为可信归属，name 为分类名称，kind 为收支类型，count 为非 nil 输出指针；返回值：数据库错误或 nil；仅用于自动分类判断，避免自动重建用户删除项，不阻止手动创建。
+func CountDeletedCategoryByName(db *gorm.DB, owner uint64, name string, kind string, count *int64) error {
+	return db.Model(&domain.Category{}).Where("owner_id = ? AND name = ? AND type = ? AND deleted = ?", owner, name, kind, true).Count(count).Error
 }
 
 // ReadRefunds 读取关联流水；参数：db 为 已绑定上下文的数据库或事务，owner 为 可信用户归属，parent 为 原流水主键，rows 为 非 nil 结果集合指针；返回值：数据库错误或 nil；沿用调用方事务，输出指针成功时写入结果。
@@ -180,7 +185,7 @@ func ReadSnapshotTransactions(db *gorm.DB, owner uint64, rows *[]domain.Transact
 	return db.Where("owner_id = ?", owner).Order("transaction_date DESC, id DESC").Find(rows).Error
 }
 
-// FindCategories 读取用户分类目录；参数：db 为 已绑定上下文的数据库或事务，owner 为 可信用户归属，rows 为 非 nil 结果集合指针；返回值：数据库错误或 nil；沿用调用方事务，输出指针成功时写入结果。
+// FindCategories 读取用户全量分类目录，包含所有墓碑供内置目录补齐判断；参数：db 为已绑定上下文的数据库或事务，owner 为可信用户归属，rows 为非 nil 结果集合指针；返回值：数据库错误或 nil；成功时写入完整目录，沿用调用方事务，不能增加活动过滤以免自动复活已删除内置项。
 func FindCategories(db *gorm.DB, owner uint64, rows *[]domain.Category) error {
 	return db.Where("owner_id = ?", owner).Find(rows).Error
 }

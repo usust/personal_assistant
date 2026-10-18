@@ -12,7 +12,7 @@ import (
 	"personal_assistant_server/internal/finance/repository"
 )
 
-// createRebate 为已完成余额变更的转账创建关联优惠收入；参数 db 为持用户锁的事务，owner 为用户，parent 为转账；返回值为错误或 nil，无优惠时不写入。失败必须回滚整个事务。
+// createRebate 为已完成余额变更的转账创建关联优惠收入；参数：db 为持用户锁的事务，owner 为可信用户身份，parent 为含优惠及返利账户的转账；返回值：数据库错误或 nil，无优惠时不写入；复用活动分类，只有墓碑时无分类入账，用户手动重建后可复用新 ID；失败回滚整个事务。
 func createRebate(db *gorm.DB, owner uint64, parent domain.Transaction) error {
 	if parent.Rebate == 0 {
 		return nil
@@ -23,20 +23,30 @@ func createRebate(db *gorm.DB, owner uint64, parent domain.Transaction) error {
 	err := repository.FindCategoryByName(db, owner, "还款优惠", "income", &category)
 	// 区分预期错误与需要继续上报的异常。
 	if errors.Is(err, gorm.ErrRecordNotFound) {
-		category = domain.Category{OwnerID: owner, Name: "还款优惠", Type: "income", Color: "#14b8a6"}
-		// 保存新建的业务记录。
-		if err = repository.CreateCategory(db, &category); err != nil {
+		var deleted int64
+		if err = repository.CountDeletedCategoryByName(db, owner, "还款优惠", "income", &deleted); err != nil {
 			return err
+		}
+		// 明确删除过的自动分类不重新生成；手动同名重建后，前面的活动查询会优先使用新分类。
+		if deleted == 0 {
+			category = domain.Category{OwnerID: owner, Name: "还款优惠", Type: "income", Color: "#14b8a6"}
+			if err = repository.CreateCategory(db, &category); err != nil {
+				return err
+			}
 		}
 	} else if err != nil {
 		return err
+	}
+	var categoryID *uint64
+	if category.ID != 0 {
+		categoryID = &category.ID
 	}
 	status := "posted"
 	if parent.RebatePending {
 		status = "pending"
 	}
 	// 生成当前操作需要的展示或协议文本。
-	child := domain.Transaction{OwnerID: owner, RequestID: fmt.Sprintf("rebate_%d", parent.ID), AccountID: *parent.RebateAccountID, Type: "income", Amount: parent.Rebate, CategoryID: &category.ID, TransactionDate: parent.TransactionDate, Description: fmt.Sprintf("还款优惠 · 转账 #%d", parent.ID), Status: status, Source: parent.Source, RebateParentID: &parent.ID}
+	child := domain.Transaction{OwnerID: owner, RequestID: fmt.Sprintf("rebate_%d", parent.ID), AccountID: *parent.RebateAccountID, Type: "income", Amount: parent.Rebate, CategoryID: categoryID, TransactionDate: parent.TransactionDate, Description: fmt.Sprintf("还款优惠 · 转账 #%d", parent.ID), Status: status, Source: parent.Source, RebateParentID: &parent.ID}
 	// 保存新建的业务记录。
 	if err = repository.CreateTransaction(db, &child); err != nil {
 		return err

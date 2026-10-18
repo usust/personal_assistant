@@ -14,7 +14,7 @@ struct TransactionCategorySelector: View {
             HStack(spacing: 16) {
                 Text(title).foregroundStyle(.primary).fixedSize()
                 Spacer(minLength: 0)
-                Text(store.categories.first { $0.id == selection }?.name ?? "点此设置")
+                Text(store.categories.first { !$0.deleted && $0.id == selection }?.name ?? "点此设置")
                     .foregroundStyle(.secondary).lineLimit(1)
                 Image(systemName: "chevron.right").font(.footnote.weight(.semibold)).foregroundStyle(.tertiary)
             }.contentShape(Rectangle())
@@ -55,14 +55,17 @@ private struct CategorySelectionPanel: View {
                 .task { draftID = selection }
         }.interactiveDismissDisabled(busy)
     }
-    /// 添加并选中推荐分类；参数：item 为管理目录模板，group 为所属一级分类；返回值：无，复用已有同名分类避免重试重复创建，错误保留选择面板。
+    /// 解析并选中推荐分类；参数：item 为管理目录模板，group 为其所属一级分组，分组收支类型须与本面板 type 一致；返回值：无。
+    /// 副作用：刷新分类缓存，仅复用同类型同名活动分类；只有同名墓碑时 POST 创建新 ID 并追加缓存，保留原墓碑，成功后更新选择并关闭面板。
+    /// 错误：请求失败显示错误并保留面板与草稿，不向外抛出；正在提交时直接返回。
     private func select(_ item: CategoryTemplate, group: CategoryGroup) async {
         guard !busy else { return }; busy = true; defer { busy = false }
         do {
             let latest: [TransactionCategory] = try await store.api.request("/finance/categories")
             store.categories = latest
             let category: TransactionCategory
-            if let existing = latest.first(where: { $0.type == type && $0.name == item.name }) {
+            // 在 first 内排除墓碑，避免较早的历史同名记录遮蔽活动分类；没有活动分类时允许用新 ID 重建。
+            if let existing = latest.first(where: { !$0.deleted && $0.type == type && $0.name.compare(item.name, options: .caseInsensitive) == .orderedSame }) {
                 category = existing
             } else {
                 category = try await store.api.request("/finance/categories", method: "POST", body: ["name": item.name, "type": type, "color": group.color, "groupKey": group.id, "icon": item.icon])

@@ -17,12 +17,16 @@ import (
 // 预编译业务字段校验规则。
 var categoryIconPattern = regexp.MustCompile(`^[a-z][a-z0-9.]{0,63}$`)
 
-// updateCategory 更新个人分类资料；参数：db 为持有用户锁的事务，owner 为可信用户身份，in 含分类 ID 及部分字段对象；返回值：持久化后的分类或归属、校验、冲突、数据库错误；失败由调用方回滚，收支类型和历史流水引用保持不变。
+// updateCategory 更新个人分类资料；参数：db 为持有用户锁的事务，owner 为可信用户身份，in 含分类 ID 及部分字段对象；返回值：持久化后的分类或归属、校验、冲突、数据库错误；已删除分类拒绝编辑，失败由调用方回滚，收支类型和历史流水引用保持不变。
 func (s *Service) updateCategory(db *gorm.DB, owner uint64, in Input) (domain.Category, error) {
 	// 先限定归属，其他用户的分类与不存在的分类统一返回未找到。
 	row, err := repository.ReadCategory(db, owner, in.ID)
 	if err != nil {
 		return row, missing(err)
+	}
+	// 墓碑保留历史名称与展示资料，不能通过编辑隐式恢复。
+	if row.Deleted {
+		return row, deletedCategoryConflict()
 	}
 	var body map[string]json.RawMessage
 	if err := Decode(in.Changes, &body); err != nil {
@@ -50,7 +54,7 @@ func (s *Service) updateCategory(db *gorm.DB, owner uint64, in Input) (domain.Ca
 			if !validText(value, 64, true) {
 				return row, Invalid("分类名称无效")
 			}
-			// 同名同类型仅在当前用户内冲突；按 ID 排除自身，兼容数据库大小写不敏感的排序规则。
+			// 仅与当前用户的同类型活动分类冲突；按 ID 排除自身，兼容数据库大小写不敏感的排序规则。
 			if value != row.Name {
 				var existing domain.Category
 				err := repository.FindCategoryByName(db, owner, value, row.Type, &existing)

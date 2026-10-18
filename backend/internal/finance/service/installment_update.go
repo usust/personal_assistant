@@ -14,7 +14,7 @@ import (
 	"personal_assistant_server/internal/finance/repository"
 )
 
-// updateInstallment 合并并保存整套分期设置；参数：db 为持有用户锁的事务，owner 为身份，bill 为分期主账单，old 为原规则，changes 为实际提交的字段；返回值：新计划或错误，所有期次与余额变更由外层原子提交；报销等资料只传播到未入账子单，不触发规则重算。
+// updateInstallment 合并并保存整套分期设置；参数：db 为持有用户锁的事务，owner 为身份，bill 为分期主账单，old 为原规则，changes 为实际提交的字段；返回值：新计划或错误，所有期次与余额变更由外层原子提交；分类仅原 ID 可沿用墓碑，报销等资料只传播到未入账子单，不触发规则重算。
 func (s *Service) updateInstallment(db *gorm.DB, owner uint64, bill domain.Transaction, old domain.InstallmentPlan, changes json.RawMessage) (domain.InstallmentPlan, error) {
 	var submitted map[string]json.RawMessage
 	// 严格解析业务输入，避免无效字段进入操作流程。
@@ -78,11 +78,9 @@ func (s *Service) updateInstallment(db *gorm.DB, owner uint64, bill domain.Trans
 			id = nil
 		}
 		if id != nil {
-			var category domain.Category
-			// 读取满足条件的目标记录。
-			if err = repository.FindExpenseCategory(db, owner, *id, &category); err != nil {
-				// 将数据库查询失败转换为业务错误。
-				return old, missing(err)
+			// 仅允许沿用主账单原分类；改选墓碑会在写入主单与未入账子单前失败。
+			if err := validateCategoryReference(db, owner, id, "expense", bill.CategoryID); err != nil {
+				return old, err
 			}
 		}
 		fields["category_id"] = id

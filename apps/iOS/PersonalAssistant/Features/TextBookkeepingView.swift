@@ -42,7 +42,7 @@ struct TextBookkeepingView: View {
         TextBookkeepingParser.date(day: draft.day, time: draft.time) != nil &&
         accounts.contains(where: { $0.id == draft.accountID }) &&
         (draft.type != "transfer" || (draft.accountID != draft.targetAccountID && accounts.contains(where: { $0.id == draft.targetAccountID }))) &&
-        (draft.type == "transfer" || draft.categoryID == 0 || store.categories.contains(where: { $0.id == draft.categoryID && $0.type == draft.type })) &&
+        (draft.type == "transfer" || draft.categoryID == 0 || store.categories.contains(where: { !$0.deleted && $0.id == draft.categoryID && $0.type == draft.type })) &&
         draft.counterparty.utf8.count <= 128 && note.utf8.count <= 2000
     }
 
@@ -73,7 +73,7 @@ struct TextBookkeepingView: View {
             .task { await loadOptions() }
             // 类型回调接收新旧类型、返回值无；清理不兼容分类，避免把收入分类带入支出或转账。
             .onChange(of: draft.type) { _, value in
-                if value == "transfer" || store.categories.first(where: { $0.id == draft.categoryID })?.type != value { draft.categoryID = 0 }
+                if value == "transfer" || store.categories.first(where: { !$0.deleted && $0.id == draft.categoryID })?.type != value { draft.categoryID = 0 }
             }
             // 以下身份观察回调接收新旧标识、返回值无；原空间失效后立即清理敏感文本并禁止继续保存。
             .onChange(of: store.sessionID) { _, _ in invalidate() }
