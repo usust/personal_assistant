@@ -19,4 +19,10 @@ func RegisterRoutes(api *gin.RouterGroup, h *handler.Handler, login gin.HandlerF
 	g.POST("/reports", h.Analyze)
 	// 注册业务接口及对应的请求处理入口。
 	g.DELETE("", h.Clear)
+	// 餐食分析只读；用户确认后才通过独立创建接口保存结构化记录。
+	g.GET("/nutrition", h.Nutrition)
+	g.PUT("/nutrition/goal", h.PutNutritionGoal)
+	g.POST("/meals", h.CreateMeal)
+	g.DELETE("/meals/:id", h.DeleteMeal)
+	g.POST("/meal-analysis", h.AnalyzeMeal)
 }

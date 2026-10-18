@@ -43,8 +43,50 @@ final class StubProtocol: URLProtocol, @unchecked Sendable {
         }
         return try JSONSerialization.jsonObject(with: data) as! [String: Any]
     }
+    /// 验证归档子树显示规则；参数：无；返回值：无；仅使用内存快照，覆盖自动归档、多层后代、恢复、搜索及异常父关系，不访问服务器或修改真实数据。
+    @MainActor static func checkTaskArchiveVisibility() {
+        var root = task(701, type: "main", completed: 10, archived: true); root.autoArchive = true
+        let branch = task(702, parent: root.id, type: "main")
+        var leaf = task(703, parent: branch.id, completed: 10); leaf.title = "归档后代搜索样本"
+        let ownArchived = task(704, parent: branch.id, completed: 10, archived: true)
+        let completedActive = task(705, completed: 10)
+        let orphan = task(706, parent: 999999)
+        var otherList = task(707); otherList.listId = 2
+        // 故意打乱父子顺序，模拟服务端排序；归档传播必须覆盖任意深度，而非依赖父节点先出现。
+        let snapshot = [leaf, completedActive, root, ownArchived, branch, orphan, otherList]
+        let original = snapshot
+        let active = Values.tasks(in: "active", all: snapshot)
+        let archived = Values.tasks(in: "archived", all: snapshot)
+        check(active.map(\.id) == [705, 706, 707], "未归档范围隐藏自动归档父节点及多层下级")
+        check(archived.map(\.id) == [703, 701, 704, 702], "归档范围保留整棵归档子树且不改变原顺序")
+        check(Values.tasks(in: "all", all: snapshot) == original, "包含归档时返回完整原始快照")
+        check(Values.tasks(in: "active", all: snapshot, listID: 1).map(\.id) == [705, 706], "清单筛选与归档规则一致")
+        check(Values.tasks(in: "unexpected", all: snapshot) == active, "未知范围按未归档处理")
+        check(active.contains(completedActive), "已完成但未归档任务仍然可见")
+        check(active.contains(orphan), "真正缺失父节点的任务保留可达")
+        check(active.filter { $0.title.contains("归档后代") }.isEmpty, "搜索不会泄漏归档祖先的下级")
+        check(snapshot == original && !leaf.archived && !branch.archived, "显示筛选不改写下级归档字段及快照")
+        check(Values.progress(root, all: snapshot).completed == 20, "完整进度继续包含归档子树")
+        var restored = root; restored.archived = false; restored.autoArchive = false
+        let restoredSnapshot = snapshot.map { $0.id == root.id ? restored : $0 }
+        check(Values.tasks(in: "active", all: restoredSnapshot).map(\.id) == [703, 705, 701, 702, 706, 707], "恢复父节点后原未归档下级重新可见且无重复")
+        check(Values.tasks(in: "archived", all: restoredSnapshot).map(\.id) == [704], "恢复父节点不恢复独立归档的下级")
+        var crossListLeaf = leaf; crossListLeaf.listId = 2
+        check(Values.tasks(in: "active", all: [root, branch, crossListLeaf], listID: 2).isEmpty, "清单筛选前使用完整快照检查归档祖先")
+        let cyclicA = task(801, parent: 802, archived: true), cyclicB = task(802, parent: 801)
+        check(Values.tasks(in: "active", all: [cyclicA, cyclicB]).isEmpty && Values.tasks(in: "archived", all: [cyclicA, cyclicB]).count == 2, "循环关系的归档传播安全终止")
+        var deep = [root]
+        for id in 1000..<3000 { deep.append(task(id, parent: id == 1000 ? root.id : id - 1)) }
+        check(Values.tasks(in: "active", all: deep).isEmpty && Values.tasks(in: "archived", all: deep).count == deep.count, "深层归档子树迭代处理不依赖递归栈")
+        check(Values.tasks(in: "active", all: []).isEmpty && Values.tasks(in: "archived", all: []).isEmpty, "空快照归档范围均为空")
+    }
+
     /// 执行业务和传输回归；参数：无；返回值：无；验证机构兼容、精度、PATCH、进度、查询、错误与 401 行为，不连接实际 API。
     @MainActor static func main() async throws {
+        checkTaskArchiveVisibility()
+        // 新入口回归仅使用虚构文本和内存任务；识别、层级规则及展示偏好不依赖网络或真实账本。
+        try TextBookkeepingTests.run()
+        try TaskBrowsingTests.run()
         // 本地日历截止边界：当天时分必须参与逾期判断，空时分使用 23:59。
         var deadlineTask = task(980)
         deadlineTask.endDate = "2026-10-04"; deadlineTask.endTime = "10:30"
@@ -89,6 +131,26 @@ final class StubProtocol: URLProtocol, @unchecked Sendable {
         check(calculation.evaluate(draft: &draft) && draft == "-4", "完成自动计算负数结果")
         for key in ["×", "清空"] { calculation.input(key, draft: &draft) }
         check(draft == "0" && calculation.operation == nil && calculation.error == nil, "清空重置整笔计算")
+        // 预览应按最终结果判断可保存性，同时不消费算式；覆盖右操作数为零、小数、错误及非正值。
+        for (keys, expected) in [(["+", "0"], "100"), (["×", "0", ".", "5"], "50"), (["−", "1", "0", "0"], "0"), (["−", "2", "0", "0"], "-100")] {
+            var previewCalculation = AmountCalculation()
+            var previewDraft = "100"
+            for key in keys { previewCalculation.input(key, draft: &previewDraft) }
+            let originalDraft = previewDraft
+            let originalOperand = previewCalculation.operand
+            let originalOperation = previewCalculation.operation
+            check(previewCalculation.preview(draft: previewDraft) == expected, "金额预览使用最终结果 \(keys)")
+            check(previewDraft == originalDraft && previewCalculation.operand == originalOperand && previewCalculation.operation == originalOperation && previewCalculation.error == nil, "渲染预览不改变草稿或算式")
+            check(Values.validMoney(expected, positive: true) == (expected == "100" || expected == "50"), "最终非正金额不可保存")
+            check(previewCalculation.evaluate(draft: &previewDraft) && previewDraft == expected, "实际求值与预览一致")
+        }
+        for keys in [["÷", "0"], ["+"], ["×", "9", "9", "9", "9", "9", "9", "9", "9", "9", "9", "9"]] {
+            var invalidCalculation = AmountCalculation()
+            var invalidDraft = "100"
+            for key in keys { invalidCalculation.input(key, draft: &invalidDraft) }
+            check(invalidCalculation.preview(draft: invalidDraft) == nil && invalidCalculation.error == nil, "错误预览不修改原状态")
+            check(!invalidCalculation.evaluate(draft: &invalidDraft) && invalidCalculation.error != nil && invalidCalculation.operation != nil, "实际完成保留错误算式并提供反馈")
+        }
         AccountIconBackgroundTests.run()
         AccountPresentationTests.run()
         AccountTransactionPeriodTests.run()
@@ -348,6 +410,25 @@ final class StubProtocol: URLProtocol, @unchecked Sendable {
         // 解码后端真实字段形状；可选指标与更新时间不阻止读取健康记录。
         let health = try JSONDecoder().decode(HealthOverview.self, from: Data(#"{"days":[{"id":1,"date":"2026-09-27","timezone":"Asia/Shanghai","steps":10,"weight":null,"updated_at":"2026-09-27T12:00:00+08:00"}],"reports":[]}"#.utf8))
         check(health.days[0].steps == 10 && health.days[0].updated_at != nil, "健康记录及服务器接收时间正确解码")
+        // 餐食视觉契约回调：输入待外发请求，返回虚构非食物结果；验证独立端点、配置版本和110秒超时，不发送真实图片。
+        StubProtocol.handler = { request in
+            let payload = try body(request)
+            precondition(request.url?.path == "/api/health-management/meal-analysis" && request.httpMethod == "POST")
+            precondition(request.timeoutInterval == 110 && payload["consent"] as? Bool == true)
+            precondition(payload["config_version"] as? String == "2026-10-17T12:00:00Z")
+            precondition(payload["image"] as? String == "data:image/jpeg;base64,fixture")
+            return (200, Data(#"{"data":{"recognized":false,"items":[],"note":"非食物"}}"#.utf8))
+        }
+        let mealAnalysis: MealAnalysisResult = try await api.request("/health-management/meal-analysis", method: "POST", body: ["config_id": 1, "config_version": "2026-10-17T12:00:00Z", "consent": true, "image": "data:image/jpeg;base64,fixture"])
+        check(mealAnalysis.valid && !mealAnalysis.recognized, "饮食视觉请求与后端契约一致")
+        // 日期查询回调：输入GET请求，返回未设目标的空日记；不把缺失目标当零。
+        StubProtocol.handler = { request in
+            precondition(request.httpMethod == "GET" && request.url?.path == "/api/health-management/nutrition")
+            precondition(URLComponents(url: request.url!, resolvingAgainstBaseURL: false)?.queryItems?.first?.value == "2026-10-17")
+            return (200, Data(#"{"data":{"daily_goal":null,"meals":[]}}"#.utf8))
+        }
+        let nutrition: NutritionOverview = try await api.request("/health-management/nutrition", query: [URLQueryItem(name: "date", value: "2026-10-17")])
+        check(nutrition.daily_goal == nil && nutrition.meals.isEmpty, "饮食查询保留缺失目标和空记录")
         try await FinanceOfflineTests.run()
         try ScreenshotBookkeepingTests.run()
         try await ScreenshotBookkeepingTests.network()

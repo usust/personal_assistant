@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Personal Assistant 业务模块 API",
-    "version": "2026-10-03",
+    "version": "2026-10-17",
     "description": "任务、记账、健康、AI 与存活检查接口，字段保留现有 camelCase/snake_case 契约。"
   },
   "paths": {
@@ -3031,6 +3031,130 @@
         "x-apifox-folder": "记账管理/记账分类"
       }
     },
+    "/api/finance/categories/{id}": {
+      "patch": {
+        "operationId": "finance_category_update",
+        "summary": "更新记账分类展示资料",
+        "tags": [
+          "finance"
+        ],
+        "description": "需要 Bearer JWT，仅允许更新本人分类。仅接受 name/groupKey/icon/color/type，至少一个非 null 字符串；type 只能等于原值，未知字段或无效展示字段返回 400。同一用户同类型名称冲突返回 409，资源不存在或不属于本人返回 404。未提交字段保留，groupKey/icon 可用空字符串清除；合并现有字段后校验分组和收支类型匹配。成功 HTTP 200，code=200、message=ok、data 为更新后的 FinanceCategory；不改变历史流水引用。同步 operation 为 finance.category.update，共用相同白名单、校验和响应。",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "enum": [
+                        200
+                      ]
+                    },
+                    "message": {
+                      "type": "string",
+                      "enum": [
+                        "ok"
+                      ]
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/FinanceCategory"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "message",
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求或业务字段无效",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "未登录或登录失效",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "资源不存在或不属于当前用户",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "同一用户同类型分类名称冲突",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "服务器内部错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "description": "必须是有效 JSON；普通业务请求最大 64 KiB。",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FinanceCategoryUpdateRequest"
+              }
+            }
+          }
+        },
+        "x-apifox-folder": "记账管理/记账分类",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "description": "当前用户所属分类 ID。"
+          }
+        ]
+      }
+    },
     "/api/finance/transactions/{id}/refund": {
       "post": {
         "operationId": "finance_transaction_refund",
@@ -3384,7 +3508,7 @@
         "tags": [
           "finance"
         ],
-        "description": "响应 code 与 HTTP 状态码一致，成功 message 为 ok，失败 data 为 null。需要 Bearer JWT；身份和数据归属由服务端认证上下文确定。仅写入本次提交且通过白名单校验的字段，持久化使用 map，未提交字段保持原值，允许的 false、0、空字符串正常更新。余额变化、关联流水及事件共用事务；同一用户通过用户行锁串行化操作。金额使用十进制字符串。",
+        "description": "响应 code 与 HTTP 状态码一致，成功 message 为 ok，失败 data 为 null。需要 Bearer JWT；身份和数据归属由服务端认证上下文确定。仅写入本次提交且通过白名单校验的字段，持久化使用 map，未提交字段保持原值，允许的 false、0、空字符串正常更新。余额变化、关联流水及事件共用事务；同一用户通过用户行锁串行化操作。金额使用十进制字符串。 reimbursementStatus 未提交保留、空字符串清除。仅修改此字段属于 metadata，允许修改分期子单且不触发余额变更。财务更正保留标记；若更正为非 expense 且标记非空则拒绝，需在同请求显式清空。退款/返现子单禁止非空标记。",
         "security": [
           {
             "bearerAuth": []
@@ -3711,7 +3835,7 @@
         "tags": [
           "finance"
         ],
-        "description": "响应 code 与 HTTP 状态码一致，成功 message 为 ok，失败 data 为 null。需要 Bearer JWT；身份和数据归属由服务端认证上下文确定。余额变化、关联流水及事件共用事务；同一用户通过用户行锁串行化操作。金额使用十进制字符串。",
+        "description": "响应 code 与 HTTP 状态码一致，成功 message 为 ok，失败 data 为 null。需要 Bearer JWT；身份和数据归属由服务端认证上下文确定。余额变化、关联流水及事件共用事务；同一用户通过用户行锁串行化操作。金额使用十进制字符串。 reimbursementStatus 为字符串 enum [\"\", \"pending\", \"reimbursed\"]，未提交默认空（无需报销）；非空仅允许原正支出，退款/返现子单禁止。",
         "security": [
           {
             "bearerAuth": []
@@ -4049,7 +4173,7 @@
         "tags": [
           "finance"
         ],
-        "description": "响应 code 与 HTTP 状态码一致，成功 message 为 ok，失败 data 为 null。需要 Bearer JWT；身份和数据归属由服务端认证上下文确定。余额变化、关联流水及事件共用事务；同一用户通过用户行锁串行化操作。金额使用十进制字符串。",
+        "description": "响应 code 与 HTTP 状态码一致，成功 message 为 ok，失败 data 为 null。需要 Bearer JWT；身份和数据归属由服务端认证上下文确定。余额变化、关联流水及事件共用事务；同一用户通过用户行锁串行化操作。金额使用十进制字符串。 按原支出的 transactionDate 所选日期范围及账户筛选，只纳入 posted 且 amount>0 的 expense 原单（含已入账分期子单），排除分期父单、退款行和返现行。每单净额为 max(0, 原单实际 amount - 关联该原单的所有月份 posted 负 expense 退款绝对额之和)；amount 已扣 discount，不重复扣减，不减返现、不加 fee。按原单当前 reimbursementStatus 分类：pending 计待报销，reimbursed 计已报销，空值不计。 reimbursementTotal = reimbursementPending + reimbursementReceived；三个金额字段始终响应，无匹配记录时均为金额字符串 \"0.00\"。收入、支出及余额使用相同日期范围与可选账户筛选，账户匹配 accountId 或 targetAccountId。",
         "security": [
           {
             "bearerAuth": []
@@ -4146,18 +4270,30 @@
             "in": "query",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "date"
             },
-            "description": "筛选条件；重复或未知参数返回 400。"
+            "description": "原支出及收支统计的起始日期（含），YYYY-MM-DD。报销退款扣减不受此日期范围限制；重复或未知参数返回 400。"
           },
           {
             "name": "endDate",
             "in": "query",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "date"
             },
-            "description": "筛选条件；重复或未知参数返回 400。"
+            "description": "原支出及收支统计的结束日期（含），YYYY-MM-DD。报销退款扣减不受此日期范围限制；重复或未知参数返回 400。"
+          },
+          {
+            "name": "accountId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "description": "可选账户 ID；收入、支出和报销汇总均仅统计 accountId 或 targetAccountId 匹配该账户的原单；退款扣减按已选原单关联所有月份的已入账退款。省略时统计本人全部账户；重复或未知参数返回 400。"
           }
         ],
         "x-apifox-folder": "记账管理/统计概览"
@@ -4375,7 +4511,7 @@
         "tags": [
           "finance"
         ],
-        "description": "响应 code 与 HTTP 状态码一致，成功 message 为 ok，失败 data 为 null。需要 Bearer JWT；身份和数据归属由服务端认证上下文确定。仅写入本次提交且通过白名单校验的字段，持久化使用 map，未提交字段保持原值，允许的 false、0、空字符串正常更新。余额变化、关联流水及事件共用事务；同一用户通过用户行锁串行化操作。金额使用十进制字符串。",
+        "description": "响应 code 与 HTTP 状态码一致，成功 message 为 ok，失败 data 为 null。需要 Bearer JWT；身份和数据归属由服务端认证上下文确定。仅写入本次提交且通过白名单校验的字段，持久化使用 map，未提交字段保持原值，允许的 false、0、空字符串正常更新。余额变化、关联流水及事件共用事务；同一用户通过用户行锁串行化操作。金额使用十进制字符串。 reimbursementStatus 可选；未提交继承原单/原计划，空字符串显式清除，生成子单继承。计划 PATCH 的标记仅传播到未入账子单，已入账子单通过 Transaction PATCH 单独修改。",
         "security": [
           {
             "bearerAuth": []
@@ -4834,7 +4970,7 @@
         "tags": [
           "finance"
         ],
-        "description": "响应 code 与 HTTP 状态码一致，成功 message 为 ok，失败 data 为 null。需要 Bearer JWT；身份和数据归属由服务端认证上下文确定。余额变化、关联流水及事件共用事务；同一用户通过用户行锁串行化操作。金额使用十进制字符串。",
+        "description": "响应 code 与 HTTP 状态码一致，成功 message 为 ok，失败 data 为 null。需要 Bearer JWT；身份和数据归属由服务端认证上下文确定。余额变化、关联流水及事件共用事务；同一用户通过用户行锁串行化操作。金额使用十进制字符串。 reimbursementStatus 可选；未提交继承原单/原计划，空字符串显式清除，生成子单继承。计划 PATCH 的标记仅传播到未入账子单，已入账子单通过 Transaction PATCH 单独修改。",
         "security": [
           {
             "bearerAuth": []
@@ -4958,7 +5094,7 @@
         "tags": [
           "finance"
         ],
-        "description": "响应 code 与 HTTP 状态码一致，成功 message 为 ok，失败 data 为 null。需要 Bearer JWT；身份和数据归属由服务端认证上下文确定。余额变化、关联流水及事件共用事务；同一用户通过用户行锁串行化操作。金额使用十进制字符串。",
+        "description": "响应 code 与 HTTP 状态码一致，成功 message 为 ok，失败 data 为 null。需要 Bearer JWT；身份和数据归属由服务端认证上下文确定。余额变化、关联流水及事件共用事务；同一用户通过用户行锁串行化操作。金额使用十进制字符串。 reimbursementStatus 可选；未提交继承原单/原计划，空字符串显式清除，生成子单继承。计划 PATCH 的标记仅传播到未入账子单，已入账子单通过 Transaction PATCH 单独修改。",
         "security": [
           {
             "bearerAuth": []
@@ -5841,7 +5977,7 @@
         "tags": [
           "finance"
         ],
-        "description": "响应 code 与 HTTP 状态码一致，成功 message 为 ok，失败 data 为 null。需要 Bearer JWT；身份和数据归属由服务端认证上下文确定。余额变化、关联流水及事件共用事务；同一用户通过用户行锁串行化操作。金额使用十进制字符串。operationId 稳定且长度 8–96，同键同内容重放原结果，同键异内容返回 409；data 是该操作原始业务结果。",
+        "description": "响应 code 与 HTTP 状态码一致，成功 message 为 ok，失败 data 为 null。需要 Bearer JWT；身份和数据归属由服务端认证上下文确定。余额变化、关联流水及事件共用事务；同一用户通过用户行锁串行化操作。金额使用十进制字符串。operationId 稳定且长度 8–96，同键同内容重放原结果，同键异内容返回 409；data 是该操作原始业务结果。 finance.transaction.create/update 的 body 分别采用 FinanceTransactionInput/FinanceTransactionUpdateRequest，返回含 reimbursementStatus 的 FinanceTransaction；纯报销标记更新为 metadata，不改变余额。finance.category.update 的 body 采用 FinanceCategoryUpdateRequest，成功 data 为 FinanceCategory；分类白名单、归属及冲突校验与 PATCH /api/finance/categories/{id} 一致。预设与分期同步 body 同样包含报销字段并沿用普通接口规则。",
         "security": [
           {
             "bearerAuth": []
@@ -6020,7 +6156,7 @@
         "tags": [
           "health"
         ],
-        "description": "响应 code 与 HTTP 状态码一致，成功 message 为 ok，失败 data 为 null。需要 Bearer JWT；身份和数据归属由服务端认证上下文确定。",
+        "description": "响应 code 与 HTTP 状态码一致，成功 message 为 ok，失败 data 为 null。需要 Bearer JWT；身份和数据归属由服务端认证上下文确定。 同时原子删除本人的餐食记录和手动每日热量目标，不影响手机HealthKit数据。",
         "security": [
           {
             "bearerAuth": []
@@ -6555,6 +6691,588 @@
                   ],
                   "additionalProperties": false
                 }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/health-management/nutrition": {
+      "get": {
+        "operationId": "health_nutrition_read",
+        "summary": "查询指定日餐食与手动目标",
+        "tags": [
+          "health"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "description": "仅访问认证本人数据。JSON拒绝未知字段、重复键、null和尾随内容；响应daily_goal未设置时为null。照片分析不创建餐食，确认保存时仅保存结构化内容。",
+        "responses": {
+          "200": {
+            "description": "成功；创建餐食及幂等重试均返回200",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "const": 200
+                    },
+                    "message": {
+                      "type": "string",
+                      "const": "ok"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/NutritionOverview"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "message",
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "字段、日期、图片或JSON格式无效",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "未登录",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "配置无权访问",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "配置版本变化或幂等内容冲突",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "记录读写失败",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "视觉模型失败或结果无效",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "date",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ]
+      }
+    },
+    "/api/health-management/nutrition/goal": {
+      "put": {
+        "operationId": "health_nutrition_goal",
+        "summary": "设置本人每日热量目标",
+        "tags": [
+          "health"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "description": "仅访问认证本人数据。JSON拒绝未知字段、重复键、null和尾随内容；响应daily_goal未设置时为null。照片分析不创建餐食，确认保存时仅保存结构化内容。",
+        "responses": {
+          "200": {
+            "description": "成功；创建餐食及幂等重试均返回200",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "const": 200
+                    },
+                    "message": {
+                      "type": "string",
+                      "const": "ok"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/NutritionGoal"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "message",
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "字段、日期、图片或JSON格式无效",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "未登录",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "配置无权访问",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "配置版本变化或幂等内容冲突",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "记录读写失败",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "视觉模型失败或结果无效",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NutritionGoal"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/health-management/meals": {
+      "post": {
+        "operationId": "health_meal_create",
+        "summary": "确认保存餐食估算",
+        "tags": [
+          "health"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "description": "仅访问认证本人数据。JSON拒绝未知字段、重复键、null和尾随内容；响应daily_goal未设置时为null。照片分析不创建餐食，确认保存时仅保存结构化内容。",
+        "responses": {
+          "200": {
+            "description": "成功；创建餐食及幂等重试均返回200",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "const": 200
+                    },
+                    "message": {
+                      "type": "string",
+                      "const": "ok"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/NutritionMeal"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "message",
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "字段、日期、图片或JSON格式无效",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "未登录",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "配置无权访问",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "配置版本变化或幂等内容冲突",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "记录读写失败",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "视觉模型失败或结果无效",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NutritionMealCreate"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/health-management/meals/{id}": {
+      "delete": {
+        "operationId": "health_meal_delete",
+        "summary": "幂等删除本人餐食，不泄漏他人记录存在性",
+        "tags": [
+          "health"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "description": "仅访问认证本人数据。JSON拒绝未知字段、重复键、null和尾随内容；响应daily_goal未设置时为null。照片分析不创建餐食，确认保存时仅保存结构化内容。",
+        "responses": {
+          "200": {
+            "description": "成功；创建餐食及幂等重试均返回200",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "const": 200
+                    },
+                    "message": {
+                      "type": "string",
+                      "const": "ok"
+                    },
+                    "data": {
+                      "type": "null"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "message",
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "字段、日期、图片或JSON格式无效",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "未登录",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "配置无权访问",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "配置版本变化或幂等内容冲突",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "记录读写失败",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "视觉模型失败或结果无效",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      }
+    },
+    "/api/health-management/meal-analysis": {
+      "post": {
+        "operationId": "health_meal_analyze",
+        "summary": "同意外发后的只读照片热量估算（90秒上限）",
+        "tags": [
+          "health"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "description": "仅访问认证本人数据。JSON拒绝未知字段、重复键、null和尾随内容；响应daily_goal未设置时为null。照片分析不创建餐食，确认保存时仅保存结构化内容。",
+        "responses": {
+          "200": {
+            "description": "成功；创建餐食及幂等重试均返回200",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "const": 200
+                    },
+                    "message": {
+                      "type": "string",
+                      "const": "ok"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/NutritionAnalysis"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "message",
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "字段、日期、图片或JSON格式无效",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "未登录",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "配置无权访问",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "配置版本变化或幂等内容冲突",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "记录读写失败",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "视觉模型失败或结果无效",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NutritionAnalysisInput"
               }
             }
           }
@@ -7291,6 +8009,73 @@
         ],
         "additionalProperties": false
       },
+      "FinanceCategoryUpdateRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "去除首尾空白后非空且最多 64 个 UTF-8 字节；同一用户同类型名称冲突返回 409（按数据库排序规则比较）。"
+          },
+          "groupKey": {
+            "type": "string",
+            "enum": [
+              "",
+              "food",
+              "transport",
+              "shopping",
+              "home",
+              "utilities",
+              "health",
+              "leisure",
+              "education",
+              "social",
+              "family",
+              "pets",
+              "other-expense",
+              "clothing",
+              "daily",
+              "digital",
+              "beauty",
+              "software",
+              "communication",
+              "car",
+              "sports",
+              "travel",
+              "office",
+              "kids",
+              "insurance",
+              "salary",
+              "side-job",
+              "investment",
+              "gifts",
+              "other-income"
+            ],
+            "description": "一级分组必须匹配分类当前收支类型；salary/side-job/investment/gifts/other-income 仅用于 income，其余非空分组仅用于 expense。空字符串显式清除。"
+          },
+          "icon": {
+            "type": "string",
+            "pattern": "^$|^[a-z][a-z0-9.]{0,63}$",
+            "description": "SF Symbols 名称；空字符串显式清除。"
+          },
+          "color": {
+            "type": "string",
+            "pattern": "^#[0-9a-fA-F]{6}$",
+            "description": "必须为 #RRGGBB，不能提交空字符串。"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "expense",
+              "income"
+            ],
+            "description": "仅作兼容校验，必须等于已有分类的收支类型，不进入更新集合；只提交相同 type 返回原分类。"
+          }
+        },
+        "required": [],
+        "additionalProperties": false,
+        "minProperties": 1,
+        "description": "至少提交一个字段，全部为非 null 字符串；仅更新 name/groupKey/icon/color，type 只校验原值。未提交字段保留；合并现有值后校验 groupKey/icon。拒绝 id/isDefault/ownerId 等未知字段，不改变收支类型和历史流水引用。"
+      },
       "FinanceCreditStatement": {
         "properties": {
           "configured": {
@@ -7425,6 +8210,15 @@
             "description": "金额为十进制字符串，数据库使用整数分，避免浮点误差。",
             "pattern": "^-?[0-9]+(\\.[0-9]{1,2})?$",
             "type": "string"
+          },
+          "reimbursementStatus": {
+            "type": "string",
+            "enum": [
+              "",
+              "pending",
+              "reimbursed"
+            ],
+            "description": "可选字符串，对应 Go *string；未提交时创建/预览继承原支出标记，编辑继承原计划标记，显式空字符串清除。生成的分期子单继承该标记；计划 PATCH 仅传播到未入账子单，已入账子单可通过 Transaction PATCH 单独修改。非空仅允许原正支出，退款/返现子单禁止。"
           }
         },
         "required": [
@@ -7573,6 +8367,15 @@
           },
           "startPeriod": {
             "type": "integer"
+          },
+          "reimbursementStatus": {
+            "type": "string",
+            "enum": [
+              "",
+              "pending",
+              "reimbursed"
+            ],
+            "description": "可选字符串，对应 Go *string；未提交时创建/预览继承原支出标记，编辑继承原计划标记，显式空字符串清除。生成的分期子单继承该标记；计划 PATCH 仅传播到未入账子单，已入账子单可通过 Transaction PATCH 单独修改。非空仅允许原正支出，退款/返现子单禁止。"
           }
         },
         "required": [
@@ -7636,6 +8439,15 @@
           },
           "startPeriod": {
             "type": "integer"
+          },
+          "reimbursementStatus": {
+            "type": "string",
+            "enum": [
+              "",
+              "pending",
+              "reimbursed"
+            ],
+            "description": "可选字符串，对应 Go *string；未提交时创建/预览继承原支出标记，编辑继承原计划标记，显式空字符串清除。生成的分期子单继承该标记；计划 PATCH 仅传播到未入账子单，已入账子单可通过 Transaction PATCH 单独修改。非空仅允许原正支出，退款/返现子单禁止。"
           }
         },
         "required": [],
@@ -8143,6 +8955,16 @@
               },
               "type": {
                 "type": "string"
+              },
+              "reimbursementStatus": {
+                "type": "string",
+                "enum": [
+                  "",
+                  "pending",
+                  "reimbursed"
+                ],
+                "description": "报销状态：空字符串为无需报销，pending 为待报销，reimbursed 为已报销。非空仅允许原正支出（type=expense 且 amount>0），退款或返现子单禁止设置非空标记。模板输入未提交时默认为空，生成流水继承模板标记。",
+                "default": ""
               }
             },
             "required": [
@@ -8281,6 +9103,16 @@
                   },
                   "type": {
                     "type": "string"
+                  },
+                  "reimbursementStatus": {
+                    "type": "string",
+                    "enum": [
+                      "",
+                      "pending",
+                      "reimbursed"
+                    ],
+                    "description": "报销状态：空字符串为无需报销，pending 为待报销，reimbursed 为已报销。非空仅允许原正支出（type=expense 且 amount>0），退款或返现子单禁止设置非空标记。模板输入未提交时默认为空，生成流水继承模板标记。",
+                    "default": ""
                   }
                 },
                 "required": [
@@ -8331,12 +9163,35 @@
       },
       "FinanceSyncCommand": {
         "properties": {
-          "body": {},
+          "body": {
+            "description": "操作对应的请求正文；transaction create/update 分别使用 FinanceTransactionInput/FinanceTransactionUpdateRequest，报销状态校验及 metadata/财务更正规则与普通接口一致；category.update 使用 FinanceCategoryUpdateRequest。"
+          },
           "id": {
             "type": "integer"
           },
           "operation": {
-            "type": "string"
+            "type": "string",
+            "enum": [
+              "finance.account.create",
+              "finance.account.update",
+              "finance.account.archive",
+              "finance.category.create",
+              "finance.category.update",
+              "finance.transaction.create",
+              "finance.transaction.update",
+              "finance.transaction.confirm",
+              "finance.transaction.void",
+              "finance.transaction.delete",
+              "finance.transaction.refund",
+              "finance.preset.create",
+              "finance.preset.update",
+              "finance.preset.delete",
+              "finance.installment.create",
+              "finance.installment.update",
+              "finance.installment.delete",
+              "finance.installment.finish",
+              "finance.loan.adjustment.save"
+            ]
           },
           "operationId": {
             "type": "string"
@@ -8348,7 +9203,143 @@
           "id",
           "body"
         ],
-        "type": "object"
+        "type": "object",
+        "description": "operation 指定白名单业务操作，id 指定目标资源；body 与对应普通 HTTP 接口共享契约。finance.transaction.create/update 返回 FinanceTransaction（含 reimbursementStatus）；finance.category.update 返回更新后的 FinanceCategory。operationId 的幂等回放不会重复更新余额。",
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "operation": {
+                  "const": "finance.transaction.create"
+                }
+              },
+              "required": [
+                "operation"
+              ]
+            },
+            "then": {
+              "properties": {
+                "body": {
+                  "$ref": "#/components/schemas/FinanceTransactionInput"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "operation": {
+                  "const": "finance.transaction.update"
+                }
+              },
+              "required": [
+                "operation"
+              ]
+            },
+            "then": {
+              "properties": {
+                "body": {
+                  "$ref": "#/components/schemas/FinanceTransactionUpdateRequest"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "operation": {
+                  "const": "finance.category.update"
+                }
+              },
+              "required": [
+                "operation"
+              ]
+            },
+            "then": {
+              "properties": {
+                "body": {
+                  "$ref": "#/components/schemas/FinanceCategoryUpdateRequest"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "operation": {
+                  "const": "finance.preset.create"
+                }
+              },
+              "required": [
+                "operation"
+              ]
+            },
+            "then": {
+              "properties": {
+                "body": {
+                  "$ref": "#/components/schemas/FinancePresetCreateRequest"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "operation": {
+                  "const": "finance.preset.update"
+                }
+              },
+              "required": [
+                "operation"
+              ]
+            },
+            "then": {
+              "properties": {
+                "body": {
+                  "$ref": "#/components/schemas/FinancePresetUpdateRequest"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "operation": {
+                  "const": "finance.installment.create"
+                }
+              },
+              "required": [
+                "operation"
+              ]
+            },
+            "then": {
+              "properties": {
+                "body": {
+                  "$ref": "#/components/schemas/FinanceInstallmentTerms"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "operation": {
+                  "const": "finance.installment.update"
+                }
+              },
+              "required": [
+                "operation"
+              ]
+            },
+            "then": {
+              "properties": {
+                "body": {
+                  "$ref": "#/components/schemas/FinanceInstallmentUpdateRequest"
+                }
+              }
+            }
+          }
+        ]
       },
       "FinanceSyncSnapshot": {
         "type": "object",
@@ -8548,6 +9539,16 @@
           "updatedAt": {
             "format": "date-time",
             "type": "string"
+          },
+          "reimbursementStatus": {
+            "type": "string",
+            "enum": [
+              "",
+              "pending",
+              "reimbursed"
+            ],
+            "description": "报销状态：空字符串为无需报销，pending 为待报销，reimbursed 为已报销。非空仅允许原正支出（type=expense 且 amount>0），退款或返现子单禁止设置非空标记。",
+            "default": ""
           }
         },
         "required": [
@@ -8570,7 +9571,8 @@
           "status",
           "source",
           "createdAt",
-          "updatedAt"
+          "updatedAt",
+          "reimbursementStatus"
         ],
         "type": "object"
       },
@@ -8659,6 +9661,16 @@
           },
           "type": {
             "type": "string"
+          },
+          "reimbursementStatus": {
+            "type": "string",
+            "enum": [
+              "",
+              "pending",
+              "reimbursed"
+            ],
+            "description": "报销状态：空字符串为无需报销，pending 为待报销，reimbursed 为已报销。非空仅允许原正支出（type=expense 且 amount>0），退款或返现子单禁止设置非空标记。创建时未提交默认为空。",
+            "default": ""
           }
         },
         "required": [
@@ -8687,14 +9699,33 @@
             "description": "金额为十进制字符串，数据库使用整数分，避免浮点误差。",
             "pattern": "^-?[0-9]+(\\.[0-9]{1,2})?$",
             "type": "string"
+          },
+          "reimbursementTotal": {
+            "description": "金额为十进制字符串，数据库使用整数分，避免浮点误差。报销总额，等于 reimbursementPending + reimbursementReceived。",
+            "pattern": "^-?[0-9]+(\\.[0-9]{1,2})?$",
+            "type": "string"
+          },
+          "reimbursementPending": {
+            "description": "金额为十进制字符串，数据库使用整数分，避免浮点误差。原单当前状态为 pending 的净额合计。",
+            "pattern": "^-?[0-9]+(\\.[0-9]{1,2})?$",
+            "type": "string"
+          },
+          "reimbursementReceived": {
+            "description": "金额为十进制字符串，数据库使用整数分，避免浮点误差。原单当前状态为 reimbursed 的净额合计。",
+            "pattern": "^-?[0-9]+(\\.[0-9]{1,2})?$",
+            "type": "string"
           }
         },
         "required": [
           "income",
           "expense",
-          "balance"
+          "balance",
+          "reimbursementTotal",
+          "reimbursementPending",
+          "reimbursementReceived"
         ],
-        "type": "object"
+        "type": "object",
+        "description": "按原支出的 transactionDate 所选日期范围及账户筛选，只纳入 posted 且 amount>0 的 expense 原单（含已入账分期子单），排除分期父单、退款行和返现行。每单净额为 max(0, 原单实际 amount - 关联该原单的所有月份 posted 负 expense 退款绝对额之和)；amount 已扣 discount，不重复扣减，不减返现、不加 fee。按原单当前 reimbursementStatus 分类：pending 计待报销，reimbursed 计已报销，空值不计。 reimbursementTotal = reimbursementPending + reimbursementReceived；三个金额字段始终响应，无匹配记录时均为金额字符串 \"0.00\"。收入、支出及余额使用相同日期范围与可选账户筛选，账户匹配 accountId 或 targetAccountId。"
       },
       "FinanceTransactionUpdateRequest": {
         "type": "object",
@@ -8769,11 +9800,21 @@
           },
           "transactionTime": {
             "type": "string"
+          },
+          "reimbursementStatus": {
+            "type": "string",
+            "enum": [
+              "",
+              "pending",
+              "reimbursed"
+            ],
+            "description": "报销状态：空字符串为无需报销，pending 为待报销，reimbursed 为已报销。非空仅允许原正支出（type=expense 且 amount>0），退款或返现子单禁止设置非空标记。未提交保留原标记，显式空字符串清除。仅修改此字段属于 metadata 更新，允许单独修改分期子单（包括已入账子单），不触发余额变更。财务更正保留未提交的原标记；若改为非 expense 且仍有标记则拒绝，必须在同一请求显式提交空字符串清除。"
           }
         },
         "required": [],
         "additionalProperties": false,
-        "minProperties": 1
+        "minProperties": 1,
+        "description": "仅更新实际提交的白名单字段；reimbursementStatus 未提交保持原值，空字符串显式清除。纯报销状态 PATCH 为 metadata，可用于分期子单且不改变余额；与财务字段同请求提交时遵守财务更正校验。"
       },
       "HealthAnalyzeInput": {
         "properties": {
@@ -9373,6 +10414,242 @@
         "required": [],
         "additionalProperties": false,
         "minProperties": 1
+      },
+      "NutritionMealItem": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "description": "去除首尾空白后非空，最多120个UTF-8字节"
+          },
+          "grams": {
+            "type": "number",
+            "exclusiveMinimum": 0,
+            "maximum": 10000
+          },
+          "calories": {
+            "type": "number",
+            "exclusiveMinimum": 0,
+            "maximum": 20000
+          }
+        },
+        "required": [
+          "name",
+          "grams",
+          "calories"
+        ],
+        "additionalProperties": false
+      },
+      "NutritionMealCreate": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "本人空间的幂等键；同正文重试返回原记录，不同正文409"
+          },
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "meal_type": {
+            "type": "string",
+            "enum": [
+              "breakfast",
+              "lunch",
+              "dinner",
+              "snack"
+            ]
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NutritionMealItem"
+            },
+            "minItems": 1,
+            "maxItems": 20
+          },
+          "note": {
+            "type": "string",
+            "description": "最多1500个UTF-8字节"
+          }
+        },
+        "required": [
+          "id",
+          "date",
+          "meal_type",
+          "items",
+          "note"
+        ],
+        "additionalProperties": false
+      },
+      "NutritionMeal": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "本人空间的幂等键；同正文重试返回原记录，不同正文409"
+          },
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "meal_type": {
+            "type": "string",
+            "enum": [
+              "breakfast",
+              "lunch",
+              "dinner",
+              "snack"
+            ]
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NutritionMealItem"
+            },
+            "minItems": 1,
+            "maxItems": 20
+          },
+          "note": {
+            "type": "string",
+            "description": "最多1500个UTF-8字节"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "date",
+          "meal_type",
+          "items",
+          "note",
+          "created_at"
+        ],
+        "additionalProperties": false
+      },
+      "NutritionGoal": {
+        "type": "object",
+        "properties": {
+          "daily_goal": {
+            "type": "number",
+            "minimum": 1000,
+            "maximum": 6000,
+            "description": "用户手动设置；支持范围不等同于个体化建议"
+          }
+        },
+        "required": [
+          "daily_goal"
+        ],
+        "additionalProperties": false
+      },
+      "NutritionOverview": {
+        "type": "object",
+        "properties": {
+          "daily_goal": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "minimum": 1000,
+            "maximum": 6000
+          },
+          "meals": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NutritionMeal"
+            }
+          }
+        },
+        "required": [
+          "daily_goal",
+          "meals"
+        ],
+        "additionalProperties": false
+      },
+      "NutritionAnalysisInput": {
+        "type": "object",
+        "properties": {
+          "config_id": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "config_version": {
+            "type": "string",
+            "format": "date-time",
+            "description": "必须精确匹配配置updated_at字符串，变化时返回409并重新同意"
+          },
+          "consent": {
+            "type": "boolean",
+            "const": true
+          },
+          "image": {
+            "type": "string",
+            "description": "内嵌JPEG/PNG data URL，解码最多3MiB，最长边4096像素，面积最多1200万像素；请求正文最多6MiB；图片不保存、不记录日志"
+          }
+        },
+        "required": [
+          "config_id",
+          "config_version",
+          "consent",
+          "image"
+        ],
+        "additionalProperties": false
+      },
+      "NutritionAnalysis": {
+        "type": "object",
+        "properties": {
+          "recognized": {
+            "type": "boolean"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NutritionMealItem"
+            },
+            "minItems": 0,
+            "maxItems": 20
+          },
+          "note": {
+            "type": "string",
+            "description": "最多1500个UTF-8字节，说明照片估算限制"
+          }
+        },
+        "required": [
+          "recognized",
+          "items",
+          "note"
+        ],
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "recognized": {
+                  "const": true
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "items": {
+                  "minItems": 1
+                }
+              }
+            },
+            "else": {
+              "properties": {
+                "items": {
+                  "maxItems": 0
+                }
+              }
+            }
+          }
+        ]
       }
     }
   }

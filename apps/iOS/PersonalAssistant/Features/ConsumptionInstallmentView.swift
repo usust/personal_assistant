@@ -1,6 +1,7 @@
 import SwiftUI
 
 nonisolated struct ConsumptionInstallmentPlan: Decodable {
+    var reimbursementStatus: String? = nil
     var categoryId: Int? = nil
     var description: String? = nil
     let name: String
@@ -40,8 +41,8 @@ struct ConsumptionInstallmentView: View {
     @State private var categoryID = 0
     @State private var notes = ""
     @State private var editingNotes = false
-    // 预留开关仅保存本次页面状态，默认关闭；不提交接口、不参与试算或统计，后续再接入业务。
-    @State private var reimbursement = false
+    // 报销进度保存到分期规则；计划修改只传播到未入账期次，已入账账单保留独立状态。
+    @State private var reimbursementStatus = ""
     @State private var excludeFromCashFlow = false
     @State private var excludeFromBudget = false
     @State private var periods = 0
@@ -99,7 +100,9 @@ struct ConsumptionInstallmentView: View {
                     }.buttonStyle(.plain)
                 }
                 Section {
-                    Toggle("是否报销", isOn: $reimbursement)
+                    Picker("报销状态", selection: $reimbursementStatus) {
+                        ForEach(ReimbursementStatus.options, id: \.self) { value in Text(ReimbursementStatus.title(value)).tag(value) }
+                    }
                     Toggle("不计收支", isOn: $excludeFromCashFlow)
                     Toggle("不计预算", isOn: $excludeFromBudget)
                 }
@@ -112,7 +115,7 @@ struct ConsumptionInstallmentView: View {
                             Image(systemName: "chevron.right").font(.footnote.weight(.semibold)).foregroundStyle(.tertiary)
                         }.contentShape(Rectangle())
                     }.buttonStyle(.plain)
-                    DatePicker("首期入账日期", selection: $firstDate, displayedComponents: .date)
+                    SystemDateTimeInput(title: "首期入账日期", selection: $firstDate, displayedComponents: .date)
                     settingRow("开始生成账单的期数", value: startPeriod == 0 ? "点此设置" : "第 \(startPeriod) 期") { editingStartPeriod = true }
                     settingRow("额度恢复（分期专项额度）", value: restoredCredit.isEmpty ? "点此设置（可不填）" : Values.money(restoredCredit)) { editingRestoredCredit = true }
                     settingRow("欠款计入方式", value: debtMode == "upfront" ? "创建时一次性计入" : "分期计入") { activeOption = .debt }
@@ -228,14 +231,15 @@ struct ConsumptionInstallmentView: View {
         }.buttonStyle(.plain)
     }
     /// 生成试算失效标识；参数：无；返回值：资料或规则变化时不同的草稿键。
-    private var draftKey: String { "\(interestCreditMode)|\(debtMode)|\(startPeriod)|\(restoredCredit)|\(categoryID)|\(notes)|\(name)|\(periods)|\(Values.day(firstDate))|\(interest)|\(interestMode)|\(rounding)|\(remainder)" }
-    /// 生成分期请求；参数：无；返回值：包含分类与备注的规则，分类 0 和空备注表示显式清空。
-    private var payload: [String: Any] { ["interestCreditMode": interestCreditMode, "debtMode": debtMode, "startPeriod": startPeriod, "restoredCredit": restoredCredit.isEmpty ? "0.00" : restoredCredit, "categoryId": categoryID, "description": notes, "name": name, "periods": periods, "firstDate": Values.day(firstDate), "interest": interest, "interestMode": interestMode, "rounding": rounding, "remainder": remainder] }
+    private var draftKey: String { "\(reimbursementStatus)|\(interestCreditMode)|\(debtMode)|\(startPeriod)|\(restoredCredit)|\(categoryID)|\(notes)|\(name)|\(periods)|\(Values.day(firstDate))|\(interest)|\(interestMode)|\(rounding)|\(remainder)" }
+    /// 生成分期请求；参数：无；返回值：包含分类、备注及报销状态的规则，分类 0、空备注和空报销键表示显式清空。
+    private var payload: [String: Any] { ["reimbursementStatus": reimbursementStatus, "interestCreditMode": interestCreditMode, "debtMode": debtMode, "startPeriod": startPeriod, "restoredCredit": restoredCredit.isEmpty ? "0.00" : restoredCredit, "categoryId": categoryID, "description": notes, "name": name, "periods": periods, "firstDate": Values.day(firstDate), "interest": interest, "interestMode": interestMode, "rounding": rounding, "remainder": remainder] }
     /// 初始化账单分期；参数：无；返回值：无，已保存时读取服务端计划，失败保留错误。
     private func initialize() async {
         guard !initialized else { return }
         initialized = true
         categoryID = bill.categoryId ?? 0; notes = bill.description
+        reimbursementStatus = bill.reimbursementStatus ?? ""
         let formatter = DateFormatter(); formatter.locale = Locale(identifier: "en_US_POSIX"); formatter.dateFormat = "yyyy-MM-dd"
         firstDate = formatter.date(from: bill.transactionDate) ?? .now
         if bill.status == "installment" || bill.installmentParentId != nil {
@@ -252,6 +256,7 @@ struct ConsumptionInstallmentView: View {
                 rounding = current.rounding; remainder = current.remainder
                 categoryID = current.categoryId ?? bill.categoryId ?? 0
                 notes = current.description ?? bill.description
+                reimbursementStatus = current.reimbursementStatus ?? bill.reimbursementStatus ?? ""
                 originalPayload = payload
                 plan = nil
             }

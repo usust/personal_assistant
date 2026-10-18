@@ -138,6 +138,9 @@ func (s *Service) Execute(ctx context.Context, actor capability.Actor, op string
 		case "finance.category.create":
 			// 校验并创建用户分类。
 			out, e = s.createCategory(tx, actor.UserID, in.Changes)
+		case "finance.category.update":
+			// 按归属校验并更新已提交的分类资料，保持收支类型及历史引用不变。
+			out, e = s.updateCategory(tx, actor.UserID, in)
 		case "finance.transaction.get":
 			// 读取当前用户可访问的目标流水。
 			out, e = getTransaction(tx, actor.UserID, in.ID)

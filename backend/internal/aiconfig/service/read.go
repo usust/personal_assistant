@@ -5,7 +5,10 @@ package service
 import (
 	"context"
 	"errors"
+	"time"
+
 	"gorm.io/gorm"
+
 	"personal_assistant_server/internal/aiconfig/model"
 	"personal_assistant_server/internal/aiconfig/repository"
 )
@@ -34,19 +37,25 @@ func (s *Service) List(ctx context.Context, actorID uint64) ([]model.ProviderCon
 // 接收者：s 为已初始化服务；参数：ctx 为调用上下文；actorID 为可信身份；id 为配置 ID。
 // 返回值：最小连接信息及错误；不存在或无权统一返回 ErrForbidden，包含的密钥不得记录或输出。
 func (s *Service) GetUsable(ctx context.Context, actorID uint64, id uint) (Connection, error) {
+	connection, _, err := s.GetUsableVersioned(ctx, actorID, id)
+	return connection, err
+}
+
+// GetUsableVersioned 原子读取已授权连接与其版本；接收者：s 已初始化；参数：ctx 为上下文，actorID 为可信身份，id 为配置ID；返回值：连接、同一行更新时间及错误；无权/不存在统一ErrForbidden，密钥不得日志或输出。
+func (s *Service) GetUsableVersioned(ctx context.Context, actorID uint64, id uint) (Connection, string, error) {
 	// 读取当前用户的业务信息。
 	actor, err := s.users.Current(ctx, actorID)
 	if err != nil {
-		return Connection{}, err
+		return Connection{}, "", err
 	}
 	// 确认所选模型配置可供当前用户使用。
 	row, err := repository.UsableConfig(s.db.WithContext(ctx), actorID, actor.Role.IsAdmin(), id)
 	// 区分预期错误与需要继续上报的异常。
 	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return Connection{}, ErrForbidden
+		return Connection{}, "", ErrForbidden
 	}
 	if err != nil {
-		return Connection{}, err
+		return Connection{}, "", err
 	}
-	return Connection{BaseURL: row.BaseURL, ModelName: row.ModelName, APIKey: row.APIKey}, nil
+	return Connection{BaseURL: row.BaseURL, ModelName: row.ModelName, APIKey: row.APIKey}, row.UpdatedAt.Format(time.RFC3339Nano), nil
 }

@@ -6,6 +6,8 @@ struct FinanceView: View {
 }
 struct AccountsView: View {
     @Environment(AppStore.self) private var store
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @ScaledMetric(relativeTo: .subheadline) private var minimumInformationWidth = 100
     @State private var creating = false
     @State private var edited: FinancialAccount?
     @State private var archived: FinancialAccount?
@@ -92,40 +94,85 @@ struct AccountsView: View {
     /// 格式化可隐藏金额；参数：value 为精确元金额；返回值：金额或隐私占位符，无副作用。
     private func displayAmount(_ value: Decimal) -> String { hideAmounts ? "••••" : AccountPresentation.money(value) }
 
-    /// 绘制账户行；参数：account 为有效账户；返回值：名称旁标注不计入状态、下方显示账户类型，右侧金额保持统一字号与右对齐，不因名称长度缩小；无网络副作用。
+    /// 绘制账户行；参数：account 为有效账户；返回值：名称按剩余宽度换行、金额右对齐，仅在最低信息宽度仍不足或辅助字号下纵向显示；无网络副作用。
     private func accountRow(_ account: FinancialAccount) -> some View {
         let provider = AccountProvider.resolve(type: account.accountType, institution: account.institution)
         let typeName = provider.type == "bank" ? (provider.isCredit ? "信用卡" : "储蓄卡") : provider.name
-        return HStack(alignment: .center, spacing: 12) {
-            // 图标组件统一裁掉素材外围留白，所有账户采用相同视觉尺寸。
-            AccountProviderIcon(provider: provider, size: 44)
-            VStack(alignment: .leading, spacing: 5) {
-                // 不计入状态紧随名称，不再独占一行；标签保留完整宽度，长名称在剩余空间换行。
-                HStack(alignment: .firstTextBaseline, spacing: 5) {
-                    Text(account.name).font(.subheadline.weight(.semibold)).foregroundStyle(.primary)
-                        .fixedSize(horizontal: false, vertical: true)
-                    if !account.includeInNetWorth {
-                        Text("不计入").font(.caption2).foregroundStyle(.secondary)
-                            .padding(.horizontal, 5).padding(.vertical, 2)
-                            .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 4))
+        return Group {
+            if dynamicTypeSize.isAccessibilitySize {
+                stackedAccountRow(account, provider: provider, typeName: typeName)
+            } else {
+                ViewThatFits(in: .horizontal) {
+                    // 用随字号缩放的最低信息宽度判断横排是否可用，名称按剩余空间换行，避免长名称触发整行纵排。
+                    HStack(spacing: 12) {
+                        AccountProviderIcon(provider: provider, size: 44)
+                        accountInformation(account, typeName: typeName, stacked: false)
+                            .frame(minWidth: minimumInformationWidth, idealWidth: minimumInformationWidth, maxWidth: .infinity, alignment: .leading)
+                        Spacer(minLength: 0)
+                        accountAmounts(account, stacked: false)
                             .fixedSize(horizontal: true, vertical: false)
                     }
+                    // 极窄宽度或大金额连同最低信息宽度仍放不下时，完整显示内容，避免金额溢出或名称被挤成单字列。
+                    stackedAccountRow(account, provider: provider, typeName: typeName)
                 }
-                accountDetail(account, typeName: typeName).font(.caption).foregroundStyle(.secondary)
-                if !account.notes.isEmpty { Text(account.notes).font(.caption).foregroundStyle(.secondary).lineLimit(2) }
-            }.frame(maxWidth: .infinity, alignment: .leading)
-            // 金额列不参与名称的宽度压缩；长名称在左列换行，所有金额沿卡片同一右边距排列。
-            VStack(alignment: .trailing, spacing: 5) {
-                Text(displayAmount(AccountPresentation.balance(account)))
-                    .font(.subheadline).monospacedDigit().foregroundStyle(.primary)
-                    .fixedSize(horizontal: true, vertical: false)
-                if let total = AccountPresentation.loanTotal(account) {
-                    Text("总贷款：\(displayAmount(total))").font(.caption).foregroundStyle(.secondary)
-                } else {
-                    creditAvailable(account).font(.caption).foregroundStyle(.secondary)
-                }
-            }.multilineTextAlignment(.trailing).layoutPriority(1)
+            }
         }.frame(maxWidth: .infinity, alignment: .leading).padding(.vertical, 8)
+    }
+
+    /// 绘制纵向账户行；参数：account 为账户，provider 为机构图标配置，typeName 为类型名称；返回值：可随可用宽度换行的图标、信息与金额，无副作用。
+    private func stackedAccountRow(_ account: FinancialAccount, provider: AccountProvider, typeName: String) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            AccountProviderIcon(provider: provider, size: 44)
+            accountInformation(account, typeName: typeName, stacked: true)
+            accountAmounts(account, stacked: true)
+        }.frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    /// 绘制账户说明；参数：account 为账户，typeName 为类型名称，stacked 表示纵向布局；返回值：完整名称与不计入状态、类型及备注，无副作用。
+    private func accountInformation(_ account: FinancialAccount, typeName: String, stacked: Bool) -> some View {
+        VStack(alignment: .leading, spacing: 5) {
+            // 纵向时状态另起一行，避免辅助字号下状态标签挤占名称宽度。
+            if stacked {
+                accountName(account)
+                if !account.includeInNetWorth { excludedBadge }
+            } else {
+                HStack(alignment: .firstTextBaseline, spacing: 5) {
+                    accountName(account)
+                    if !account.includeInNetWorth { excludedBadge }
+                }
+            }
+            accountDetail(account, typeName: typeName).font(.caption).foregroundStyle(.secondary)
+            if !account.notes.isEmpty { Text(account.notes).font(.caption).foregroundStyle(.secondary).lineLimit(2) }
+        }.frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    /// 绘制完整账户名；参数：account 为账户；返回值：允许纵向换行的名称，无副作用。
+    private func accountName(_ account: FinancialAccount) -> some View {
+        Text(account.name).font(.subheadline.weight(.semibold)).foregroundStyle(.primary)
+            .fixedSize(horizontal: false, vertical: true)
+    }
+
+    /// 绘制净资产排除状态；参数：无；返回值：允许换行的“不计入”标签，无副作用。
+    private var excludedBadge: some View {
+        Text("不计入").font(.caption2).foregroundStyle(.secondary)
+            .fixedSize(horizontal: false, vertical: true)
+            .padding(.horizontal, 5).padding(.vertical, 2)
+            .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 4))
+    }
+
+    /// 绘制账户金额；参数：account 为账户，stacked 表示纵向布局；返回值：保留隐藏规则的余额及贷款总额或额度，纵向可完整换行，无副作用。
+    private func accountAmounts(_ account: FinancialAccount, stacked: Bool) -> some View {
+        VStack(alignment: stacked ? .leading : .trailing, spacing: 5) {
+            Text(displayAmount(AccountPresentation.balance(account)))
+                .font(.subheadline).monospacedDigit().foregroundStyle(.primary)
+            if let total = AccountPresentation.loanTotal(account) {
+                Text("总贷款：\(displayAmount(total))").font(.caption).foregroundStyle(.secondary)
+            } else {
+                creditAvailable(account).font(.caption).foregroundStyle(.secondary)
+            }
+        }.multilineTextAlignment(stacked ? .leading : .trailing)
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(maxWidth: .infinity, alignment: stacked ? .leading : .trailing)
     }
 
     /// 绘制类型和最近账期；参数：account 为账户，typeName 为产品类型；返回值：信用账户显示最近日程，普通账户只显示类型。
@@ -139,7 +186,7 @@ struct AccountsView: View {
     @ViewBuilder private func creditAvailable(_ account: FinancialAccount) -> some View {
         if account.institution != "贷款", AccountProvider.resolve(type: account.accountType, institution: account.institution).isCredit,
            let value = AccountPresentation.availableCredit(account) {
-            Text("可用额度: \(displayAmount(value))").fixedSize()
+            Text("可用额度: \(displayAmount(value))").fixedSize(horizontal: false, vertical: true)
         }
     }
 
@@ -244,6 +291,7 @@ struct AccountEditor: View {
     /// 校验保存条件；参数无；返回名称、余额及文本长度是否满足服务端约束。
     private var valid: Bool { !savedName.isEmpty && savedName.utf8.count <= 128 && provider.institution.utf8.count <= 128 && notes.utf8.count <= 2000 && Values.validMoney(openingBalance) && (!isLoan || loan.valid) && (!provider.isCredit || (Values.validMoney(debt) && Values.validMoney(creditLimit) && !creditLimit.hasPrefix("-") && (reminderDays < 0 || (isLoan ? (loan.enabled || repaymentDay > 0) : repaymentDay > 0)))) }
 
+    /// 构建账户编辑器；参数：无；返回值：共享实色分组卡片和原生玻璃保存操作，字段、金额计算与保存校验保持现有业务约束。
     var body: some View {
         Group {
             if account == nil && !hasChoice {
@@ -281,7 +329,7 @@ struct AccountEditor: View {
                                 inputRow("账户备注", text: $notes, placeholder: "点击填写备注（可不填）")
                             }
                             .padding(.horizontal, 18).padding(.vertical, 6)
-                            .background(Color(uiColor: .secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 26))
+                            .cardSurface()
 
                             if provider.isCredit && !isLoan { cardFields }
                             if isLoan {
@@ -289,7 +337,7 @@ struct AccountEditor: View {
                                 if account != nil {
                                     amountRow("剩余本金", value: debt)
                                         .padding(.horizontal, 18).padding(.vertical, 6)
-                                        .background(Color(uiColor: .secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 26))
+                                        .cardSurface()
                                 }
                             } else if provider.isCredit {
                                 VStack(spacing: 0) {
@@ -304,7 +352,7 @@ struct AccountEditor: View {
                                     Toggle("出账日账单计入当期", isOn: $billDayInclusive).tint(.green).frame(minHeight: 54)
                                 }
                                 .padding(.horizontal, 18).padding(.vertical, 6)
-                                .background(Color(uiColor: .secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 26))
+                                .cardSurface()
                             }
                             VStack(spacing: 0) {
                                 if !provider.isCredit {
@@ -317,7 +365,7 @@ struct AccountEditor: View {
                                 Toggle("计入净资产", isOn: $include).tint(.green).frame(minHeight: 54)
                             }
                             .padding(.horizontal, 18).padding(.vertical, 6)
-                            .background(Color(uiColor: .secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 26))
+                            .cardSurface()
                             if provider.isCredit {
                                 VStack(spacing: 0) {
                                     // 菜单选择器在 ScrollView 中不显示自身标题，使用独立标签保证字段名常驻。
@@ -333,16 +381,16 @@ struct AccountEditor: View {
                                     }.frame(maxWidth: .infinity, minHeight: 54, alignment: .leading)
                                     if reminderDays >= 0 {
                                         Divider()
-                                        DatePicker("提醒时间", selection: $reminderTime, displayedComponents: .hourAndMinute).frame(minHeight: 54)
+                                        SystemDateTimeInput(title: "提醒时间", selection: $reminderTime, displayedComponents: .hourAndMinute).frame(minHeight: 54)
                                     }
                                 }
                                 .padding(.horizontal, 18).padding(.vertical, 6)
-                                .background(Color(uiColor: .secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 26))
+                                .cardSurface()
                                 if reminderDays >= 0 && !isLoan && repaymentDay == 0 { InlineError(message: "请先设置还款日期。") }
                             }
                             Toggle("记账时可被选择", isOn: $selectable).tint(.green).frame(minHeight: 54)
                                 .padding(.horizontal, 18).padding(.vertical, 6)
-                                .background(Color(uiColor: .secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 26))
+                                .cardSurface()
                             if provider.isCredit && (!Values.validMoney(debt) || !Values.validMoney(creditLimit) || creditLimit.hasPrefix("-")) {
                                 InlineError(message: "请输入有效金额，信用额度不能为负数。")
                             }
@@ -388,16 +436,14 @@ struct AccountEditor: View {
                             // 提交回调参数、返回值无；仅显式点击创建／保存才执行网络写入。
                             Button { Task { await save() } } label: {
                                 Group {
-                                    if busy { ProgressView().tint(.white) }
-                                    else { Image(systemName: "checkmark").font(.title3.weight(.semibold)) }
+                                    if busy { ProgressView() }
+                                    else { Image(systemName: "checkmark").font(.body.weight(.semibold)) }
                                 }
-                                .frame(width: 44, height: 44)
-                                .foregroundStyle(.white)
-                                .background(valid && !hasPendingAmountCalculation ? Color.accentColor : Color.secondary, in: Circle())
-                            }.buttonStyle(.plain)
+                                .frame(minWidth: 44, minHeight: 44)
+                            }.buttonStyle(.glassProminent).buttonBorderShape(.circle)
                                 .accessibilityLabel(account == nil ? "创建账户" : "保存账户")
                                 .disabled(busy || !valid || !validCardNumber || !validCards || hasPendingAmountCalculation)
-                        }
+                        }.visibilityPriority(.high)
                     }
                     .disabled(busy)
                     .navigationDestination(isPresented: $choosingProvider) {

@@ -40,6 +40,11 @@ func splitInstallment(total domain.Money, terms domain.InstallmentTerms) ([]doma
 // calculateInstallment 试算逐月计划；参数：principal 为正数本金，terms 为用户规则；返回值：精确本息计划或校验错误，无数据库写入。
 func calculateInstallment(principal domain.Money, terms domain.InstallmentTerms) (domain.InstallmentPlan, error) {
 	plan := domain.InstallmentPlan{InstallmentTerms: terms, Principal: principal, Total: principal + terms.Interest, Rows: []domain.InstallmentRow{}}
+	if terms.ReimbursementStatus != nil {
+		if err := validateReimbursement(*terms.ReimbursementStatus, "expense", principal, false); err != nil {
+			return plan, err
+		}
+	}
 	// 检查文本长度与必填约束。
 	if !validText(terms.Name, 128, true) || terms.Periods < 2 || terms.Periods > 480 || !validDate(terms.FirstDate) || principal <= 0 || terms.Interest < 0 || plan.Total > maxMoney {
 		// 拒绝本次操作：请检查名称、期数（2–480）、首期日期和利息。
@@ -110,7 +115,7 @@ func calculateInstallment(principal domain.Money, terms domain.InstallmentTerms)
 	return plan, nil
 }
 
-// installment 读取、试算或原子转换支出；参数：db 为已锁定用户的事务，owner 为身份，op 为操作，in 含原账单 ID 和规则；返回值：计划或错误，失败全部回滚。
+// installment 读取、试算或原子转换支出；参数：db 为已锁定用户的事务，owner 为身份，op 为操作，in 含原账单 ID 和规则（可选报销状态覆盖原单并传给子单）；返回值：计划或错误，失败全部回滚，报销仅为分类资料。
 func installment(db *gorm.DB, owner uint64, op string, in Input) (domain.InstallmentPlan, error) {
 	var bill domain.Transaction
 	var plan domain.InstallmentPlan
@@ -173,6 +178,13 @@ func installment(db *gorm.DB, owner uint64, op string, in Input) (domain.Install
 	}
 	// 仅接收经过校验的资料字段；试算只修改内存，保存时与分期转换一起原子写入。
 	fields := map[string]any{}
+	if terms.ReimbursementStatus != nil {
+		if err := validateReimbursement(*terms.ReimbursementStatus, bill.Type, bill.Amount, bill.RefundParentID != nil || bill.RebateParentID != nil); err != nil {
+			return plan, err
+		}
+		bill.ReimbursementStatus = *terms.ReimbursementStatus
+		fields["reimbursement_status"] = bill.ReimbursementStatus
+	}
 	if terms.CategoryID != nil {
 		bill.CategoryID = nil
 		if *terms.CategoryID != 0 {
@@ -238,7 +250,7 @@ func installment(db *gorm.DB, owner uint64, op string, in Input) (domain.Install
 	for i := range plan.Rows {
 		period := &plan.Rows[i]
 		// 生成当前操作需要的展示或协议文本。
-		child := domain.Transaction{OwnerID: owner, RequestID: fmt.Sprintf("installment_%d_%d", bill.ID, period.Period), AccountID: bill.AccountID, Type: "expense", Amount: period.Amount, CategoryID: bill.CategoryID, Counterparty: bill.Counterparty, TransactionDate: period.Date, Description: fmt.Sprintf("%s · %d/%d", terms.Name, period.Period, terms.Periods), Status: "pending", Source: "http", InstallmentParentID: &bill.ID, InstallmentPeriod: period.Period}
+		child := domain.Transaction{ReimbursementStatus: bill.ReimbursementStatus, OwnerID: owner, RequestID: fmt.Sprintf("installment_%d_%d", bill.ID, period.Period), AccountID: bill.AccountID, Type: "expense", Amount: period.Amount, CategoryID: bill.CategoryID, Counterparty: bill.Counterparty, TransactionDate: period.Date, Description: fmt.Sprintf("%s · %d/%d", terms.Name, period.Period, terms.Periods), Status: "pending", Source: "http", InstallmentParentID: &bill.ID, InstallmentPeriod: period.Period}
 		if terms.Description != nil || bill.Description != "" {
 			child.Description = bill.Description
 		}

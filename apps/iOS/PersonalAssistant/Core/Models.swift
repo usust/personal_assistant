@@ -147,6 +147,8 @@ nonisolated struct AccountCard: Codable, Identifiable, Equatable {
 }
 
 nonisolated struct FinanceTransaction: Codable, Identifiable {
+    /// 空值或空字符串表示无需报销；pending 为待报销，reimbursed 为已报销，兼容旧账本。
+    var reimbursementStatus: String? = nil
     var screenshotJobID: String? = nil
     var screenshotIssue: String? = nil
     var installmentPeriods: Int? = nil
@@ -268,6 +270,25 @@ nonisolated enum Values {
         formatter.dateFormat = "yyyy-MM-dd"
         return formatter.date(from: raw) ?? .now
     }
+    /// 筛选任务显示范围；参数：scope 为 active（默认）、all 或 archived，all 为完整任务快照，listID 为清单 ID、0 表示全部；返回值：保持原顺序的任务，归档节点的全部后代在显示层归入归档范围；不改写节点字段、父子关系或进度，缺失父节点保留，循环关系安全终止。
+    static func tasks(in scope: String, all: [AssistantTask], listID: Int = 0) -> [AssistantTask] {
+        // 全部范围不隐藏任何子树；清单筛选只作用于输出，祖先关系始终基于完整快照。
+        if scope == "all" { return all.filter { listID == 0 || $0.listId == listID } }
+        var children: [Int: [Int]] = [:]
+        var archivedIDs = Set<Int>()
+        for task in all {
+            if let parent = task.parentId { children[parent, default: []].append(task.id) }
+            if task.archived { archivedIDs.insert(task.id) }
+        }
+        var pending = Array(archivedIDs)
+        // 服务端归档不级联修改下级字段；这里只传播可见性，防止下级因父节点被筛掉而升为顶层。集合同时阻止循环重复入队。
+        while let parent = pending.popLast() {
+            for child in children[parent] ?? [] where archivedIDs.insert(child).inserted { pending.append(child) }
+        }
+        let showingArchived = scope == "archived"
+        return all.filter { (listID == 0 || $0.listId == listID) && archivedIDs.contains($0.id) == showingArchived }
+    }
+
     /// 聚合任务子树（包括归档子任务）；参数：task 为当前节点，all 为全部任务，visited 用于检测环；返回值：叶节点进度汇总；无副作用。
     static func progress(_ task: AssistantTask, all: [AssistantTask], visited: Set<Int> = []) -> TaskProgress {
         let own = TaskProgress(total: task.progressTotal, completed: task.progressCompleted, unit: task.progressUnit)
@@ -351,6 +372,7 @@ nonisolated struct FinancePreset: Decodable, Identifiable {
     let lastError: String
 }
 nonisolated struct PresetTransaction: Decodable {
+    var reimbursementStatus: String? = nil
     var discount: String? = nil
     let accountId: Int
     let targetAccountId: Int?

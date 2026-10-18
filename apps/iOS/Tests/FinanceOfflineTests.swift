@@ -84,9 +84,61 @@ final class OfflineSyncServer: @unchecked Sendable {
             CoreTests.check(false, "相同转账账户必须拒绝")
         } catch { CoreTests.check(NSDictionary(dictionary: before).isEqual(to: store.document), "编辑失败完整回滚余额与队列") }
     }
+    /// 验证分类编辑和跨月报销净额；参数：无；返回值：无；使用独立账本验证稳定引用、零值清空、退款和重新打开后的资料，不访问真实数据。
+    static func reimbursementAndCategoryEditing() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent("reimbursement-tests-" + UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let store = try ledger(directory, "reimbursement")
+        let a = try account(store, name: "报销钱包", balance: "1000.00")
+        let b = try account(store, name: "其他钱包", balance: "100.00")
+        let category = try store.writeLocal("/finance/categories", method: "POST", body: ["name": "工作午餐", "type": "expense", "groupKey": "food", "icon": "fork.knife", "color": "#123456"]) as! [String: Any]
+        let categoryID = FinanceLocalStore.id(category), categoryPath = "/finance/categories/\(categoryID)"
+        var body = payment(a, amount: "100.00", key: "reimbursement-expense-001")
+        body["discount"] = "10.00"; body["reimbursementStatus"] = "pending"; body["categoryId"] = categoryID
+        let created = try store.writeLocal("/finance/transactions", method: "POST", body: body) as! [String: Any]
+        let id = FinanceLocalStore.id(created), path = "/finance/transactions/\(id)"
+        CoreTests.check(store.supportsLocal(categoryPath, method: "PATCH", body: ["name": "商务午餐"]), "分类更正支持离线")
+        _ = try store.writeLocal(categoryPath, method: "PATCH", body: ["name": "商务午餐", "icon": "cup.and.saucer"])
+        let edited = store.rows("categories").first { FinanceLocalStore.id($0) == categoryID }!
+        CoreTests.check(edited["name"] as? String == "商务午餐" && edited["groupKey"] as? String == "food" && edited["color"] as? String == "#123456", "分类只更新提交字段")
+        CoreTests.check(store.rows("transactions").first { FinanceLocalStore.id($0) == id }?["categoryId"] as? Int == categoryID, "分类更正保留原流水引用")
+        _ = try store.writeLocal(categoryPath, method: "PATCH", body: ["groupKey": "", "icon": ""])
+        CoreTests.check(store.rows("categories").first { FinanceLocalStore.id($0) == categoryID }?["icon"] as? String == "", "分类可显式清除图标")
+        let categoryBefore = store.document
+        do {
+            _ = try store.writeLocal(categoryPath, method: "PATCH", body: ["type": "income"])
+            CoreTests.check(false, "有关联流水的分类不得跨收支类型")
+        } catch { CoreTests.check(NSDictionary(dictionary: categoryBefore).isEqual(to: store.document), "非法分类更正原子回滚") }
+        // 跨月退款必须回到原支出月份，不能受当前月份流水分页或退款日期限制。
+        _ = try store.writeLocal(path + "/refund", method: "POST", body: ["requestId": "reimbursement-refund-001", "amount": "20.00", "transactionDate": "2026-10-02"])
+        let refund = store.rows("transactions").first { FinanceLocalStore.id($0, "refundParentId") == id }!
+        CoreTests.check((refund["reimbursementStatus"] as? String ?? "").isEmpty, "退款不复制报销状态")
+        var other = payment(b, amount: "5.00", key: "reimbursement-other-001"); other["reimbursementStatus"] = "reimbursed"
+        _ = try store.writeLocal("/finance/transactions", method: "POST", body: other)
+        let filters = ["startDate": "2026-09-01", "endDate": "2026-09-30", "accountId": String(a), "limit": "1"]
+        var sums = try store.summary(filters)
+        CoreTests.check(sums["reimbursementPending"] == "70.00" && sums["reimbursementReceived"] == "0.00" && sums["reimbursementTotal"] == "70.00", "实付扣退款并隔离账户")
+        _ = try store.writeLocal(path, method: "PATCH", body: ["reimbursementStatus": "reimbursed"])
+        balance(store, a, "930.00")
+        sums = try store.summary(filters)
+        CoreTests.check(sums["reimbursementPending"] == "0.00" && sums["reimbursementReceived"] == "70.00", "状态更正仅重新分类，不重复入账")
+        let restored = try ledger(directory, "reimbursement")
+        CoreTests.check(restored.rows("transactions").first { FinanceLocalStore.id($0) == id }?["reimbursementStatus"] as? String == "reimbursed", "重启保留报销标记")
+        _ = try store.writeLocal(path, method: "PATCH", body: ["reimbursementStatus": ""])
+        let cleared = try store.summary(filters)
+        CoreTests.check(cleared["reimbursementTotal"] == "0.00", "显式空值取消报销")
+        let before = store.document
+        var invalid = payment(a, kind: "income", key: "invalid-reimbursement-001"); invalid["reimbursementStatus"] = "pending"
+        do {
+            _ = try store.writeLocal("/finance/transactions", method: "POST", body: invalid)
+            CoreTests.check(false, "收入不能标记报销")
+        } catch { CoreTests.check(NSDictionary(dictionary: before).isEqual(to: store.document), "非法报销回滚余额和队列") }
+    }
     /// 执行离线业务、磁盘恢复及真实传输封装测试；参数：无；返回值：无，失败抛错或断言，不访问实际网络和钥匙串。
     static func run() async throws {
         try transactionEditing()
+        try reimbursementAndCategoryEditing()
         // 使用虚构号码验证本机保存、同步脱敏及快照合并，防止保存或下载后丢失完整号码。
         let card = try AccountCard(id: "card-test", name: "测试卡", maskedAccountNumber: "1234-5678 9012 3456").normalized()
         precondition(card.maskedAccountNumber == "1234567890123456")

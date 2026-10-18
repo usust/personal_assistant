@@ -7,9 +7,9 @@ import (
 	"personal_assistant_server/internal/health/repository"
 )
 
-// Clear 删除个人健康快照及报告；接收者：s 已初始化；参数：ctx 为上下文，uid 为可信身份；返回值：公开错误或 nil；不删除手机原始数据。
+// Clear 删除个人健康快照、报告、餐食及手动目标；接收者：s 已初始化；参数：ctx 为上下文，uid 为可信身份；返回值：公开错误或 nil；不删除手机原始数据。
 func (s *Service) Clear(ctx context.Context, uid uint64) error {
-	// 仓储保证报告与日汇总删除的原子性。
+	// 仓储保证所有本人健康模块数据删除的原子性。
 	if err := repository.Clear(s.db.WithContext(ctx), uid); err != nil {
 		return &OperationError{500, "删除健康数据失败"}
 	}

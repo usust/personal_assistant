@@ -239,7 +239,7 @@ extension FinanceLocalStore {
     func saveScreenshotTransaction(_ id: String, body: [String: Any]) throws {
         var book = try screenshotBook()
         guard let index = book.jobs.firstIndex(where: { $0.id == id }), book.jobs[index].state == "review" else { throw Self.failure("截图流水不存在") }
-        let allowed = Set(["type", "accountId", "targetAccountId", "amount", "discount", "fee", "rebate", "rebateAccountId", "rebatePending", "categoryId", "counterparty", "description", "transactionDate", "transactionTime"])
+        let allowed = Set(["type", "accountId", "targetAccountId", "amount", "discount", "fee", "rebate", "rebateAccountId", "rebatePending", "categoryId", "counterparty", "description", "transactionDate", "transactionTime", "reimbursementStatus"])
         // 只复制编辑器允许的交易字段，账本 apply 继续校验金额、账户、类型及关联约束。
         var fields = body.filter { allowed.contains($0.key) }
         let operationID = "screenshot-" + id

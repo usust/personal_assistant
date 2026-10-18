@@ -64,16 +64,31 @@ extension FinanceLocalStore {
         let offset = max(0, Int(filters["offset"] ?? "0") ?? 0), limit = min(500, max(1, Int(filters["limit"] ?? "100") ?? 100))
         return Array(result.dropFirst(offset).prefix(limit))
     }
-    /// 以 Decimal 汇总完整范围，避免多账户聚合溢出；参数：filters 为日期范围；返回值：两位小数字符串的收入、支出和结余，无写入。
+    /// 以 Decimal 汇总完整范围；参数：filters 为日期及账户范围；返回值：两位小数收支、结余及报销金额；报销按原支出月份归属，扣除所有月份有效退款，无写入。
     func summary(_ filters: [String: String]) throws -> [String: String] {
         var income = Decimal.zero, expense = Decimal.zero
+        var pending = Decimal.zero, received = Decimal.zero
+        var refunds: [Int: Decimal] = [:]
+        // 退款不受当前日期分页限制；按原单身份抵扣，跨月退款仍修正原支出归属月份。
+        for row in rows("transactions") where row["status"] as? String == "posted" && row["type"] as? String == "expense" && Self.id(row, "refundParentId") != 0 {
+            let amount = try Self.cents(row["amount"])
+            if amount < 0 { refunds[Self.id(row, "refundParentId"), default: 0] -= Decimal(amount) }
+        }
         for row in try transactions(filters, paginated: false) where row["status"] as? String == "posted" {
             let amount = Decimal(try Self.cents(row["amount"]))
             if row["type"] as? String == "income" { income += amount }
-            if row["type"] as? String == "expense" { expense += amount }
+            if row["type"] as? String == "expense" {
+                expense += amount
+                if amount > 0, Self.id(row, "refundParentId") == 0, Self.id(row, "rebateParentId") == 0 {
+                    let net = max(0, amount - (refunds[Self.id(row)] ?? 0))
+                    if row["reimbursementStatus"] as? String == "pending" { pending += net }
+                    if row["reimbursementStatus"] as? String == "reimbursed" { received += net }
+                }
+            }
             expense += Decimal(try Self.cents(row["fee"] ?? "0.00"))
         }
-        return ["income": Self.decimalMoney(income), "expense": Self.decimalMoney(expense), "balance": Self.decimalMoney(income - expense)]
+        return ["income": Self.decimalMoney(income), "expense": Self.decimalMoney(expense), "balance": Self.decimalMoney(income - expense),
+                "reimbursementTotal": Self.decimalMoney(pending + received), "reimbursementPending": Self.decimalMoney(pending), "reimbursementReceived": Self.decimalMoney(received)]
     }
     /// 格式化累计分金额；参数：value 为精确 Decimal 分；返回值：两位小数字符串，无浮点舍入。
     static func decimalMoney(_ value: Decimal) -> String {

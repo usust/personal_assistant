@@ -123,7 +123,7 @@ final class APIClient {
         return try await networkData(path, method: method, body: body, query: query)
     }
 
-    /// 发送 JSON；参数：path 为路径，method 为方法，body 为可选字典，query 为查询；返回值：响应字节；401 清理会话，禁止携带凭证跟随重定向。
+    /// 发送 JSON；参数：path 为路径（餐食视觉与健康报告允许110秒），method 为方法，body 为可选字典，query 为查询；返回值：响应字节；401 清理会话，禁止携带凭证跟随重定向。
     func networkData(_ path: String, method: String, body: [String: Any]?, query: [URLQueryItem] = []) async throws -> Data {
         let base = try Self.normalize(baseURL)
         let requestToken = token
@@ -132,7 +132,7 @@ final class APIClient {
         guard let url = components.url else { throw APIError(status: 0, message: "请求地址无效") }
         var request = URLRequest(url: url)
         request.httpMethod = method
-        request.timeoutInterval = path == "/health" ? 10 : (path == "/ai/chat" || path == "/ai/screenshot" || path == "/health-management/reports") ? 110 : 20
+        request.timeoutInterval = path == "/health" ? 10 : (path == "/ai/chat" || path == "/ai/screenshot" || path == "/health-management/reports" || path == "/health-management/meal-analysis") ? 110 : 20
         request.cachePolicy = .reloadIgnoringLocalCacheData
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         if let token { request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization") }

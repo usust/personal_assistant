@@ -65,11 +65,11 @@ struct ListEditor: View {
                         // 图标回调：输入为跨端共用图标键与系统符号；返回选择按钮，仅更新草稿。
                         ForEach(TaskListAppearance.icons, id: \.key) { option in
                             Button { icon = option.key } label: {
-                                Image(systemName: option.symbol).font(.title3)
+                                Image(systemName: option.symbol).font(.system(size: 20, weight: .semibold))
                                     .frame(maxWidth: .infinity, minHeight: 48)
                                     .foregroundStyle(Color.listColor(color))
-                                    .background(Color.listColor(color).opacity(icon == option.key ? 0.2 : 0.06), in: RoundedRectangle(cornerRadius: 14))
-                                    .overlay { if icon == option.key { RoundedRectangle(cornerRadius: 14).stroke(Color.listColor(color), lineWidth: 2) } }
+                                    .background(Color.listColor(color).opacity(icon == option.key ? 0.2 : 0.12), in: RoundedRectangle(cornerRadius: AppVisualStyle.fieldRadius, style: .continuous))
+                                    .overlay { if icon == option.key { RoundedRectangle(cornerRadius: AppVisualStyle.fieldRadius, style: .continuous).stroke(Color.listColor(color), lineWidth: 2) } }
                             }.buttonStyle(.plain).accessibilityLabel(option.label)
                                 .accessibilityAddTraits(icon == option.key ? .isSelected : [])
                         }
@@ -155,20 +155,63 @@ struct TaskFloatingField: View {
     let title: String
     @Binding var text: String
     var multiline = false
+    var stepperRange: ClosedRange<Int>? = nil
+    // 同行普通字段可预留与数量按钮一致的输入高度，保证数字和单位的基线对齐。
+    var minimumInputHeight: CGFloat = 0
     @FocusState private var focused: Bool
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    /// 构建清单界面；参数：无；返回值：原生视图；操作回调受共享写保护约束。
+    // 双行浮动字段只保留必要上下留白，避免再次叠加 Form 的默认 15 点内边距。
+    static let rowInsets = EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16)
+
+    /// 构建紧凑浮动标签输入框；参数：无；返回值：至少 44 点高、随字号和多行内容自然增长的输入区，可选整数范围提供原生液态玻璃加减按钮；聚焦或有值时抬升标签，减少动态效果时取消动画，只修改绑定草稿。
     var body: some View {
         let raised = focused || !text.isEmpty
-        ZStack(alignment: .topLeading) {
-            Text(title).font(raised ? .caption : .body).foregroundStyle(.secondary)
-                .offset(y: raised ? 0 : 18).allowsHitTesting(false).accessibilityHidden(true)
-            TextField(title, text: $text, prompt: Text(""), axis: multiline ? .vertical : .horizontal)
-                .labelsHidden().focused($focused).padding(.top, 22)
-                .lineLimit(1...(multiline ? 8 : 1)).accessibilityLabel(title)
-        }.frame(minHeight: 54, alignment: .topLeading)
-            .contentShape(Rectangle()).onTapGesture { focused = true }
-            .animation(reduceMotion ? nil : .easeInOut(duration: 0.2), value: raised)
+        let inputHeight = max(minimumInputHeight, stepperRange == nil ? 0 : 44)
+        // 共用标签布局负责动态字号与减少动态效果，数量字段仍保留原有草稿及按钮行为。
+        FloatingFieldContainer(title: title, raised: raised, inputHeight: inputHeight) {
+            HStack(spacing: 4) {
+                TextField(title, text: $text, prompt: Text(""), axis: multiline ? .vertical : .horizontal)
+                    .labelsHidden().focused($focused)
+                    .lineLimit(1...(multiline ? 8 : 1)).accessibilityLabel(title)
+                if stepperRange != nil {
+                    // 玻璃仅用于加减操作层，输入与卡片保持系统内容背景；同一容器协调两个按钮，避免玻璃背景叠加。
+                    GlassEffectContainer(spacing: 4) {
+                        HStack(spacing: 4) { adjustmentButton(-1); adjustmentButton(1) }
+                    }.fixedSize()
+                }
+            }
+        }
+        .listRowInsets(Self.rowInsets)
+        .contentShape(Rectangle())
+        // 普通字段的标签和留白属于输入区；数量字段的加减按钮仍属于外部操作，可同时收起数字键盘。
+        .background { if stepperRange == nil { KeyboardInputRegion() } }
+        // 点击回调无参数、返回无；普通输入整块获取焦点，数量按钮点击不额外弹出数字键盘。
+        .onTapGesture { if stepperRange == nil { focused = true } }
+    }
+
+    /// 构建原生圆形液态玻璃数量按钮；参数 delta 为 1 或 -1，分别表示增加与减少；返回值：至少 44 点点击区域的按钮，支持按住连续增减并在边界停用；点击只执行已校验的草稿回调，无持久化副作用。
+    private func adjustmentButton(_ delta: Int) -> some View {
+        let action = adjustment(delta)
+        // 点击回调输入无、输出无；无有效候选值时按钮停用，按住重复时每次重新校验当前范围。
+        return Button { adjustment(delta)?() } label: {
+            Image(systemName: delta > 0 ? "plus" : "minus")
+                .font(.body.weight(.medium)).frame(width: 30, height: 30)
+        }
+        .buttonStyle(.glass).buttonBorderShape(.circle).tint(.teal)
+        .frame(width: 44, height: 44).buttonRepeatBehavior(.enabled)
+        .disabled(action == nil)
+        .accessibilityLabel((delta > 0 ? "增加" : "减少") + title)
+        .accessibilityValue(text)
+        .accessibilityIdentifier(title + ".stepper-" + (delta > 0 ? "Increment" : "Decrement"))
+    }
+
+    /// 生成整数增减回调；参数 delta 为 1 或 -1，分别表示增加与减少；返回值为无参数、无返回值且仅更新本字段草稿的回调，非整数、溢出或超出 stepperRange 时返回 nil，使对应系统按钮停用；无持久化副作用。
+    private func adjustment(_ delta: Int) -> (() -> Void)? {
+        guard let stepperRange, text.range(of: #"^[0-9]+$"#, options: .regularExpression) != nil,
+              let current = Int(text) else { return nil }
+        let (next, overflow) = current.addingReportingOverflow(delta)
+        guard !overflow, stepperRange.contains(next) else { return nil }
+        // 回调输入无、输出无；只提交已检查的整数，不截断或重置用户正在输入的非法草稿。
+        return { text = String(next) }
     }
 }
 

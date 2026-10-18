@@ -15,8 +15,12 @@ extension FinanceLocalStore {
             if parts.count > 2, let id = Int(parts[2]), let preset = rows("presets").first(where: { Self.id($0) == id }), (preset["frequency"] as? String ?? "") != "" { return false }
             return parts.count <= 3
         }
-        if parts[1] == "categories" { return parts.count == 2 && method == "POST" }
+        if parts[1] == "categories" { return (parts.count == 2 && method == "POST") || (parts.count == 3 && Int(parts[2]).map { $0 > 0 } == true && method == "PATCH") }
         if parts[1] == "transactions" {
+            // 报销仅更正资料，分期子单也可离线更新；其他关联财务变更仍交由云端处理。
+            if parts.count == 3, method == "PATCH", !body.isEmpty, Set(body.keys).isSubset(of: ["reimbursementStatus"]),
+               let id = Int(parts[2]), let row = rows("transactions").first(where: { Self.id($0) == id }),
+               row["status"] as? String != "installment" { return true }
             if parts.count > 2, let id = Int(parts[2]), let row = rows("transactions").first(where: { Self.id($0) == id }), Self.id(row, "installmentParentId") != 0 || row["status"] as? String == "installment" || Self.id(row, "rebateParentId") != 0 { return false }
             if parts.last == "confirm", let id = Int(parts[2]), let row = rows("transactions").first(where: { Self.id($0) == id }), (try? Self.cents(row["rebate"] ?? "0.00")) != 0 { return false }
             return parts.count <= 3 || (parts.count == 4 && ["refund", "void", "confirm"].contains(parts[3]))
@@ -103,9 +107,33 @@ extension FinanceLocalStore {
             space[table] = records; return row
         }
         if table == "categories" {
-            guard let name = body["name"] as? String, !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, name.utf8.count <= 64, ["expense", "income"].contains(body["type"] as? String ?? "") else { throw failure("分类名称或类型无效") }
-            var row = body; row["id"] = newID; row["color"] = body["color"] ?? "#808080"
-            records.append(row); space[table] = records; return row
+            let allowed: Set<String> = ["name", "type", "groupKey", "icon", "color"]
+            guard !body.isEmpty, Set(body.keys).isSubset(of: allowed), body.values.allSatisfy({ $0 is String }) else { throw failure("分类字段无效") }
+            var row: [String: Any]
+            let index: Int?
+            if method == "POST", parts.count == 2 {
+                row = ["id": newID, "color": "#808080"]
+                index = nil
+            } else if method == "PATCH", parts.count == 3, let found = records.firstIndex(where: { id($0) == target }) {
+                row = records[found]; index = found
+                // type 仅兼容同值输入，绝不更新，避免历史流水及模板的分类引用跨收支类型。
+                if let type = body["type"] as? String, type != row["type"] as? String { throw failure("不能修改分类的收支类型") }
+            } else { throw failure("分类不存在或操作无效") }
+            // 在副本合并经过白名单校验的字段；不覆盖 id、用户归属及未提交的展示资料。
+            for (key, value) in body where key != "type" || method == "POST" { row[key] = value }
+            guard let rawName = row["name"] as? String, let type = row["type"] as? String,
+                  ["expense", "income"].contains(type) else { throw failure("分类名称或类型无效") }
+            let name = rawName.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !name.isEmpty, name.utf8.count <= 64 else { throw failure("分类名称无效") }
+            if body["name"] != nil { row["name"] = name }
+            let groupKey = row["groupKey"] as? String ?? "", icon = row["icon"] as? String ?? ""
+            guard groupKey.isEmpty || CategoryCatalog.groups(for: type).contains(where: { $0.id == groupKey }) else { throw failure("分组与收支类型不匹配") }
+            guard icon.isEmpty || icon.range(of: #"\A[a-z][a-z0-9.]{0,63}\z"#, options: .regularExpression) != nil else { throw failure("分类图标无效") }
+            guard let color = row["color"] as? String, color.range(of: #"\A#[0-9A-Fa-f]{6}\z"#, options: .regularExpression) != nil else { throw failure("颜色格式无效") }
+            // 同类型名称按大小写不敏感比较并排除自身；全部验证成功后才写回账本，保留所有业务引用。
+            guard !records.contains(where: { id($0) != id(row) && $0["type"] as? String == type && ($0["name"] as? String ?? "").trimmingCharacters(in: .whitespacesAndNewlines).compare(name, options: .caseInsensitive) == .orderedSame }) else { throw failure("分类名称重复") }
+            if let index { records[index] = row } else { records.append(row) }
+            space[table] = records; return row
         }
         if table == "presets" {
             guard Set(body.keys).isSubset(of: ["key", "name", "transaction", "frequency", "startDate", "endDate", "enabled"]) else { throw failure("模板字段无效") }
@@ -133,7 +161,7 @@ extension FinanceLocalStore {
         }
         guard table == "transactions" else { throw failure("此操作需要联网") }
         if method == "POST" && target == 0 {
-            let allowed: Set<String> = ["requestId", "accountId", "targetAccountId", "targetCreditCardId", "type", "amount", "categoryId", "counterparty", "transactionDate", "transactionTime", "description", "fee", "discount", "rebate", "rebateAccountId", "rebatePending"]
+            let allowed: Set<String> = ["requestId", "accountId", "targetAccountId", "targetCreditCardId", "type", "amount", "categoryId", "counterparty", "transactionDate", "transactionTime", "description", "fee", "discount", "rebate", "rebateAccountId", "rebatePending", "reimbursementStatus"]
             guard Set(body.keys).isSubset(of: allowed), (body["targetCreditCardId"] == nil || body["targetCreditCardId"] is NSNull),
                   let key = body["requestId"] as? String, key.range(of: #"^[A-Za-z0-9_-]{8,96}$"#, options: .regularExpression) != nil else { throw failure("流水字段或记账标识无效") }
             // 同一录入会话失败重试保持 requestId；本地也去重，避免界面重试形成两笔消费。
@@ -167,9 +195,9 @@ extension FinanceLocalStore {
         guard let index = records.firstIndex(where: { id($0) == target }) else { throw failure("流水不存在") }
         var row = records[index]
         if method == "PATCH" {
-            let allowed: Set<String> = ["accountId", "targetAccountId", "type", "amount", "discount", "fee", "rebate", "rebateAccountId", "rebatePending", "categoryId", "counterparty", "description", "transactionDate", "transactionTime"]
+            let allowed: Set<String> = ["accountId", "targetAccountId", "type", "amount", "discount", "fee", "rebate", "rebateAccountId", "rebatePending", "categoryId", "counterparty", "description", "transactionDate", "transactionTime", "reimbursementStatus"]
             guard !body.isEmpty, Set(body.keys).isSubset(of: allowed), row["status"] as? String != "deleted", row["status"] as? String != "voided" else { throw failure("流水不可修改") }
-            let financial = !Set(body.keys).isSubset(of: ["categoryId", "counterparty", "description"])
+            let financial = !Set(body.keys).isSubset(of: ["categoryId", "counterparty", "description", "reimbursementStatus"])
             let previous = row
             if financial {
                 // 关联账单财务关系由原业务维护；普通流水在同一账本副本内先验证再冲销重记。
@@ -217,6 +245,7 @@ extension FinanceLocalStore {
             } else {
                 for (key, value) in body { row[key] = value }
                 try validateCategory(row, space: space)
+                try validateReimbursement(row)
             }
         } else if parts.last == "refund" {
             guard Set(body.keys).isSubset(of: ["requestId", "amount", "transactionDate", "transactionTime", "description"]),
@@ -227,7 +256,7 @@ extension FinanceLocalStore {
             for refund in records where id(refund, "refundParentId") == target && refund["status"] as? String == "posted" { available += try cents(refund["amount"]) }
             guard amount > 0, amount <= available, (body["transactionDate"] as? String ?? "") >= (row["transactionDate"] as? String ?? "") else { throw failure("退款金额或日期无效") }
             var refund = row
-            for key in ["localInput", "rebate", "rebateParentId", "discount"] { refund.removeValue(forKey: key) }
+            for key in ["localInput", "rebate", "rebateParentId", "discount", "reimbursementStatus"] { refund.removeValue(forKey: key) }
             for (key, value) in body { refund[key] = value }
             refund["localInput"] = body
             refund["id"] = newID; refund["refundParentId"] = target; refund["amount"] = money(-amount); refund["fee"] = "0.00"
@@ -262,8 +291,19 @@ extension FinanceLocalStore {
         let categories = space["categories"] as? [[String: Any]] ?? []
         guard categories.contains(where: { id($0) == categoryID && $0["type"] as? String == row["type"] as? String }) else { throw failure("分类与收支类型不匹配") }
     }
-    /// 校验交易日期和关联账户；参数：row 为流水，space 为当前账本；返回值：无；引用不可用或日期无效抛错。
+    /// 校验报销资料；参数：row 为含收支类型及关联身份的流水；返回值：无；非法状态、非原始支出或非正金额标记抛错，不改变余额。
+    static func validateReimbursement(_ row: [String: Any]) throws {
+        guard row["reimbursementStatus"] == nil || row["reimbursementStatus"] is String else { throw failure("报销状态无效") }
+        let status = row["reimbursementStatus"] as? String ?? ""
+        guard ReimbursementStatus.options.contains(status) else { throw failure("报销状态无效") }
+        if !status.isEmpty {
+            guard row["type"] as? String == "expense", id(row, "refundParentId") == 0, id(row, "rebateParentId") == 0,
+                  try cents(row["amount"]) > 0 else { throw failure("仅原支出可标记报销") }
+        }
+    }
+    /// 校验交易日期、报销和关联账户；参数：row 为流水，space 为当前账本；返回值：无；引用、报销状态或日期无效抛错。
     static func validateTransaction(_ row: [String: Any], space: [String: Any]) throws {
+        try validateReimbursement(row)
         guard let date = row["transactionDate"] as? String, date.count == 10, Values.day(Values.date(date)) == date else { throw failure("交易日期无效") }
         if let time = row["transactionTime"] as? String, !time.isEmpty,
            time.range(of: #"^([01][0-9]|2[0-3]):[0-5][0-9]$"#, options: .regularExpression) == nil { throw failure("交易时间无效") }

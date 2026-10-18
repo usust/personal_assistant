@@ -36,9 +36,12 @@ type Overview struct {
 
 // TransactionSummary 表示日期范围内已入账收支，不受流水分页影响。
 type TransactionSummary struct {
-	Income  Money `json:"income"`
-	Expense Money `json:"expense"`
-	Balance Money `json:"balance"`
+	Income                Money `json:"income"`
+	Expense               Money `json:"expense"`
+	Balance               Money `json:"balance"`
+	ReimbursementTotal    Money `json:"reimbursementTotal"`
+	ReimbursementPending  Money `json:"reimbursementPending"`
+	ReimbursementReceived Money `json:"reimbursementReceived"`
 }
 
 // CreditStatement 按账本推算最近已出账期的剩余应还；不冒充银行同步账单。

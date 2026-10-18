@@ -1,9 +1,13 @@
 import Foundation
+#if canImport(AppKit)
 import AppKit
+#elseif canImport(UIKit)
+import UIKit
+#endif
 
 @main
 struct CategoryCatalogTests {
-    /// 验证旧分类解码、归组与自定义字段优先级；参数：无；返回值：无，断言失败使进程退出，解码失败抛出错误。
+    /// 验证旧分类解码、归组、自定义字段优先级及全量图标库；参数：无；返回值：无，断言失败使进程退出，解码失败抛出错误；Apple 平台同时验证系统符号实际可加载。
     static func main() throws {
         let old = try JSONDecoder().decode(TransactionCategory.self, from: Data(##"{"id":1,"name":"生活缴费","type":"expense","color":"#14B8A6"}"##.utf8))
         precondition(CategoryCatalog.group(for: old).id == "utilities")
@@ -28,12 +32,61 @@ struct CategoryCatalogTests {
         let invalidType = TransactionCategory(id: 7, name: "未知", type: "unknown", color: "#D57FA6")
         precondition(CategoryCatalog.group(for: invalidType).id == "other-expense")
         precondition(Set(CategoryCatalog.groups.map(\.id)).count == CategoryCatalog.groups.count)
-        // SF Symbols 名称无效不会导致编译失败，加载每个图标防止界面出现空白。
+        // 图标库包含全部现有目录和推荐项，不允许为了增加数量重复堆叠同一个符号。
+        let library = CategoryCatalog.iconLibrary
+        let symbols = Set(library.map(\.symbol))
+        precondition(library.count >= 120, "分类图标至少 120 项")
+        precondition(symbols.count == library.count, "图标库必须去重")
+        precondition(CategoryCatalog.icons().map(\.symbol) == library.map(\.symbol))
+        precondition(CategoryCatalog.icons(groupID: "").map(\.symbol) == library.map(\.symbol))
+        precondition(CategoryCatalog.icons(matching: " \n ").count == library.count)
+        precondition(CategoryCatalog.icons(groupID: "unknown").isEmpty)
+        precondition(CategoryCatalog.icons(matching: "不存在的图标搜索词").isEmpty)
         for group in CategoryCatalog.groups {
+            let grouped = CategoryCatalog.icons(groupID: group.id)
+            let groupedSymbols = Set(grouped.map(\.symbol))
+            precondition(groupedSymbols.count == grouped.count, "分组内图标必须去重")
+            precondition(grouped.allSatisfy { $0.groupIDs.contains(group.id) })
             for symbol in [group.icon] + group.items.map(\.icon) {
-                precondition(NSImage(systemSymbolName: symbol, accessibilityDescription: nil) != nil, "无效分类图标：\(symbol)")
+                precondition(symbols.contains(symbol), "图标库遗漏目录符号：\(symbol)")
+                precondition(groupedSymbols.contains(symbol), "分组遗漏目录符号：\(group.id)/\(symbol)")
             }
         }
-        print("Category catalog tests passed")
+        // 同一图标的多个中文用途必须都可搜索，分组筛选不得丢失共享符号。
+        precondition(CategoryCatalog.icons(matching: "咖啡").contains { $0.symbol == "cup.and.saucer" })
+        precondition(CategoryCatalog.icons(matching: "奶茶").contains { $0.symbol == "cup.and.saucer.fill" })
+        precondition(CategoryCatalog.icons(matching: "餐饮 早餐").contains { $0.symbol == "sunrise" })
+        precondition(CategoryCatalog.icons(groupID: "home", matching: "房租").contains { $0.symbol == "house" })
+        precondition(CategoryCatalog.icons(groupID: "insurance", matching: "财产保险").contains { $0.symbol == "house" })
+        precondition(CategoryCatalog.icons(groupID: "salary", matching: "收入").contains { $0.symbol == "briefcase" })
+        precondition(CategoryCatalog.icons(groupID: "food", matching: "工资").isEmpty)
+        precondition(CategoryCatalog.icons(groupID: "daily", matching: "肥皂").contains { $0.symbol == "bubbles.and.sparkles" })
+        precondition(CategoryCatalog.icons(matching: "  CUP.AND.SAUCER  ").contains { $0.symbol == "cup.and.saucer" })
+        precondition(CategoryCatalog.iconName(for: "cup.and.saucer") == "咖啡")
+        precondition(CategoryCatalog.iconName(for: "custom.saved.symbol") == "自定义图标")
+        // 库外已保存图标继续使用原始值，搜索和浏览不改变分类的持久化外观。
+        let saved = TransactionCategory(id: 8, name: "个性分类", type: "expense", color: "#123456", groupKey: "food", icon: "heart.circle")
+        precondition(CategoryCatalog.icon(for: saved) == "heart.circle")
+        for option in library {
+            precondition(option.id == option.symbol)
+            precondition(option.name.unicodeScalars.contains { (0x4E00...0x9FFF).contains($0.value) }, "图标缺少中文可访问名：\(option.symbol)")
+            precondition(!option.keywords.isEmpty && !option.groupIDs.isEmpty)
+            precondition(option.groupIDs.allSatisfy { id in CategoryCatalog.groups.contains { $0.id == id } })
+            precondition(option.symbol.range(of: #"\A[a-z][a-z0-9.]{0,63}\z"#, options: .regularExpression) != nil)
+            validateSymbol(option.symbol)
+        }
+        #if !canImport(AppKit) && !canImport(UIKit)
+        print("SF Symbols 加载验证需在 Apple 平台执行")
+        #endif
+        print("Category catalog tests passed (\(library.count) unique icons)")
+    }
+
+    /// 验证系统符号可加载；参数：symbol 为目录中的 SF Symbols 名称；返回值：无，Apple 平台加载失败即断言失败，Linux 仅运行其余目录及搜索测试。
+    private static func validateSymbol(_ symbol: String) {
+        #if canImport(AppKit)
+        precondition(NSImage(systemSymbolName: symbol, accessibilityDescription: nil) != nil, "无效分类图标：\(symbol)")
+        #elseif canImport(UIKit)
+        precondition(UIImage(systemName: symbol) != nil, "无效分类图标：\(symbol)")
+        #endif
     }
 }

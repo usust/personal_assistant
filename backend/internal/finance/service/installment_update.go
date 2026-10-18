@@ -14,7 +14,7 @@ import (
 	"personal_assistant_server/internal/finance/repository"
 )
 
-// updateInstallment 合并并保存整套分期设置；参数：db 为持有用户锁的事务，owner 为身份，bill 为分期主账单，old 为原规则，changes 为实际提交的字段；返回值：新计划或错误，所有期次与余额变更由外层原子提交。
+// updateInstallment 合并并保存整套分期设置；参数：db 为持有用户锁的事务，owner 为身份，bill 为分期主账单，old 为原规则，changes 为实际提交的字段；返回值：新计划或错误，所有期次与余额变更由外层原子提交；报销等资料只传播到未入账子单，不触发规则重算。
 func (s *Service) updateInstallment(db *gorm.DB, owner uint64, bill domain.Transaction, old domain.InstallmentPlan, changes json.RawMessage) (domain.InstallmentPlan, error) {
 	var submitted map[string]json.RawMessage
 	// 严格解析业务输入，避免无效字段进入操作流程。
@@ -37,7 +37,7 @@ func (s *Service) updateInstallment(db *gorm.DB, owner uint64, bill domain.Trans
 	}
 	for key, value := range submitted {
 		switch key {
-		case "name", "periods", "firstDate", "startPeriod", "restoredCredit", "debtMode", "interest", "interestMode", "interestCreditMode", "rounding", "remainder", "description", "categoryId":
+		case "reimbursementStatus", "name", "periods", "firstDate", "startPeriod", "restoredCredit", "debtMode", "interest", "interestMode", "interestCreditMode", "rounding", "remainder", "description", "categoryId":
 			if string(value) == "null" && key != "categoryId" {
 				// 拒绝本次操作：分期字段不能为空。
 				return old, Invalid("分期字段不能为空")
@@ -66,6 +66,12 @@ func (s *Service) updateInstallment(db *gorm.DB, owner uint64, bill domain.Trans
 	}
 	fields := map[string]any{}
 	childFields := map[string]any{}
+	if _, ok := submitted["reimbursementStatus"]; ok {
+		// calculateInstallment 已校验非空指针的枚举；白名单拒绝 null，空串可显式清除。
+		bill.ReimbursementStatus = *terms.ReimbursementStatus
+		fields["reimbursement_status"] = bill.ReimbursementStatus
+		childFields["reimbursement_status"] = bill.ReimbursementStatus
+	}
 	if _, ok := submitted["categoryId"]; ok {
 		id := terms.CategoryID
 		if id != nil && *id == 0 {
@@ -98,6 +104,7 @@ func (s *Service) updateInstallment(db *gorm.DB, owner uint64, bill domain.Trans
 	before.Name = after.Name
 	before.CategoryID = after.CategoryID
 	before.Description = after.Description
+	before.ReimbursementStatus = after.ReimbursementStatus
 	// 比较业务字段是否发生实际变化。
 	if reflect.DeepEqual(before, after) {
 		old.InstallmentTerms = terms
@@ -198,7 +205,7 @@ func (s *Service) reconcileInstallment(db *gorm.DB, owner uint64, bill domain.Tr
 			}
 		} else {
 			// 生成当前操作需要的展示或协议文本。
-			child = domain.Transaction{OwnerID: owner, RequestID: fmt.Sprintf("installment_%d_%d", bill.ID, row.Period), AccountID: bill.AccountID, Type: "expense", CategoryID: bill.CategoryID, Counterparty: bill.Counterparty, Description: bill.Description, Source: "http", InstallmentParentID: &bill.ID, InstallmentPeriod: row.Period}
+			child = domain.Transaction{ReimbursementStatus: bill.ReimbursementStatus, OwnerID: owner, RequestID: fmt.Sprintf("installment_%d_%d", bill.ID, row.Period), AccountID: bill.AccountID, Type: "expense", CategoryID: bill.CategoryID, Counterparty: bill.Counterparty, Description: bill.Description, Source: "http", InstallmentParentID: &bill.ID, InstallmentPeriod: row.Period}
 		}
 		update := map[string]any{"amount": row.Amount, "transaction_date": row.Date, "status": row.Status, "installment_edit_removed": false}
 		// 已单独修改的历史资料保留；计划资料仅传播到原本未入账的期次。

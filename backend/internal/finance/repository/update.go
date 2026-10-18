@@ -12,6 +12,11 @@ func UpdateAccount(tx *gorm.DB, owner, id uint64, fields map[string]any) error {
 	return tx.Model(&domain.Account{}).Where("owner_id = ? AND id = ?", owner, id).Updates(fields).Error
 }
 
+// UpdateCategory 保存分类部分字段；参数：tx 为事务，owner 和 id 限定可信归属及目标，fields 为服务层验证后的数据库列白名单 map；返回值：数据库错误或 nil；显式空字符串会写入，未提交字段保持原值。
+func UpdateCategory(tx *gorm.DB, owner, id uint64, fields map[string]any) error {
+	return tx.Model(&domain.Category{}).Where("owner_id = ? AND id = ?", owner, id).Updates(fields).Error
+}
+
 // UpdateTransaction 保存部分字段；参数：tx 为事务，owner 和 id 限定归属及目标，fields 为服务层验证后的数据库列白名单 map；返回值：数据库错误或 nil；显式零值会写入，空 map 不覆盖其他字段。
 func UpdateTransaction(tx *gorm.DB, owner, id uint64, fields map[string]any) error {
 	return tx.Model(&domain.Transaction{}).Where("owner_id = ? AND id = ?", owner, id).Updates(fields).Error

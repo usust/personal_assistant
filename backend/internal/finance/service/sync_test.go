@@ -105,6 +105,82 @@ func TestSyncRollbackAndCategoryMapping(t *testing.T) {
 	}
 }
 
+// TestSyncCategoryPatch 验证分类更新通过同步白名单并复用权限、校验与幂等回执；参数：t 为测试上下文；返回值：无，失败无回执，重放不得覆盖后续修改或重复记录事件。
+func TestSyncCategoryPatch(t *testing.T) {
+	s := fixture(t)
+	if err := s.db.AutoMigrate(&domain.SyncReceipt{}); err != nil {
+		t.Fatal(err)
+	}
+	row := must(t, s, "finance.category.create", 0, map[string]any{"name": "离线原分类", "type": "expense", "groupKey": "food", "icon": "star", "color": "#654321"}).(domain.Category)
+	must(t, s, "finance.category.create", 0, map[string]any{"name": "已存在分类", "type": "expense"})
+	command := syncTestCommand("offline-category-patch-001", "finance.category.update", row.ID, map[string]any{"name": "离线新分类", "groupKey": "", "icon": "", "color": "#123ABC"})
+	first, err := s.SyncExecute(context.Background(), 1, command)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var got domain.Category
+	if err := json.Unmarshal(first, &got); err != nil || got.ID != row.ID || got.Name != "离线新分类" || got.GroupKey != "" || got.Icon != "" || got.Color != "#123ABC" || got.Type != row.Type {
+		t.Fatalf("同步分类更新结果错误: %+v %v", got, err)
+	}
+	later := must(t, s, "finance.category.update", row.ID, map[string]any{"color": "#ABCDEF"}).(domain.Category)
+	// 同一正文换键序仍命中原回执，响应保持原样且不再次执行 PATCH。
+	command.Body = json.RawMessage(`{"color":"#123ABC","icon":"","groupKey":"","name":"离线新分类"}`)
+	replayed, err := s.SyncExecute(context.Background(), 1, command)
+	if err != nil || string(first) != string(replayed) {
+		t.Fatalf("分类重放响应不稳定: %s %s %v", first, replayed, err)
+	}
+	changed := command
+	changed.Body = json.RawMessage(`{"name":"不同正文"}`)
+	if _, err := s.SyncExecute(context.Background(), 1, changed); !errors.Is(err, ErrConflict) {
+		t.Fatalf("同键异内容未冲突: %v", err)
+	}
+	changed = command
+	changed.ID++
+	if _, err := s.SyncExecute(context.Background(), 1, changed); !errors.Is(err, ErrConflict) {
+		t.Fatalf("同键不同目标未冲突: %v", err)
+	}
+	if _, err := s.SyncExecute(context.Background(), 2, command); !errors.Is(err, ErrNotFound) {
+		t.Fatalf("分类同步未隔离归属: %v", err)
+	}
+	for _, tc := range []struct {
+		key  string
+		body map[string]any
+		want error
+	}{
+		{"offline-category-bad-type", map[string]any{"name": "不得保存", "type": "income"}, ErrInvalid},
+		{"offline-category-duplicate", map[string]any{"name": "已存在分类", "icon": "bag"}, ErrConflict},
+		{"offline-category-bad-group", map[string]any{"groupKey": "salary"}, ErrInvalid},
+	} {
+		if _, err := s.SyncExecute(context.Background(), 1, syncTestCommand(tc.key, "finance.category.update", row.ID, tc.body)); !errors.Is(err, tc.want) {
+			t.Fatalf("同步更新未复用业务校验 %s: %v", tc.key, err)
+		}
+	}
+	var saved domain.Category
+	if err := s.db.First(&saved, row.ID).Error; err != nil || saved != later {
+		t.Fatalf("重放或失败请求覆盖了后续更改: %+v %v", saved, err)
+	}
+	var receipts, events int64
+	if err := s.db.Model(&domain.SyncReceipt{}).Count(&receipts).Error; err != nil || receipts != 1 {
+		t.Fatalf("重复或失败请求留下回执: %d %v", receipts, err)
+	}
+	if err := s.db.Model(&domain.Event{}).Where("operation = ?", "finance.category.update").Count(&events).Error; err != nil || events != 2 {
+		t.Fatalf("分类更新事件数量错误: %d %v", events, err)
+	}
+	snapshot, err := s.SyncSnapshot(context.Background(), 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, category := range snapshot["categories"].([]domain.Category) {
+		if category.ID == row.ID {
+			if category != later {
+				t.Fatalf("同步快照遗漏分类更新: %+v", category)
+			}
+			return
+		}
+	}
+	t.Fatal("同步快照缺少更新后的分类")
+}
+
 // TestSnapshotIncludesWebChangesAndTombstones 验证普通 Web 路径产生的资料变化、归档和删除会出现在一致性快照；参数：t 为测试上下文；返回值：无。
 func TestSnapshotIncludesWebChangesAndTombstones(t *testing.T) {
 	s := fixture(t)

@@ -9,8 +9,10 @@ type Transaction struct {
 	InstallmentPeriods int    `json:"installmentPeriods,omitempty" gorm:"-"`
 	InstallmentName    string `json:"installmentName,omitempty" gorm:"-"`
 	// Discount 为支出减免，Amount 保存实际扣款金额。
-	Discount            Money   `json:"discount" gorm:"type:bigint;not null;default:0"`
-	RefundParentID      *uint64 `json:"refundParentId,omitempty" gorm:"index"`
+	Discount       Money   `json:"discount" gorm:"type:bigint;not null;default:0"`
+	RefundParentID *uint64 `json:"refundParentId,omitempty" gorm:"index"`
+	// ReimbursementStatus 仅分类原支出的报销进度，不影响余额；旧记录默认无需报销。
+	ReimbursementStatus string  `json:"reimbursementStatus" gorm:"size:16;not null;default:''"`
 	Rebate              Money   `json:"rebate" gorm:"type:bigint;not null;default:0"`
 	RebateAccountID     *uint64 `json:"rebateAccountId,omitempty"`
 	RebatePending       bool    `json:"rebatePending" gorm:"not null;default:false"`
@@ -46,20 +48,21 @@ type Transaction struct {
 func (Transaction) TableName() string { return "finance_transactions_v2" }
 
 type TransactionInput struct {
-	Discount           Money   `json:"discount,omitempty"`
-	Rebate             Money   `json:"rebate,omitempty"`
-	RebateAccountID    *uint64 `json:"rebateAccountId,omitempty"`
-	RebatePending      bool    `json:"rebatePending,omitempty"`
-	Fee                Money   `json:"fee,omitempty"`
-	RequestID          string  `json:"requestId"`
-	AccountID          uint64  `json:"accountId"`
-	TargetAccountID    *uint64 `json:"targetAccountId"`
-	TargetCreditCardID *uint64 `json:"targetCreditCardId"`
-	Type               string  `json:"type"`
-	Amount             Money   `json:"amount"`
-	CategoryID         *uint64 `json:"categoryId"`
-	Counterparty       string  `json:"counterparty"`
-	TransactionTime    string  `json:"transactionTime,omitempty"`
-	TransactionDate    string  `json:"transactionDate"`
-	Description        string  `json:"description"`
+	ReimbursementStatus string  `json:"reimbursementStatus,omitempty"`
+	Discount            Money   `json:"discount,omitempty"`
+	Rebate              Money   `json:"rebate,omitempty"`
+	RebateAccountID     *uint64 `json:"rebateAccountId,omitempty"`
+	RebatePending       bool    `json:"rebatePending,omitempty"`
+	Fee                 Money   `json:"fee,omitempty"`
+	RequestID           string  `json:"requestId"`
+	AccountID           uint64  `json:"accountId"`
+	TargetAccountID     *uint64 `json:"targetAccountId"`
+	TargetCreditCardID  *uint64 `json:"targetCreditCardId"`
+	Type                string  `json:"type"`
+	Amount              Money   `json:"amount"`
+	CategoryID          *uint64 `json:"categoryId"`
+	Counterparty        string  `json:"counterparty"`
+	TransactionTime     string  `json:"transactionTime,omitempty"`
+	TransactionDate     string  `json:"transactionDate"`
+	Description         string  `json:"description"`
 }

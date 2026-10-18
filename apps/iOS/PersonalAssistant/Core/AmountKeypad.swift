@@ -71,6 +71,13 @@ struct AmountCalculation {
         }
     }
 
+    /// 预览最终金额；参数：draft 为当前操作数；返回值：副本求值后的金额，算式错误返回 nil；不修改原算式、错误或草稿，金额正负及用途约束仍由表单校验。
+    func preview(draft: String) -> String? {
+        var copy = self
+        var value = draft
+        return copy.evaluate(draft: &value) ? value : nil
+    }
+
     /// 求出待处理算式；参数：draft 为当前操作数，成功后替换成结果；返回值：是否成功；无算式时直接成功，缺少右操作数、除零或越界时保留输入并设置错误。
     mutating func evaluate(draft: inout String) -> Bool {
         guard let operand, let operation else { return true }

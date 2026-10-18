@@ -18,7 +18,7 @@ import (
 	userhandler "personal_assistant_server/internal/user/handler"
 )
 
-// TestBusinessRoutesMatchOpenAPI 验证 57 个实际业务路由与文档双向一致；参数：t 为测试上下文；返回值：无；只注册内存路由，不调用数据库、模型或业务处理器。
+// TestBusinessRoutesMatchOpenAPI 验证全部业务路由（含餐食）与 OpenAPI 契约双向一致；参数：t 为非空测试上下文；返回值：无，集合为空或路由不一致时报告测试失败；只注册内存路由，不调用数据库、模型或业务处理器。
 func TestBusinessRoutesMatchOpenAPI(t *testing.T) {
 	// 认证占位回调只用于路由注册；参数：c 为上下文；返回值：无，不处理实际 HTTP 请求。
 	login := func(c *gin.Context) { c.Next() }
@@ -47,6 +47,10 @@ func TestBusinessRoutesMatchOpenAPI(t *testing.T) {
 		}
 		actual[route.Method+" "+path] = true
 	}
+	// 两侧集合都必须非空，防止路由或契约意外清空后双向比较仍通过。
+	if len(actual) == 0 || len(documented) == 0 {
+		t.Fatalf("业务路由与契约集合不能为空：实际 %d，文档 %d", len(actual), len(documented))
+	}
 	for route := range actual {
 		if !documented[route] {
 			t.Errorf("实际接口未记录：%s", route)
@@ -56,8 +60,5 @@ func TestBusinessRoutesMatchOpenAPI(t *testing.T) {
 		if !actual[route] {
 			t.Errorf("文档接口未注册：%s", route)
 		}
-	}
-	if len(actual) != 57 {
-		t.Errorf("业务接口数量变化：%d，请同时更新契约与 Apifox", len(actual))
 	}
 }

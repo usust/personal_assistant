@@ -118,4 +118,21 @@ nonisolated struct FinanceMonthSummary: Decodable {
     let income: String
     let expense: String
     let balance: String
+    /// 旧服务端未提供时保持未知，不将缺失指标展示为零。
+    var reimbursementTotal: String? = nil
+    var reimbursementPending: String? = nil
+    var reimbursementReceived: String? = nil
+}
+
+/// 报销状态在记账、分期和详情中共享，不触发资金入账。
+nonisolated enum ReimbursementStatus {
+    static let options = ["", "pending", "reimbursed"]
+    /// 返回状态名称；参数：value 为状态键或旧记录空值；返回值：对应的简短中文名称，无副作用。
+    static func title(_ value: String?) -> String {
+        switch value ?? "" {
+        case "pending": return "待报销"
+        case "reimbursed": return "已报销"
+        default: return "无需报销"
+        }
+    }
 }

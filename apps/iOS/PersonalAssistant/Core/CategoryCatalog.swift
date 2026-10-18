@@ -15,6 +15,16 @@ nonisolated struct CategoryGroup: Identifiable {
     let aliases: [String]
     let items: [CategoryTemplate]
 }
+/// 分类编辑器共用图标；symbol 为持久化的 SF Symbols 名，中文名称与关键词用于辅助朗读和搜索。
+nonisolated struct CategoryIcon: Identifiable {
+    let symbol: String
+    let name: String
+    var groupIDs: [String]
+    var keywords: [String]
+    /// 图标稳定标识；参数：无；返回值：系统符号名称，与持久化值一致。
+    var id: String { symbol }
+}
+
 nonisolated enum CategoryCatalog {
     static let groups: [CategoryGroup] = [
         CategoryGroup(id: "food", name: "餐饮", icon: "fork.knife", color: "#E99B43", type: "expense", aliases: ["餐饮"], items: [
@@ -207,6 +217,170 @@ nonisolated enum CategoryCatalog {
             CategoryTemplate(name: "其他收入", icon: "ellipsis.circle"),
         ]),
     ]
+    // 图标先收录全部目录符号，再按目录附加生活与收支常用项；不改变模板或历史分类归属。
+    private static let additionalIcons: [String: [CategoryTemplate]] = [
+        "food": [
+            CategoryTemplate(name: "餐具", icon: "fork.knife.circle"), CategoryTemplate(name: "热饮", icon: "mug"),
+            CategoryTemplate(name: "饮品", icon: "mug.fill"), CategoryTemplate(name: "酒水", icon: "wineglass"),
+            CategoryTemplate(name: "聚餐", icon: "wineglass.fill"), CategoryTemplate(name: "蛋糕", icon: "birthday.cake.fill"),
+            CategoryTemplate(name: "生鲜", icon: "fish"), CategoryTemplate(name: "海鲜", icon: "fish.fill"),
+            CategoryTemplate(name: "蔬果", icon: "leaf"), CategoryTemplate(name: "蔬菜", icon: "leaf.fill"),
+            CategoryTemplate(name: "打包", icon: "takeoutbag.and.cup.and.straw.fill"),
+        ],
+        "transport": [
+            CategoryTemplate(name: "公交车", icon: "bus.fill"), CategoryTemplate(name: "汽车", icon: "car"),
+            CategoryTemplate(name: "轮渡", icon: "ferry"), CategoryTemplate(name: "滑板车", icon: "scooter"),
+            CategoryTemplate(name: "到达", icon: "airplane.arrival"), CategoryTemplate(name: "帆船", icon: "sailboat"),
+        ],
+        "shopping": [
+            CategoryTemplate(name: "购物车", icon: "cart"), CategoryTemplate(name: "超市", icon: "cart.fill"),
+            CategoryTemplate(name: "付款", icon: "creditcard.fill"), CategoryTemplate(name: "折扣", icon: "tag"),
+            CategoryTemplate(name: "优惠券", icon: "tag.fill"), CategoryTemplate(name: "扫码", icon: "barcode.viewfinder"),
+        ],
+        "home": [
+            CategoryTemplate(name: "钥匙", icon: "key"), CategoryTemplate(name: "门锁", icon: "key.fill"),
+            CategoryTemplate(name: "灯具", icon: "lightbulb"), CategoryTemplate(name: "照明", icon: "lightbulb.fill"),
+            CategoryTemplate(name: "台灯", icon: "lamp.desk"), CategoryTemplate(name: "座椅", icon: "chair"),
+            CategoryTemplate(name: "冰箱", icon: "refrigerator"),
+        ],
+        "daily": [
+            CategoryTemplate(name: "垃圾袋", icon: "trash"), CategoryTemplate(name: "垃圾桶", icon: "trash.fill"),
+            CategoryTemplate(name: "肥皂", icon: "bubbles.and.sparkles"), CategoryTemplate(name: "卫浴", icon: "toilet"),
+            CategoryTemplate(name: "洗浴", icon: "bathtub"), CategoryTemplate(name: "烹饪", icon: "frying.pan.fill"),
+        ],
+        "health": [
+            CategoryTemplate(name: "诊疗", icon: "stethoscope"), CategoryTemplate(name: "护理", icon: "bandage.fill"),
+            CategoryTemplate(name: "用药", icon: "pills.fill"), CategoryTemplate(name: "疫苗", icon: "syringe"),
+            CategoryTemplate(name: "体温", icon: "medical.thermometer"), CategoryTemplate(name: "保健", icon: "heart.fill"),
+        ],
+        "leisure": [
+            CategoryTemplate(name: "音乐", icon: "music.note"), CategoryTemplate(name: "歌单", icon: "music.note.list"),
+            CategoryTemplate(name: "乐器", icon: "guitars"), CategoryTemplate(name: "演出", icon: "theatermasks"),
+            CategoryTemplate(name: "剧院", icon: "theatermasks.fill"), CategoryTemplate(name: "爆米花", icon: "popcorn"),
+        ],
+        "education": [
+            CategoryTemplate(name: "阅读", icon: "book"), CategoryTemplate(name: "教材", icon: "book.closed"),
+            CategoryTemplate(name: "书包", icon: "backpack"), CategoryTemplate(name: "课桌", icon: "studentdesk"),
+            CategoryTemplate(name: "学习用品", icon: "pencil.and.ruler"),
+        ],
+        "social": [
+            CategoryTemplate(name: "礼品卡", icon: "giftcard"), CategoryTemplate(name: "赠礼", icon: "giftcard.fill"),
+            CategoryTemplate(name: "庆祝", icon: "party.popper"), CategoryTemplate(name: "聚会", icon: "hands.clap"),
+            CategoryTemplate(name: "赞赏", icon: "hand.thumbsup"),
+        ],
+        "family": [
+            CategoryTemplate(name: "个人", icon: "person"), CategoryTemplate(name: "家人", icon: "person.fill"),
+            CategoryTemplate(name: "家庭成员", icon: "person.3"),
+        ],
+        "pets": [
+            CategoryTemplate(name: "猫咪", icon: "cat"), CategoryTemplate(name: "狗狗", icon: "dog"),
+            CategoryTemplate(name: "小鸟", icon: "bird"), CategoryTemplate(name: "兔子", icon: "hare"),
+            CategoryTemplate(name: "乌龟", icon: "tortoise"),
+        ],
+        "clothing": [
+            CategoryTemplate(name: "外套", icon: "jacket"), CategoryTemplate(name: "帽子", icon: "hat.widebrim"),
+            CategoryTemplate(name: "墨镜", icon: "sunglasses"),
+        ],
+        "digital": [
+            CategoryTemplate(name: "平板", icon: "ipad"), CategoryTemplate(name: "显示器", icon: "display"),
+            CategoryTemplate(name: "鼠标", icon: "computermouse"), CategoryTemplate(name: "无线耳机", icon: "airpods"),
+            CategoryTemplate(name: "手表", icon: "applewatch"), CategoryTemplate(name: "数据线", icon: "cable.connector"),
+        ],
+        "beauty": [CategoryTemplate(name: "梳子", icon: "comb")],
+        "software": [
+            CategoryTemplate(name: "应用", icon: "app.fill"), CategoryTemplate(name: "云服务", icon: "icloud.fill"),
+            CategoryTemplate(name: "存储", icon: "externaldrive"), CategoryTemplate(name: "安全服务", icon: "lock.shield"),
+        ],
+        "communication": [
+            CategoryTemplate(name: "电话", icon: "phone"), CategoryTemplate(name: "短信", icon: "message"),
+            CategoryTemplate(name: "聊天", icon: "message.fill"), CategoryTemplate(name: "寄件", icon: "paperplane"),
+            CategoryTemplate(name: "快递", icon: "paperplane.fill"),
+        ],
+        "car": [
+            CategoryTemplate(name: "汽油", icon: "fuelpump.fill"), CategoryTemplate(name: "驾驶", icon: "steeringwheel"),
+            CategoryTemplate(name: "车辆", icon: "car.side.fill"), CategoryTemplate(name: "充电", icon: "bolt.car.fill"),
+        ],
+        "sports": [
+            CategoryTemplate(name: "橄榄球", icon: "football"), CategoryTemplate(name: "棒球", icon: "baseball"),
+            CategoryTemplate(name: "网球", icon: "tennis.racket"), CategoryTemplate(name: "足球", icon: "soccerball"),
+            CategoryTemplate(name: "瑜伽", icon: "figure.yoga"), CategoryTemplate(name: "步行", icon: "figure.walk"),
+            CategoryTemplate(name: "户外骑行", icon: "figure.outdoor.cycle"),
+        ],
+        "travel": [
+            CategoryTemplate(name: "行李", icon: "suitcase"), CategoryTemplate(name: "地图", icon: "map"),
+            CategoryTemplate(name: "导航", icon: "map.fill"), CategoryTemplate(name: "登山", icon: "mountain.2"),
+            CategoryTemplate(name: "海滩", icon: "beach.umbrella"), CategoryTemplate(name: "拍照", icon: "camera.fill"),
+            CategoryTemplate(name: "营地", icon: "tent.fill"),
+        ],
+        "office": [
+            CategoryTemplate(name: "文件夹", icon: "folder"), CategoryTemplate(name: "资料", icon: "folder.fill"),
+            CategoryTemplate(name: "文档", icon: "doc.text"), CategoryTemplate(name: "收件", icon: "tray"),
+            CategoryTemplate(name: "日程", icon: "calendar"), CategoryTemplate(name: "计时", icon: "clock"),
+        ],
+        "kids": [
+            CategoryTemplate(name: "拼图", icon: "puzzlepiece"), CategoryTemplate(name: "毛绒玩具", icon: "teddybear.fill"),
+            CategoryTemplate(name: "气球", icon: "balloon.fill"), CategoryTemplate(name: "儿童", icon: "figure.child.circle"),
+        ],
+        "insurance": [
+            CategoryTemplate(name: "保障", icon: "checkmark.shield"), CategoryTemplate(name: "雨伞", icon: "umbrella"),
+            CategoryTemplate(name: "守护", icon: "umbrella.fill"),
+        ],
+        "other-expense": [
+            CategoryTemplate(name: "更多", icon: "ellipsis"), CategoryTemplate(name: "待定", icon: "questionmark.circle"),
+            CategoryTemplate(name: "临时支出", icon: "exclamationmark.circle"),
+        ],
+        "salary": [
+            CategoryTemplate(name: "现金", icon: "banknote.fill"), CategoryTemplate(name: "外币", icon: "dollarsign.circle"),
+            CategoryTemplate(name: "人民币", icon: "yensign.circle"), CategoryTemplate(name: "钱包", icon: "wallet.pass"),
+            CategoryTemplate(name: "银行", icon: "building.columns"),
+        ],
+        "side-job": [CategoryTemplate(name: "劳务", icon: "hammer.fill"), CategoryTemplate(name: "手工", icon: "wrench")],
+        "investment": [
+            CategoryTemplate(name: "收益", icon: "chart.bar"), CategoryTemplate(name: "理财", icon: "chart.bar.fill"),
+            CategoryTemplate(name: "资产配置", icon: "chart.pie.fill"), CategoryTemplate(name: "行情", icon: "chart.line.downtrend.xyaxis"),
+        ],
+        "gifts": [CategoryTemplate(name: "奖励", icon: "star.fill"), CategoryTemplate(name: "奖牌", icon: "medal.fill")],
+        "other-income": [CategoryTemplate(name: "入账", icon: "plus.circle"), CategoryTemplate(name: "收款", icon: "arrow.down.circle")],
+    ]
+
+    static let iconLibrary: [CategoryIcon] = makeIconLibrary()
+
+    /// 汇总去重图标及中文索引；参数：无；返回值：按目录顺序排列的图标，每个系统符号仅一项，合并重复图标的名称、收支与分组关键词；无副作用。
+    private static func makeIconLibrary() -> [CategoryIcon] {
+        var result: [CategoryIcon] = []
+        var positions: [String: Int] = [:]
+        /// 收录目录符号；参数：symbol 为有效系统符号，name 为中文名称，group 为所属目录；返回值：无，仅合并本次构建中的图标与搜索索引。
+        func append(symbol: String, name: String, group: CategoryGroup) {
+            let keywords = [name, group.name, group.type == "income" ? "收入" : "支出"] + group.aliases
+            if let index = positions[symbol] {
+                if !result[index].groupIDs.contains(group.id) { result[index].groupIDs.append(group.id) }
+                result[index].keywords = Array(Set(result[index].keywords + keywords)).sorted()
+            } else {
+                positions[symbol] = result.count
+                result.append(CategoryIcon(symbol: symbol, name: name, groupIDs: [group.id], keywords: keywords))
+            }
+        }
+        for group in groups {
+            append(symbol: group.icon, name: group.name, group: group)
+            for item in group.items + (additionalIcons[group.id] ?? []) { append(symbol: item.icon, name: item.name, group: group) }
+        }
+        return result
+    }
+
+    /// 搜索并筛选图标；参数：groupID 为目录键，nil 或空串表示全部，未知键返回空数组；query 为中文名称、目录、收支或符号名，空白分隔词须全部匹配；返回值：保持目录顺序的去重图标，无副作用。
+    static func icons(groupID: String? = nil, matching query: String = "") -> [CategoryIcon] {
+        let terms = query.split(whereSeparator: { $0.isWhitespace }).map(String.init)
+        // 筛选回调输入一个图标，返回是否同时符合目录和所有搜索词；合并的别名保证共享图标可从各原目录搜到。
+        return iconLibrary.filter { option in
+            if let groupID, !groupID.isEmpty, !option.groupIDs.contains(groupID) { return false }
+            let text = ([option.name, option.symbol] + option.keywords).joined(separator: " ")
+            return terms.allSatisfy { text.localizedStandardContains($0) }
+        }
+    }
+
+    /// 获取图标中文名称；参数：symbol 为已保存或候选系统符号；返回值：库内中文名称，库外符号返回“自定义图标”，不替换原始符号。
+    static func iconName(for symbol: String) -> String { iconLibrary.first { $0.symbol == symbol }?.name ?? "自定义图标" }
+
     /// 获取收支分组；参数：type 为 expense 或 income；返回值：该类型有序分组，未知类型返回空数组。
     static func groups(for type: String) -> [CategoryGroup] { groups.filter { $0.type == type } }
 

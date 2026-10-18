@@ -3,11 +3,95 @@
 package service
 
 import (
+	"encoding/json"
+	"errors"
 	"regexp"
+	"strings"
+
+	"gorm.io/gorm"
+
+	domain "personal_assistant_server/internal/finance/model"
+	"personal_assistant_server/internal/finance/repository"
 )
 
 // 预编译业务字段校验规则。
 var categoryIconPattern = regexp.MustCompile(`^[a-z][a-z0-9.]{0,63}$`)
+
+// updateCategory 更新个人分类资料；参数：db 为持有用户锁的事务，owner 为可信用户身份，in 含分类 ID 及部分字段对象；返回值：持久化后的分类或归属、校验、冲突、数据库错误；失败由调用方回滚，收支类型和历史流水引用保持不变。
+func (s *Service) updateCategory(db *gorm.DB, owner uint64, in Input) (domain.Category, error) {
+	// 先限定归属，其他用户的分类与不存在的分类统一返回未找到。
+	row, err := repository.ReadCategory(db, owner, in.ID)
+	if err != nil {
+		return row, missing(err)
+	}
+	var body map[string]json.RawMessage
+	if err := Decode(in.Changes, &body); err != nil {
+		return row, err
+	}
+	if len(body) == 0 {
+		return row, Invalid("至少提交一个字段")
+	}
+	fields := map[string]any{}
+	group, icon := row.GroupKey, row.Icon
+	for key, raw := range body {
+		// 仅接受固定字段；type 只作兼容校验，不进入持久化更新集合。
+		switch key {
+		case "name", "groupKey", "icon", "color", "type":
+		default:
+			return row, Invalid("不允许更新分类字段: " + key)
+		}
+		var value string
+		if string(raw) == "null" || json.Unmarshal(raw, &value) != nil {
+			return row, Invalid("分类字段必须为字符串")
+		}
+		switch key {
+		case "name":
+			value = strings.TrimSpace(value)
+			if !validText(value, 64, true) {
+				return row, Invalid("分类名称无效")
+			}
+			// 同名同类型仅在当前用户内冲突；按 ID 排除自身，兼容数据库大小写不敏感的排序规则。
+			if value != row.Name {
+				var existing domain.Category
+				err := repository.FindCategoryByName(db, owner, value, row.Type, &existing)
+				if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+					return row, err
+				}
+				if err == nil && existing.ID != row.ID {
+					return row, ErrConflict
+				}
+			}
+			fields["name"] = value
+		case "groupKey":
+			group = value
+			fields["group_key"] = value
+		case "icon":
+			icon = value
+			fields["icon"] = value
+		case "color":
+			if !colorPattern.MatchString(value) {
+				return row, Invalid("颜色必须为 #RRGGBB")
+			}
+			fields["color"] = value
+		case "type":
+			if value != row.Type {
+				return row, Invalid("不能修改已有分类的收支类型")
+			}
+		}
+	}
+	// 合并未提交的展示字段后沿用创建校验；空分组和空图标允许显式清除。
+	if err := validateCategoryPresentation(row.Type, group, icon); err != nil {
+		return row, err
+	}
+	if len(fields) == 0 {
+		return row, nil
+	}
+	// 所有校验完成后只写入白名单 map，避免零值丢失或覆盖未提交字段。
+	if err := repository.UpdateCategory(db, owner, row.ID, fields); err != nil {
+		return row, err
+	}
+	return repository.ReadCategory(db, owner, row.ID)
+}
 
 // validateCategoryPresentation 校验分类展示字段；参数：kind 为收支类型，group 为可省略的一级分类键，icon 为可省略的 SF Symbols 名称；返回值：校验错误或 nil，无副作用。
 func validateCategoryPresentation(kind, group, icon string) error {

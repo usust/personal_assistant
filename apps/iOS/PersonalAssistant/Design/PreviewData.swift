@@ -89,13 +89,19 @@ nonisolated final class PreviewProtocol: URLProtocol, @unchecked Sendable {
     static func payload(_ path: String) -> Any {
         switch path {
         case "/api/users/me": return ["id": 1, "account": "preview", "nickname": "林予", "role": "admin"]
+        // 健康样本仅用于 Debug 只读布局验收；包含缺失指标，不读取 HealthKit、不上传或调用 AI。
+        case "/api/health-management": return ["days": [
+            ["id": 1, "date": "2026-10-08", "timezone": "Asia/Shanghai", "steps": 8260, "active_energy": 386.5, "distance": 5620.8, "resting_heart_rate": 62, "weight": 68.5],
+            ["id": 2, "date": "2026-10-07", "timezone": "Asia/Shanghai", "steps": 6420, "active_energy": NSNull(), "distance": 4180, "resting_heart_rate": NSNull(), "weight": NSNull()]
+        ], "reports": []] as [String: Any]
         case "/api/tasks": return [task(1, "为新的一周留点空间", completed: 3), task(2, "读完《设计心理学》第三章", parent: 1, completed: 4), task(3, "整理本月订阅与开销", completed: 2), task(4, "写下三个值得记住的瞬间", completed: 0)]
         case "/api/task-lists": return [["id": 1, "name": "日常与成长", "remark": "让每一天，更有条理", "color": "#14B8A6", "icon": "folder"], ["id": 2, "name": "工作计划", "remark": "专注重要的事", "color": "#3B82F6", "icon": "folder"]]
         case "/api/finance/overview": return ["totalAssets": "86520.50", "totalLiabilities": "0.00", "netWorth": "86520.50", "monthIncome": "18500.00", "monthExpense": "4268.80", "monthBalance": "14231.20", "savingsRate": "76.93", "debtRatio": "0.00", "accountCount": 2, "assetStructure": [["name": "日常储蓄", "amount": "86000.00"], ["name": "现金钱包", "amount": "520.50"]], "cashFlow": [["month": "2026-07", "income": "18500.00", "expense": "6820.00", "net": "11680.00"], ["month": "2026-08", "income": "18500.00", "expense": "5360.00", "net": "13140.00"], ["month": "2026-09", "income": "18500.00", "expense": "4268.80", "net": "14231.20"]], "expenseCategories": [["name": "餐饮", "amount": "1820.00"], ["name": "生活", "amount": "1600.00"], ["name": "出行", "amount": "848.80"]]]
         case "/api/finance/transactions-summary": return ["income": "0.00", "expense": "0.00", "balance": "0.00"]
         case "/api/finance/accounts": return [["id": 1, "name": "日常储蓄", "accountType": "bank", "institution": "招商银行", "maskedAccountNumber": "**** 8260", "balance": "86000.00", "availableBalance": "86000.00", "currency": "CNY", "includeInNetWorth": true, "notes": ""], ["id": 2, "name": "现金钱包", "accountType": "cash", "institution": "", "maskedAccountNumber": "", "balance": "520.50", "availableBalance": "520.50", "currency": "CNY", "includeInNetWorth": true, "notes": ""]]
         case "/api/finance/categories": return [["id": 1, "name": "餐饮", "type": "expense", "color": "#14B8A6"]]
-        case "/api/setting/ai/provider_config": return [["id": 1, "name": "日常助手", "model_name": "个人模型", "provider_name": "自定义", "is_selected": true]]
+        // 预览配置补齐 Codable 必填字段，使用保留域名和虚构所有者；不提供密钥或发起模型请求。
+        case "/api/setting/ai/provider_config": return [["id": 1, "name": "日常助手", "model_name": "个人模型", "provider_name": "自定义", "is_selected": true, "base_url": "https://example.test/api", "owner_type": "user", "owner_id": 1, "visibility": "private", "updated_at": "2026-10-08T00:00:00Z"]]
         default: return []
         }
     }
@@ -129,6 +135,15 @@ nonisolated final class TaskScenarioProtocol: URLProtocol, @unchecked Sendable {
             Self.initialized = true
             if scenario == "empty" { Self.rows = []; Self.lists = [] }
             else if scenario == "today-empty-list" { Self.rows = [] }
+            else if scenario == "archived-subtree" {
+                // 模拟后端已自动归档主任务、但未级联修改下级 archived 的完整快照；全部为虚构内存样本。
+                var root = PreviewProtocol.task(1, "自动归档项目", completed: 10)
+                root["autoArchive"] = true; root["archived"] = true
+                var branch = PreviewProtocol.task(2, "归档项目子任务", parent: 1, completed: 10); branch["taskType"] = "main"
+                let leaf = PreviewProtocol.task(3, "归档项目末级任务", parent: 2, completed: 10)
+                let completedActive = PreviewProtocol.task(4, "已完成但未归档", completed: 10)
+                Self.rows = [root, branch, leaf, completedActive]
+            }
             else if scenario == "v4" {
                 // v4模拟树：真实数量求和6/11、空主任务及历史具体容器；仅虚构内存数据，不发送真实请求。
                 var root = PreviewProtocol.task(1, "产品发布"); root["icon"] = "Rocket"

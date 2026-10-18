@@ -253,8 +253,11 @@ func accountFields(raw json.RawMessage, create bool) (map[string]any, error) {
 	return fields, nil
 }
 
-// validate 校验流水结构；参数：无；返回值：字段错误，不访问数据库；关联记录权限在事务中另行验证。
+// validateTransactionInput 校验流水结构；参数：in 为待新建或合并更正的输入，金额必须为正且报销标记仅限支出；返回值：字段错误或 nil，不访问数据库，关联记录权限在事务中另行验证。
 func validateTransactionInput(in domain.TransactionInput) error {
+	if err := validateReimbursement(in.ReimbursementStatus, in.Type, in.Amount-in.Discount, false); err != nil {
+		return err
+	}
 	// 检查流水时间是否有效。
 	if !validTransactionTime(in.TransactionTime) {
 		// 拒绝本次操作：交易时间须为 HH:mm。
@@ -305,6 +308,17 @@ func validateTransactionInput(in domain.TransactionInput) error {
 	if !regexp.MustCompile(`^[A-Za-z0-9_-]{8,96}$`).MatchString(in.RequestID) {
 		// 拒绝本次操作：requestId 需为 8 至 96 位字母、数字、下划线或连字符；重试请复用。
 		return Invalid("requestId 需为 8 至 96 位字母、数字、下划线或连字符；重试请复用")
+	}
+	return nil
+}
+
+// validateReimbursement 校验报销分类；参数：status 只接受空、pending、reimbursed，typ/amount 为原单类型及实付金额，linked 表示退款或返现子项；返回值：校验错误或 nil，无写入；空值始终允许以显式清除标记。
+func validateReimbursement(status, typ string, amount domain.Money, linked bool) error {
+	if status != "" && status != "pending" && status != "reimbursed" {
+		return Invalid("报销状态无效")
+	}
+	if status != "" && (typ != "expense" || amount <= 0 || linked) {
+		return Invalid("仅原正支出可标记报销；更改收支类型请同时清空报销状态")
 	}
 	return nil
 }

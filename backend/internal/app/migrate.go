@@ -22,6 +22,9 @@ func (a *App) migrate(ctx context.Context) error {
 		&healthmodel.Day{},
 		// 健康报告表：保存用户的健康分析报告、生成时的数据快照及所用模型配置。
 		&healthmodel.Report{},
+		// 用户确认的餐食与手动目标；照片只在请求内存中使用，永不入库。
+		&healthmodel.Meal{},
+		&healthmodel.NutritionGoal{},
 		// 用户表：保存账号、密码哈希、昵称和角色，支持登录认证与业务授权。
 		&model.User{},
 		// 模型配置表：保存模型提供商、连接地址、模型名称、密钥及配置归属和使用范围。

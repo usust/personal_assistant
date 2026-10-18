@@ -20,7 +20,7 @@ func RegisterRoutes(api *gin.RouterGroup, h *handler.Handler, login gin.HandlerF
 		{"GET", "/presets", "finance.preset.list"}, {"POST", "/presets", "finance.preset.create"}, {"PATCH", "/presets/:id", "finance.preset.update"}, {"DELETE", "/presets/:id", "finance.preset.delete"},
 		{"POST", "/recurring/materialize", "finance.recurring.materialize"},
 		{"GET", "/accounts/:id/statements", "finance.account.statements"}, {"GET", "/accounts/:id/statement", "finance.account.statement"}, {"GET", "/accounts", "finance.account.list"}, {"POST", "/accounts", "finance.account.create"}, {"PATCH", "/accounts/:id", "finance.account.update"}, {"GET", "/accounts/:id/impact", "finance.account.impact"}, {"DELETE", "/accounts/:id", "finance.account.archive"},
-		{"GET", "/categories", "finance.category.list"}, {"POST", "/categories", "finance.category.create"},
+		{"GET", "/categories", "finance.category.list"}, {"POST", "/categories", "finance.category.create"}, {"PATCH", "/categories/:id", "finance.category.update"},
 		{"POST", "/transactions/:id/refund", "finance.transaction.refund"}, {"DELETE", "/transactions/:id", "finance.transaction.delete"},
 		{"GET", "/transactions/:id", "finance.transaction.get"}, {"GET", "/transactions", "finance.transaction.list"}, {"POST", "/transactions", "finance.transaction.create"}, {"PATCH", "/transactions/:id", "finance.transaction.update"}, {"POST", "/transactions/:id/confirm", "finance.transaction.confirm"}, {"POST", "/transactions/:id/void", "finance.transaction.void"},
 		{"GET", "/transactions-summary", "finance.transaction.summary"},

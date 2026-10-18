@@ -4,7 +4,18 @@ struct ContentView: View {
     @Environment(AppStore.self) private var store
     @State private var selectedTab = "finance"
     @Environment(\.scenePhase) private var scenePhase
-    /// 构建主界面；参数：无；返回值：正常应用导航，预览参数只展示隔离钱包样本。
+    /// 解析旧版预览的管理页入口；参数：无；返回值：仅调试预览中的账号、健康或设置目的地，生产环境始终为 nil；不改变真实用户导航。
+    private var initialPersonalDestination: PersonalDestination? {
+        #if DEBUG
+        let arguments = ProcessInfo.processInfo.arguments
+        guard store.isPreview, let index = arguments.firstIndex(of: "--tab"), arguments.count > index + 1 else { return nil }
+        return PersonalDestination(rawValue: arguments[index + 1])
+        #else
+        return nil
+        #endif
+    }
+
+    /// 构建主界面；参数：无；返回值：最多五个原生工作标签及聚合管理入口，预览参数只展示隔离样本，不改变会话及同步流程。
     var body: some View {
         Group {
             if store.isPreview && ProcessInfo.processInfo.arguments.contains("--wallet-ui") { AccountCardWalletPreview() }
@@ -12,18 +23,16 @@ struct ContentView: View {
             else {
                 TabView(selection: $selectedTab) {
                     if store.canUseCloud {
-                        Tab("今日", systemImage: "sun.max", value: "today") { NavigationStack { TodayView() } }
-                        Tab("任务", systemImage: "checklist", value: "tasks") { NavigationStack { TasksView() } }
+                        Tab("今日", systemImage: "sun.max", value: "today") { TabRootNavigation { TodayView() } }
+                        Tab("任务", systemImage: "checklist", value: "tasks") { TabRootNavigation { TasksView() } }
                     }
-                    Tab("财务", systemImage: "chart.pie", value: "finance") { NavigationStack { FinanceView() } }
-                    if store.profile != nil {
-                        Tab("健康", systemImage: "heart", value: "health") { NavigationStack { HealthView() } }
-                    }
+                    Tab("财务", systemImage: "chart.pie", value: "finance") { TabRootNavigation { FinanceView() } }
                     if store.canUseCloud {
-                        Tab("助手", systemImage: "sparkles", value: "chat") { NavigationStack { ChatView() } }
+                        Tab("助手", systemImage: "sparkles", value: "chat") { TabRootNavigation { ChatView() } }
                     }
-                    Tab("用户", systemImage: "person.crop.circle", value: "user") { NavigationStack { UserAccountView() } }
-                    Tab("设置", systemImage: "gearshape", value: "settings") { NavigationStack { SettingsView() } }
+                    Tab("我的", systemImage: "person.crop.circle", value: "user") {
+                        TabRootNavigation { PersonalHubView(initialDestination: initialPersonalDestination) }
+                    }
                 }
                 // 由 iOS 27 系统 TabView 管理液态玻璃导航，滚动时收起以增加内容空间。
                 .tabViewStyle(.sidebarAdaptable)
@@ -54,7 +63,10 @@ struct ContentView: View {
             }
             .task {
                 #if DEBUG
-                if store.isPreview, let index = ProcessInfo.processInfo.arguments.firstIndex(of: "--tab"), ProcessInfo.processInfo.arguments.count > index + 1 { selectedTab = ProcessInfo.processInfo.arguments[index + 1] }
+                if store.isPreview, let index = ProcessInfo.processInfo.arguments.firstIndex(of: "--tab"), ProcessInfo.processInfo.arguments.count > index + 1 {
+                    let requested = ProcessInfo.processInfo.arguments[index + 1]
+                    selectedTab = PersonalDestination(rawValue: requested) == nil ? requested : "user"
+                }
                 #endif
                 await store.restore()
             }

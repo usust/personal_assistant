@@ -203,7 +203,7 @@ func (s *Service) createTransaction(db *gorm.DB, owner uint64, raw json.RawMessa
 	if e = validateReferences(db, owner, in); e != nil {
 		return domain.Transaction{}, e
 	}
-	row := domain.Transaction{Rebate: in.Rebate, RebateAccountID: in.RebateAccountID, RebatePending: in.RebatePending, Fee: in.Fee, OwnerID: owner, RequestID: in.RequestID, Fingerprint: hash, AccountID: in.AccountID, TargetAccountID: in.TargetAccountID, Type: in.Type, Amount: in.Amount - in.Discount, Discount: in.Discount, CategoryID: in.CategoryID, Counterparty: in.Counterparty, TransactionDate: in.TransactionDate, TransactionTime: in.TransactionTime, Description: in.Description, Source: source, Status: "posted"}
+	row := domain.Transaction{ReimbursementStatus: in.ReimbursementStatus, Rebate: in.Rebate, RebateAccountID: in.RebateAccountID, RebatePending: in.RebatePending, Fee: in.Fee, OwnerID: owner, RequestID: in.RequestID, Fingerprint: hash, AccountID: in.AccountID, TargetAccountID: in.TargetAccountID, Type: in.Type, Amount: in.Amount - in.Discount, Discount: in.Discount, CategoryID: in.CategoryID, Counterparty: in.Counterparty, TransactionDate: in.TransactionDate, TransactionTime: in.TransactionTime, Description: in.Description, Source: source, Status: "posted"}
 	if row.Rebate > 0 && row.RebateAccountID == nil {
 		row.RebateAccountID = &row.AccountID
 	}

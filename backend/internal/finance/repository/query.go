@@ -60,9 +60,39 @@ func QueryTransactions(db *gorm.DB, owner uint64, f TransactionFilter, rows *[]d
 	return q.Order("transaction_date DESC, transaction_time DESC, id DESC").Limit(f.Limit).Offset(f.Offset).Find(rows).Error
 }
 
-// SumTransactionSummary 查询区间收支原始汇总；参数：db 为事务，owner 为可信归属，start/end 为已校验日期且包含边界，result 为非 nil 汇总指针；返回值：数据库错误或 nil；仅统计已入账流水，手续费计入支出。
-func SumTransactionSummary(db *gorm.DB, owner uint64, start, end string, result *domain.TransactionSummary) error {
-	return db.Model(&domain.Transaction{}).Select("COALESCE(SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END), 0) AS income, COALESCE(SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END), 0) + COALESCE(SUM(fee), 0) AS expense").Where("owner_id = ? AND status = ? AND transaction_date >= ? AND transaction_date <= ?", owner, "posted", start, end).Scan(result).Error
+// SumTransactionSummary 查询区间收支原始汇总；参数：db 为事务，owner 为可信归属，start/end 为已校验日期且包含边界，accountID 为可选账户（0 表示全部，匹配转出或转入），result 为非 nil 汇总指针；返回值：数据库错误或 nil；仅统计已入账流水，手续费计入支出，无写入。
+func SumTransactionSummary(db *gorm.DB, owner uint64, start, end string, accountID uint64, result *domain.TransactionSummary) error {
+	q := db.Model(&domain.Transaction{}).Select("COALESCE(SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END), 0) AS income, COALESCE(SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END), 0) + COALESCE(SUM(fee), 0) AS expense").Where("owner_id = ? AND status = ? AND transaction_date >= ? AND transaction_date <= ?", owner, "posted", start, end)
+	if accountID != 0 {
+		q = q.Where("(account_id = ? OR target_account_id = ?)", accountID, accountID)
+	}
+	return q.Scan(result).Error
+}
+
+// SumReimbursementSummary 汇总报销净额；参数：db 为事务，owner 为可信归属，start/end 为原支出的包含边界日期，accountID 为可选原单账户（0 表示全部），result 为非 nil 结果指针；返回值：查询错误或 nil，无写入；跨月有效退款依原单当前状态归类，逐单净额下限为零。
+func SumReimbursementSummary(db *gorm.DB, owner uint64, start, end string, accountID uint64, result *domain.TransactionSummary) error {
+	// 与退款余额校验同样只取已入账退款，并约束为负支出；退款无日期或账户过滤，始终归属于原单。
+	refunds := db.Model(&domain.Transaction{}).Select("refund_parent_id, SUM(amount) AS total").Where("owner_id = ? AND status = ? AND type = ? AND amount < 0 AND refund_parent_id IS NOT NULL", owner, "posted", "expense").Group("refund_parent_id")
+	q := db.Table("finance_transactions_v2 AS original").Select("original.reimbursement_status AS status, SUM(CASE WHEN original.amount + COALESCE(refunds.total, 0) > 0 THEN original.amount + COALESCE(refunds.total, 0) ELSE 0 END) AS total").Joins("LEFT JOIN (?) AS refunds ON refunds.refund_parent_id = original.id", refunds).Where("original.owner_id = ? AND original.status = ? AND original.type = ? AND original.amount > 0 AND original.refund_parent_id IS NULL AND original.rebate_parent_id IS NULL", owner, "posted", "expense").Where("original.transaction_date >= ? AND original.transaction_date <= ? AND original.reimbursement_status IN ?", start, end, []string{"pending", "reimbursed"})
+	if accountID != 0 {
+		q = q.Where("original.account_id = ?", accountID)
+	}
+	var rows []struct {
+		Status string
+		Total  domain.Money
+	}
+	if err := q.Group("original.reimbursement_status").Scan(&rows).Error; err != nil {
+		return err
+	}
+	result.ReimbursementPending, result.ReimbursementReceived = 0, 0
+	for _, row := range rows {
+		if row.Status == "pending" {
+			result.ReimbursementPending = row.Total
+		} else {
+			result.ReimbursementReceived = row.Total
+		}
+	}
+	return nil
 }
 
 // SumTypes 按收支类型聚合金额；参数：db 为事务，owner 为归属，start/end 为左闭右开日期，result 为含 Type、Total 字段的非 nil 集合指针；返回值：数据库错误或 nil，无写入。

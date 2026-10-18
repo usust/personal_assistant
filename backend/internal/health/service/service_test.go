@@ -22,7 +22,7 @@ func healthFixture(t *testing.T) *Service {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err = db.AutoMigrate(&domain.Day{}, &domain.Report{}); err != nil {
+	if err = db.AutoMigrate(&domain.Day{}, &domain.Report{}, &domain.Meal{}, &domain.NutritionGoal{}); err != nil {
 		t.Fatal(err)
 	}
 	// 清理回调关闭独立数据库；参数：无；返回值：无，关闭错误令测试失败。

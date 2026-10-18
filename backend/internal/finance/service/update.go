@@ -12,7 +12,7 @@ import (
 	"personal_assistant_server/internal/finance/repository"
 )
 
-// updateTransaction 更正流水并原子重算余额；参数：db 为持用户锁的事务，owner 为身份，in 含流水 ID 和部分字段；返回值：更新后的流水或校验/数据库错误；失败必须回滚，白名单 map 保留零值，关联分期及退款子项的财务字段由原业务维护。
+// updateTransaction 更正流水，财务变更原子重算余额；参数：db 为持用户锁的事务，owner 为身份，in 含流水 ID 和部分字段；返回值：更新后的流水或校验/数据库错误；失败必须回滚，白名单 map 保留零值，报销等资料更正不冲销余额且允许分期子单，关联分期及退款子项的财务字段由原业务维护。
 func (s *Service) updateTransaction(db *gorm.DB, owner uint64, in Input) (domain.Transaction, error) {
 	var row domain.Transaction
 	// 读取满足条件的目标记录。
@@ -34,8 +34,8 @@ func (s *Service) updateTransaction(db *gorm.DB, owner uint64, in Input) (domain
 		// 拒绝本次操作：至少提交一个字段。
 		return row, Invalid("至少提交一个字段")
 	}
-	columns := map[string]string{"accountId": "account_id", "targetAccountId": "target_account_id", "type": "type", "amount": "amount", "discount": "discount", "fee": "fee", "rebate": "rebate", "rebateAccountId": "rebate_account_id", "rebatePending": "rebate_pending", "categoryId": "category_id", "counterparty": "counterparty", "description": "description", "transactionDate": "transaction_date", "transactionTime": "transaction_time"}
-	candidate := domain.TransactionInput{RequestID: "transaction-edit", AccountID: row.AccountID, TargetAccountID: row.TargetAccountID, Type: row.Type, Amount: row.Amount + row.Discount, Discount: row.Discount, Fee: row.Fee, Rebate: row.Rebate, RebateAccountID: row.RebateAccountID, RebatePending: row.RebatePending, CategoryID: row.CategoryID, Counterparty: row.Counterparty, Description: row.Description, TransactionDate: row.TransactionDate, TransactionTime: row.TransactionTime}
+	columns := map[string]string{"reimbursementStatus": "reimbursement_status", "accountId": "account_id", "targetAccountId": "target_account_id", "type": "type", "amount": "amount", "discount": "discount", "fee": "fee", "rebate": "rebate", "rebateAccountId": "rebate_account_id", "rebatePending": "rebate_pending", "categoryId": "category_id", "counterparty": "counterparty", "description": "description", "transactionDate": "transaction_date", "transactionTime": "transaction_time"}
+	candidate := domain.TransactionInput{ReimbursementStatus: row.ReimbursementStatus, RequestID: "transaction-edit", AccountID: row.AccountID, TargetAccountID: row.TargetAccountID, Type: row.Type, Amount: row.Amount + row.Discount, Discount: row.Discount, Fee: row.Fee, Rebate: row.Rebate, RebateAccountID: row.RebateAccountID, RebatePending: row.RebatePending, CategoryID: row.CategoryID, Counterparty: row.Counterparty, Description: row.Description, TransactionDate: row.TransactionDate, TransactionTime: row.TransactionTime}
 	// 序列化业务数据，供存储或响应使用。
 	encoded, _ := json.Marshal(candidate)
 	var merged map[string]json.RawMessage
@@ -54,7 +54,7 @@ func (s *Service) updateTransaction(db *gorm.DB, owner uint64, in Input) (domain
 			return row, Invalid("流水字段不可为 null")
 		}
 		merged[key] = value
-		if key != "categoryId" && key != "counterparty" && key != "description" {
+		if key != "categoryId" && key != "counterparty" && key != "description" && key != "reimbursementStatus" {
 			financial = true
 		}
 	}
@@ -67,6 +67,10 @@ func (s *Service) updateTransaction(db *gorm.DB, owner uint64, in Input) (domain
 	encoded, _ = json.Marshal(merged)
 	// 严格解析业务输入，避免无效字段进入操作流程。
 	if e := Decode(encoded, &candidate); e != nil {
+		return row, e
+	}
+	// 报销属于资料更正，分期子单可独立修改；退款和返现子项不能独立标记，财务更正不能隐式丢弃原标记。
+	if e := validateReimbursement(candidate.ReimbursementStatus, candidate.Type, candidate.Amount-candidate.Discount, row.RefundParentID != nil || row.RebateParentID != nil); e != nil {
 		return row, e
 	}
 	if financial {
@@ -100,6 +104,7 @@ func (s *Service) updateTransaction(db *gorm.DB, owner uint64, in Input) (domain
 		}
 	}
 	next := row
+	next.ReimbursementStatus = candidate.ReimbursementStatus
 	next.AccountID = candidate.AccountID
 	next.TargetAccountID = candidate.TargetAccountID
 	next.Type = candidate.Type
@@ -151,7 +156,7 @@ func (s *Service) updateTransaction(db *gorm.DB, owner uint64, in Input) (domain
 			return row, e
 		}
 	}
-	values := map[string]any{"account_id": next.AccountID, "target_account_id": next.TargetAccountID, "type": next.Type, "amount": next.Amount, "discount": next.Discount, "fee": next.Fee, "rebate": next.Rebate, "rebate_account_id": next.RebateAccountID, "rebate_pending": next.RebatePending, "category_id": next.CategoryID, "counterparty": next.Counterparty, "description": next.Description, "transaction_date": next.TransactionDate, "transaction_time": next.TransactionTime}
+	values := map[string]any{"reimbursement_status": next.ReimbursementStatus, "account_id": next.AccountID, "target_account_id": next.TargetAccountID, "type": next.Type, "amount": next.Amount, "discount": next.Discount, "fee": next.Fee, "rebate": next.Rebate, "rebate_account_id": next.RebateAccountID, "rebate_pending": next.RebatePending, "category_id": next.CategoryID, "counterparty": next.Counterparty, "description": next.Description, "transaction_date": next.TransactionDate, "transaction_time": next.TransactionTime}
 	fields := map[string]any{}
 	for key := range body {
 		fields[columns[key]] = values[columns[key]]

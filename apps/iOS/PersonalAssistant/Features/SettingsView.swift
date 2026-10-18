@@ -1,39 +1,133 @@
 import SwiftUI
 import UIKit
 
+/// 我的工作台中的二级入口；保留旧预览参数与业务页面的独立导航状态。
+enum PersonalDestination: String, Hashable {
+    case user, health, settings
+}
+
+/// 聚合低频管理入口，让主标签始终留给每日工作，不再依赖系统 More 的溢出导航。
+struct PersonalHubView: View {
+    @Environment(AppStore.self) private var store
+    var initialDestination: PersonalDestination? = nil
+    @State private var destination: PersonalDestination?
+    @State private var handledInitialDestination = false
+
+    /// 构建我的首页；参数：无；返回值：独立身份区和共用分组内的既有健康、设置入口，使用系统实底与动态字号；不发起同步、读取健康或更改账号。
+    var body: some View {
+        List {
+            Section {
+                // 入口回调无输入、返回无；只打开现有账号页面，登录与同步继续由该页面明确触发。
+                Button { destination = .user } label: {
+                    HStack(spacing: 16) {
+                        SymbolTile(symbol: "person.crop.circle.fill", size: 56)
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text(store.profile?.nickname ?? "本机账本").font(.title2.weight(.semibold)).foregroundStyle(.primary)
+                                .fixedSize(horizontal: false, vertical: true)
+                            Text(store.profile?.account ?? "未登录").font(.subheadline).foregroundStyle(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        Spacer(minLength: 8)
+                        Image(systemName: "chevron.right").font(.footnote.weight(.semibold)).foregroundStyle(.tertiary)
+                    }.frame(minHeight: 72).padding(.vertical, 8).contentShape(Rectangle())
+                }.buttonStyle(.plain).accessibilityIdentifier("personal.account")
+            }
+            Section {
+                if store.profile != nil {
+                    // 入口回调无输入、返回无；只查看服务器健康记录，不隐式申请或上传手机健康数据。
+                    Button { destination = .health } label: {
+                        hubLabel("健康管理", symbol: "heart.text.clipboard", color: .teal)
+                    }.buttonStyle(.plain).accessibilityIdentifier("personal.health")
+                }
+                // 入口回调无输入、返回无；进入既有设置页，模型服务与快捷指令仍保留原授权流程。
+                Button { destination = .settings } label: {
+                    hubLabel("设置", symbol: "gearshape", color: .secondary)
+                }.buttonStyle(.plain).accessibilityIdentifier("personal.settings")
+            }
+        }
+        .listStyle(.insetGrouped).listSectionSpacing(AppVisualStyle.sectionSpacing)
+        .contentMargins(.horizontal, AppVisualStyle.pageInset, for: .scrollContent)
+        .scrollContentBackground(.hidden).background(AppVisualStyle.canvas)
+        .navigationTitle("我的").navigationBarTitleDisplayMode(.inline)
+        .navigationDestination(item: $destination) { selected in
+            // 导航构造回调输入所选目的地、返回既有业务页面，不新建数据源或重写业务状态。
+            switch selected {
+            case .user: UserAccountView()
+            case .health: HealthView()
+            case .settings: SettingsView()
+            }
+        }
+        .task {
+            // 首次挂载回调无输入、返回无；只消费一次旧 UI 预览入口，返回时不重复推入页面。
+            guard !handledInitialDestination else { return }
+            handledInitialDestination = true
+            destination = initialDestination
+        }
+    }
+
+    /// 构建工作台入口；参数：title 为入口名称，symbol 为有效系统符号，color 为动态语义色；返回值：带方向标记的非交互标签，无业务副作用。
+    private func hubLabel(_ title: String, symbol: String, color: Color) -> some View {
+        HStack(spacing: 12) {
+            AppDestinationLabel(title: title, symbol: symbol, color: color)
+            Image(systemName: "chevron.right").font(.footnote.weight(.semibold)).foregroundStyle(.tertiary)
+        }.contentShape(Rectangle())
+    }
+}
+
 struct SettingsView: View {
     @Environment(AppStore.self) private var store
     @AppStorage("appearance") private var appearance = "system"
+    @AppStorage(TaskDisplayMode.storageKey) private var taskDisplayMode = TaskDisplayMode.tree.rawValue
     @State private var editingServer = false
 
-    /// 构建一级设置页面；参数：无；返回值：按 AI、快捷指令、外观、连接及关于分块的设置表单，与用户账号操作分离。
+    /// 构建一级设置页面；参数：无；返回值：以共享 headline 标题和系统符号分组的设置表单，服务器地址可完整换行；任务与外观仅保存原有本机偏好，连接编辑仍需独立确认。
     var body: some View {
         Form {
-            Section("AI 设置") {
-                if store.profile != nil { NavigationLink { AISettingsView() } label: { Label("模型服务", systemImage: "sparkles") } }
+            if store.profile != nil {
+                Section {
+                    NavigationLink { AISettingsView() } label: { Label("模型服务", systemImage: "cpu") }
+                } header: { AppSectionHeading(title: "AI 设置").textCase(nil) }
             }
-            Section("快捷指令") {
-                NavigationLink { ScreenshotSetupView() } label: { Label("截图记账", systemImage: "hand.tap") }
-            }
-            Section("外观") {
-                Picker("外观", selection: $appearance) { Text("跟随系统").tag("system"); Text("浅色").tag("light"); Text("深色").tag("dark") }
-            }
-            Section("连接") {
+            Section {
+                NavigationLink { ScreenshotSetupView() } label: { Label("截图记账", systemImage: "camera.viewfinder") }
+            } header: { AppSectionHeading(title: "快捷指令").textCase(nil) }
+            Section {
+                // 选项回调输入展示类型、返回本机 Picker 选项；与任务菜单共享 AppStorage，不修改任务/清单/归档数据。
+                Picker(selection: $taskDisplayMode) {
+                    ForEach(TaskDisplayMode.allCases, id: \.rawValue) { mode in Text(mode.title).tag(mode.rawValue) }
+                } label: { Label("任务展示", systemImage: "list.bullet.indent") }
+                    .accessibilityIdentifier("settingsTaskDisplayMode")
+            } header: { AppSectionHeading(title: "任务").textCase(nil) }
+            Section {
+                Picker(selection: $appearance) {
+                    Text("跟随系统").tag("system"); Text("浅色").tag("light"); Text("深色").tag("dark")
+                } label: { Label("外观", systemImage: "circle.lefthalf.filled") }
+            } header: { AppSectionHeading(title: "外观").textCase(nil) }
+            Section {
                 // 点击回调无输入和返回；打开独立编辑表单，取消时不修改当前连接。
                 Button { editingServer = true } label: {
-                    HStack {
-                        Text("服务器").foregroundStyle(.primary)
-                        Spacer()
-                        Text(store.api.baseURL).font(.footnote).foregroundStyle(.secondary).lineLimit(1).truncationMode(.middle)
+                    HStack(spacing: AppVisualStyle.itemSpacing) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Label("服务器", systemImage: "network").foregroundStyle(.primary)
+                            Text(store.api.baseURL).font(.footnote).foregroundStyle(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        Spacer(minLength: 0)
                         Image(systemName: "chevron.right").font(.footnote.weight(.semibold)).foregroundStyle(.tertiary)
-                    }.contentShape(Rectangle())
+                    }.frame(minHeight: 44).contentShape(Rectangle())
                 }.buttonStyle(.plain)
-            }
-            Section("关于") {
-                LabeledContent("Personal Assistant", value: "1.0")
-            }
-        }.navigationTitle("").navigationBarTitleDisplayMode(.inline)
-            .sheet(isPresented: $editingServer) { ServerAddressEditor() }
+            } header: { AppSectionHeading(title: "连接").textCase(nil) }
+            Section {
+                LabeledContent {
+                    Text("1.0")
+                } label: { Label("Personal Assistant", systemImage: "info.circle") }
+            } header: { AppSectionHeading(title: "关于").textCase(nil) }
+        }
+        .listSectionSpacing(AppVisualStyle.sectionSpacing)
+        .contentMargins(.horizontal, AppVisualStyle.pageInset, for: .scrollContent)
+        .scrollContentBackground(.hidden).background(AppVisualStyle.canvas)
+        .navigationTitle("").navigationBarTitleDisplayMode(.inline)
+        .sheet(isPresented: $editingServer) { ServerAddressEditor() }
     }
 }
 
@@ -181,7 +275,7 @@ struct AISettingsView: View {
     @State private var consenting: AIConfig?
     @State private var busy = false
     @State private var error: String?
-    /// 构建模型服务与用途配置；参数：无；返回值：左侧分组标题、左滑删除服务及图片记账模型下拉选择。
+    /// 构建模型服务与用途配置；参数：无；返回值：统一 headline 分组标题、实底服务列表和独立玻璃新增操作，保留左滑删除及图片记账模型下拉；编辑、删除与外发授权沿用原有明确操作。
     var body: some View {
         List {
             if let error { InlineError(message: error); Button("重试") { Task { await reload() } } }
@@ -194,7 +288,7 @@ struct AISettingsView: View {
                             Text(config.name).font(.headline)
                             Text(config.provider_name + " · " + config.model_name).font(.subheadline).foregroundStyle(.secondary)
                         }.frame(maxWidth: .infinity, alignment: .leading).padding(.vertical, 4)
-                    }.foregroundStyle(.tint).disabled(!canManage(config) || busy)
+                    }.buttonStyle(.plain).foregroundStyle(.primary).disabled(!canManage(config) || busy)
                         .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                             if canManage(config) {
                                 // 左滑删除只选定目标，确认后才向后端发送删除请求。
@@ -205,7 +299,7 @@ struct AISettingsView: View {
                         }
                 }
             } header: {
-                Text("模型服务").textCase(nil).padding(.leading, -16)
+                AppSectionHeading(title: "模型服务").textCase(nil)
             }
             Section {
                 // 新增按钮无输入及返回；保留等宽长条玻璃操作入口。
@@ -213,8 +307,7 @@ struct AISettingsView: View {
                     Label("添加模型服务", systemImage: "plus")
                         .font(.body).frame(maxWidth: .infinity, minHeight: 60)
                         .contentShape(RoundedRectangle(cornerRadius: 28))
-                }.buttonStyle(.plain).foregroundStyle(.tint).disabled(busy)
-                    .glassEffect(.regular.interactive(), in: RoundedRectangle(cornerRadius: 28))
+                }.buttonStyle(.glass).buttonBorderShape(.roundedRectangle(radius: 28)).tint(.teal).disabled(busy)
                     .listRowInsets(EdgeInsets()).listRowBackground(Color.clear)
             }
             Section {
@@ -225,11 +318,12 @@ struct AISettingsView: View {
                     }
                 }.pickerStyle(.menu).disabled(busy)
             } header: {
-                Text("模型配置").textCase(nil).padding(.leading, -16)
+                AppSectionHeading(title: "模型配置").textCase(nil)
             }
-        }.listStyle(.insetGrouped).listSectionSpacing(16)
+        }.listStyle(.insetGrouped).listSectionSpacing(AppVisualStyle.sectionSpacing)
+            .contentMargins(.horizontal, AppVisualStyle.pageInset, for: .scrollContent)
+            .scrollContentBackground(.hidden).background(AppVisualStyle.canvas)
             .navigationTitle("").navigationBarTitleDisplayMode(.inline)
-            .background(ModelServiceNavigationContainer())
             .task { await reload() }.refreshable { await reload() }
             .sheet(isPresented: $creating) { AIConfigEditor(config: nil) }
             .sheet(item: $editing) { AIConfigEditor(config: $0) }
@@ -296,90 +390,31 @@ struct AISettingsView: View {
     }
 }
 
-/// 本页保留 SwiftUI 导航栏，临时隐藏系统 More 的外层导航栏，避免两行按钮。
-private struct ModelServiceNavigationContainer: UIViewControllerRepresentable {
-    /// 创建导航适配控制器；参数：context 为 SwiftUI 生命周期上下文；返回值：不显示内容的控制器。
-    func makeUIViewController(context: Context) -> NavigationController {
-        NavigationController()
-    }
-
-    /// 更新适配控制器；参数：controller 为已创建实例，context 为生命周期上下文；返回值：无。
-    func updateUIViewController(_ controller: NavigationController, context: Context) {
-        controller.hideMoreNavigationBar()
-    }
-
-    /// 离开页面时恢复外层导航；参数：controller 为即将移除实例，coordinator 为默认协调器；返回值：无。
-    static func dismantleUIViewController(_ controller: NavigationController, coordinator: ()) {
-        controller.restoreMoreNavigationBar()
-    }
-
-    final class NavigationController: UIViewController {
-        private weak var moreNavigation: UINavigationController?
-        private var wasHidden = false
-
-        /// 页面出现前适配导航栏；参数：animated 表示系统是否使用动画；返回值：无。
-        override func viewWillAppear(_ animated: Bool) {
-            super.viewWillAppear(animated)
-            hideMoreNavigationBar()
-        }
-
-        /// 挂载后适配导航栏；参数：parent 为父控制器或 nil；返回值：无，未挂载时不修改导航。
-        override func didMove(toParent parent: UIViewController?) {
-            super.didMove(toParent: parent)
-            if parent != nil { hideMoreNavigationBar() }
-        }
-
-        /// 隐藏本页所属 More 外层导航栏；参数：无；返回值：无，其他标签及宽屏导航不受影响。
-        func hideMoreNavigationBar() {
-            guard let more = tabBarController?.moreNavigationController else { return }
-            // 必须确认当前页面在 More 层级内，避免隐藏其他一级菜单的导航栏。
-            var ancestor: UIViewController? = parent
-            while let current = ancestor {
-                if current === more {
-                    if moreNavigation == nil { moreNavigation = more; wasHidden = more.isNavigationBarHidden }
-                    more.setNavigationBarHidden(true, animated: false)
-                    return
-                }
-                ancestor = current.parent
-            }
-        }
-
-        /// 恢复进入前的外层导航状态；参数：无；返回值：无，适配器移除时执行。
-        func restoreMoreNavigationBar() {
-            moreNavigation?.setNavigationBarHidden(wasHidden, animated: false)
-            moreNavigation = nil
-        }
-    }
-}
-
-
-/// 模型服务字段：空值使用完整占位标签，有值时在输入上方显示缩小标签；密钥保持安全输入。
+/// 模型服务字段：复用任务浮动标签布局，聚焦或有值时标签抬升；密钥保持安全输入。
 private struct ModelServiceTextField: View {
     let title: String
     @Binding var text: String
     var keyboard: UIKeyboardType = .default
     var secure = false
+    @FocusState private var focused: Bool
 
     /// 构建浮动标签输入；参数：无；返回值：绑定 text 的输入视图，title 为字段名称，keyboard 指定键盘，secure 决定是否遮盖内容。
     var body: some View {
-        VStack(alignment: .leading, spacing: 5) {
-            // 根据真实值浮动标签，编辑回填立即显示字段名；清空后还原占位，标签不截断长名称。
-            if !text.isEmpty {
-                Text(title).font(.caption).foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .accessibilityHidden(true)
-            }
+        FloatingFieldContainer(title: title, raised: focused || !text.isEmpty) {
             Group {
                 if secure {
-                    SecureField(title, text: $text, prompt: Text(title).foregroundStyle(.secondary))
+                    SecureField(title, text: $text, prompt: Text(""))
                 } else {
-                    TextField(title, text: $text, prompt: Text(title).foregroundStyle(.secondary))
+                    TextField(title, text: $text, prompt: Text(""))
                 }
-            }.font(.body).keyboardType(keyboard)
+            }.font(.body).keyboardType(keyboard).focused($focused)
                 .textInputAutocapitalization(.never).autocorrectionDisabled()
                 .accessibilityLabel(title)
-        }.frame(maxWidth: .infinity, minHeight: 52, alignment: .leading)
-            .animation(.easeInOut(duration: 0.16), value: text.isEmpty)
+        }
+        .contentShape(Rectangle())
+        .background { KeyboardInputRegion() }
+        // 点击回调无输入、返回值无；标签与留白同样获取焦点，只编辑字段草稿。
+        .onTapGesture { focused = true }
     }
 }
 
@@ -388,6 +423,10 @@ struct AIConfigEditor: View {
     @Environment(AppStore.self) private var store
     @Environment(\.dismiss) private var dismiss
     @State private var providers: [Provider] = []
+    @State private var loadingProviders = false
+    @State private var providersError: String?
+    @State private var providersLoadID = UUID()
+    @State private var providersRequestID = UUID()
     @State private var name = ""
     @State private var provider = ""
     @State private var baseURL = ""
@@ -404,15 +443,27 @@ struct AIConfigEditor: View {
     @State private var shared = false
     @State private var busy = false
     @State private var error: String?
-    /// 构建配置编辑器；参数：无；返回值：采用浮动标签的新建或编辑表单，已有密钥不读取。
+    /// 构建配置编辑器；参数：无；返回值：采用浮动标签的表单，草稿仅回填一次，目录可独立重试，已有密钥不读取。
     var body: some View {
         NavigationStack {
             Form {
                 Section("模型连接") {
                     ModelServiceTextField(title: "服务名称", text: $name)
-                    Picker("提供商", selection: $provider) { Text("请选择").tag(""); ForEach(providers) { Text($0.name).tag($0.id) } }
-                        // 提供商变化回调输入旧新 ID，返回无；编辑原提供商保留自定义地址。
-                        .onChange(of: provider) { _, value in baseURL = value == config?.provider_name ? config?.base_url ?? "" : providers.first { $0.id == value }?.base_url ?? "" }
+                    // 选择绑定读取当前 ID，写入回调接收用户选择的 ID、返回无；仅主动选择时预填地址。
+                    Picker("提供商", selection: Binding(get: { provider }, set: { selectProvider($0) })) {
+                        Text("请选择").tag("")
+                        // 目录失败或缺少已保存提供商时，仍为当前值提供有效选项。
+                        if !provider.isEmpty && !providers.contains(where: { $0.id == provider }) {
+                            Text(provider).tag(provider)
+                        }
+                        ForEach(providers) { Text($0.name).tag($0.id) }
+                    }
+                    if loadingProviders { ProgressView("加载提供商") }
+                    if let providersError {
+                        InlineError(message: providersError)
+                        // 重试回调无参数、返回值无；只重启目录任务，由视图生命周期负责取消。
+                        Button("重试") { providersLoadID = UUID() }
+                    }
                     ModelServiceTextField(title: "API 地址", text: $baseURL, keyboard: .URL)
                     ModelServiceTextField(title: config == nil ? "API Key" : "API Key（留空保留）", text: $key, secure: true)
                     // 标签独立放在左侧，模型菜单与刷新采用紧凑间距并共同靠右。
@@ -456,13 +507,10 @@ struct AIConfigEditor: View {
                 .alert(modelResultTitle, isPresented: $showingModelResult) {
                     Button("好", role: .cancel) { }
                 } message: { Text(modelResultMessage) }
-                .task {
-                    // 表单加载无输入及返回；先加载目录再回填，防止默认地址覆盖已保存地址。
-                    do {
-                        providers = try await store.api.request("/setting/ai/providers")
-                        if let config { name = config.name; provider = config.provider_name; model = config.model_name; baseURL = config.base_url; shared = config.visibility == "shared" }
-                        initialized = true
-                    } catch { self.error = error.localizedDescription }
+                .task(id: providersLoadID) {
+                    // 目录任务无参数、返回值无；首次请求前同步回填，重试及视图重入均保留草稿。
+                    initializeDraft()
+                    await loadProviders()
                 }
                 .task(id: provider + "\n" + baseURL + "\n" + key + "\n" + String(initialized)) {
                     // 连接变化回调无输入及返回；防抖、取消过期请求，不用旧结果覆盖新连接。
@@ -472,6 +520,38 @@ struct AIConfigEditor: View {
                     guard !baseURL.isEmpty, !key.isEmpty || config != nil else { return }
                     do { try await Task.sleep(for: .milliseconds(600)); try Task.checkCancellation(); await loadModels() } catch { }
                 }
+        }
+    }
+    /// 一次性回填已有配置草稿；参数：无；返回值：无，网络请求前完成初始化，不读取密钥，不覆盖后续编辑。
+    private func initializeDraft() {
+        guard !initialized else { return }
+        if let config {
+            name = config.name; provider = config.provider_name; model = config.model_name
+            baseURL = config.base_url; shared = config.visibility == "shared"
+        }
+        initialized = true
+    }
+    /// 切换提供商并预填地址；参数：value 为用户选择的提供商 ID，空串表示未选择；返回值：无，同值选择保留草稿，原提供商沿用已保存地址。
+    private func selectProvider(_ value: String) {
+        guard provider != value else { return }
+        provider = value
+        baseURL = value == config?.provider_name ? config?.base_url ?? "" : providers.first { $0.id == value }?.base_url ?? ""
+    }
+    /// 独立读取提供商目录；参数：无；返回值：无，错误仅写目录状态，不阻断保存；取消、会话变化或过期响应不落地，草稿始终不变。
+    private func loadProviders() async {
+        guard !Task.isCancelled else { return }
+        let generation = store.sessionID
+        let requestID = UUID(); providersRequestID = requestID
+        loadingProviders = true; providersError = nil
+        // 仅结束本代请求的加载状态，避免旧任务清除新请求的进度。
+        defer { if providersRequestID == requestID { loadingProviders = false } }
+        do {
+            let result: [Provider] = try await store.api.request("/setting/ai/providers")
+            guard !Task.isCancelled, generation == store.sessionID, providersRequestID == requestID else { return }
+            providers = result
+        } catch {
+            guard !Task.isCancelled, generation == store.sessionID, providersRequestID == requestID else { return }
+            providersError = error.localizedDescription
         }
     }
     /// 从当前服务拉取模型目录；参数：showResult 指定手动刷新后弹出结果，自动加载默认不弹出；返回值：无，取消或连接变化时忽略旧响应，密钥由后端读取。

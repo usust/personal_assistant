@@ -1,5 +1,4 @@
 import SwiftUI
-import Charts
 
 /// 单笔流水详情，所有写入复用财务接口，刷新后由父列表传入最新记录。
 struct TransactionDetailView: View {
@@ -24,7 +23,7 @@ struct TransactionDetailView: View {
     private var refundableExpense: Bool {
         transaction.type == "expense" && transaction.status == "posted" && transaction.refundParentId == nil
     }
-    /// 构建详情页；参数：无；返回值：顶部快捷操作及真实流水字段，不显示未实现的账本、标签或报销开关。
+    /// 构建详情页；参数：无；返回值：快捷操作、真实流水字段及原支出的报销状态入口，修改状态仅更新资料。
     var body: some View {
         List {
             Section {
@@ -51,6 +50,13 @@ struct TransactionDetailView: View {
                 LabeledContent("分类", value: store.categories.first { $0.id == transaction.categoryId }?.name ?? "未分类")
                 LabeledContent("状态", value: transaction.installmentParentId != nil && transaction.status == "pending" ? "待入账" : ["posted": "已入账", "pending": "待确认", "voided": "已作废", "installment": "分期主账单"][transaction.status] ?? transaction.status)
                 if transaction.status == "pending" && transaction.installmentParentId == nil { Button("确认入账") { confirming = true } }
+                if transaction.type == "expense", transaction.refundParentId == nil, transaction.rebateParentId == nil,
+                   ["posted", "pending"].contains(transaction.status) {
+                    // 绑定读取当前流水状态；写入回调输入状态键、返回无，异步保存成功后由父页提供新流水，失败保留原值。
+                    Picker("报销状态", selection: Binding(get: { transaction.reimbursementStatus ?? "" }, set: { value in Task { await saveReimbursement(value) } })) {
+                        ForEach(ReimbursementStatus.options, id: \.self) { value in Text(ReimbursementStatus.title(value)).tag(value) }
+                    }.pickerStyle(.menu)
+                }
             }
             Section {
                 LabeledContent("日期和时间", value: transaction.transactionDateTime)
@@ -87,6 +93,15 @@ struct TransactionDetailView: View {
                 Button("确认") { Task { await mutate(delete: false) } }
                 Button("取消", role: .cancel) { }
             }
+    }
+    /// 更新原支出的报销状态；参数：value 为无需报销空键、pending 或 reimbursed；返回值：无；仅提交变化字段，失败显示错误，不生成收入或重算余额。
+    private func saveReimbursement(_ value: String) async {
+        guard !busy, value != (transaction.reimbursementStatus ?? "") else { return }
+        busy = true; error = nil; defer { busy = false }
+        do {
+            try await store.api.mutate("/finance/transactions/\(transaction.id)", method: "PATCH", body: ["reimbursementStatus": value])
+            await onChange()
+        } catch { self.error = error.localizedDescription }
     }
     /// 返回类型名称；参数：无；返回值：退款优先，转账按目标账户用途展示，其余按收支类型展示。
     private var typeName: String {
@@ -148,6 +163,8 @@ private struct TransactionTemplateSheet: View {
         let gross = (Decimal(string: transaction.amount) ?? 0) + (Decimal(string: transaction.discount ?? "0") ?? 0)
         var value: [String: Any] = ["type": transaction.type, "accountId": transaction.accountId, "amount": NSDecimalNumber(decimal: gross).stringValue, "discount": transaction.discount ?? "0.00", "counterparty": transaction.counterparty, "description": transaction.description, "fee": transaction.fee ?? "0.00"]
         if let category = transaction.categoryId { value["categoryId"] = category }
+        // 模板只继承需报销的意向，新生成支出不能直接继承上一笔的已报销结果。
+        if !(transaction.reimbursementStatus ?? "").isEmpty { value["reimbursementStatus"] = "pending" }
         if let target = transaction.targetAccountId { value["targetAccountId"] = target }
         if let rebate = transaction.rebate { value["rebate"] = rebate; value["rebateAccountId"] = transaction.rebateAccountId ?? transaction.accountId; value["rebatePending"] = transaction.rebatePending ?? false }
         var body: [String: Any] = ["name": name.trimmingCharacters(in: .whitespacesAndNewlines), "frequency": "", "startDate": Values.day(.now), "transaction": value]
@@ -158,43 +175,6 @@ private struct TransactionTemplateSheet: View {
             try await store.api.mutate("/finance/presets", body: body)
             dismiss()
         } catch { self.error = error.localizedDescription }
-    }
-}
-
-/// 独立账单分析页，使用服务端统一统计口径，不从已分页流水推算总额。
-struct BillAnalysisView: View {
-    @Environment(AppStore.self) private var store
-    @State private var summary: FinanceOverview?
-    @State private var error: String?
-    /// 构建收支分析；参数：无；返回值：本月收支、半年趋势与支出分类，可下拉刷新。
-    var body: some View {
-        List {
-            if let error { InlineError(message: error); Button("重试") { Task { await load() } } }
-            if let summary {
-                Section("本月收支") {
-                    LabeledContent("收入", value: Values.money(summary.monthIncome))
-                    LabeledContent("支出", value: Values.money(summary.monthExpense))
-                    LabeledContent("结余", value: Values.money(summary.monthBalance))
-                }
-                Section("收支趋势") {
-                    Chart {
-                        ForEach(summary.cashFlow, id: \.month) { point in
-                            BarMark(x: .value("月份", point.month), y: .value("金额", Double(point.income) ?? 0)).foregroundStyle(by: .value("类型", "收入")).position(by: .value("类型", "收入"))
-                            BarMark(x: .value("月份", point.month), y: .value("金额", Double(point.expense) ?? 0)).foregroundStyle(by: .value("类型", "支出")).position(by: .value("类型", "支出"))
-                        }
-                    }.chartForegroundStyleScale(["收入": Color.teal, "支出": Color.orange]).frame(height: 200)
-                }
-                Section("本月支出分类") {
-                    if summary.expenseCategories.isEmpty { Text("暂无支出").foregroundStyle(.secondary) }
-                    ForEach(Array(summary.expenseCategories.enumerated()), id: \.offset) { _, category in LabeledContent(category.name, value: Values.money(category.amount)) }
-                }
-            } else if error == nil { ProgressView("加载分析…") }
-        }.navigationTitle("账单分析").navigationBarTitleDisplayMode(.inline).task { await load() }.refreshable { await load() }
-    }
-    /// 加载账单统计；参数：无；返回值：无，失败保留原统计并显示可重试错误。
-    private func load() async {
-        do { summary = try await store.api.request("/finance/overview"); error = nil }
-        catch { self.error = error.localizedDescription }
     }
 }
 

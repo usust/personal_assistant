@@ -20,7 +20,7 @@ struct AmountKeyboard: View {
                     if let operand = calculation.operand, let operation = calculation.operation {
                         Text(operand + " " + operation).font(.caption).foregroundStyle(.secondary)
                     }
-                    Text(draft).font(.title3.monospacedDigit()).lineLimit(1).minimumScaleFactor(0.6)
+                    AmountText(value: draft, emphasis: .compact)
                 }
             }.accessibilityElement(children: .combine)
             if let error = calculation.error { InlineError(message: error) }
@@ -28,16 +28,14 @@ struct AmountKeyboard: View {
                 // 网格回调输入键名，返回编辑草稿或确认结果的按钮，不执行网络写入。
                 ForEach(keys, id: \.self) { key in
                     Button { input(key) } label: {
-                        Text(key).font(key.count > 1 && key != "00" ? .body.weight(.medium) : .title2)
+                        Text(key).font(key.count > 1 && key != "00" ? .body.weight(.medium) : AppVisualStyle.keypadFont)
                             .frame(maxWidth: .infinity, minHeight: 44)
-                            .background(key == "完成" ? Color.accentColor : Color(uiColor: .secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 12))
-                            .foregroundStyle(key == "完成" ? Color.white : ["+", "−", "×", "÷", "="].contains(key) ? Color.accentColor : Color.primary)
-                    }.buttonStyle(.plain)
+                    }.buttonStyle(AmountKeyStyle(emphasized: key == "完成", foreground: key == "完成" ? .white : ["+", "−", "×", "÷", "="].contains(key) ? .accentColor : .primary))
                         .accessibilityLabel(["+": "加", "−": "减", "×": "乘", "÷": "除", "=": "等于"][key] ?? key)
                 }
             }
         }.padding(.horizontal, 16).padding(.vertical, 12)
-            .frame(maxWidth: 600).frame(maxWidth: .infinity).background(.regularMaterial)
+            .frame(maxWidth: 600).frame(maxWidth: .infinity).background(Color(uiColor: .systemGroupedBackground))
             // 生命周期回调无参数、无返回值；载入表单金额，离开时丢弃未完成算式并解除提交锁定。
             .onAppear { draft = value; hasPendingCalculation = false }
             .onDisappear { hasPendingCalculation = false }

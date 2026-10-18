@@ -34,7 +34,7 @@ func (s *Service) SyncExecute(ctx context.Context, owner uint64, command SyncCom
 		return nil, Invalid("同步标识无效")
 	}
 	switch command.Operation {
-	case "finance.account.create", "finance.account.update", "finance.account.archive", "finance.category.create", "finance.transaction.create", "finance.transaction.update", "finance.transaction.confirm", "finance.transaction.void", "finance.transaction.delete", "finance.transaction.refund", "finance.preset.create", "finance.preset.update", "finance.preset.delete", "finance.installment.create", "finance.installment.update", "finance.installment.delete", "finance.installment.finish", "finance.loan.adjustment.save":
+	case "finance.account.create", "finance.account.update", "finance.account.archive", "finance.category.create", "finance.category.update", "finance.transaction.create", "finance.transaction.update", "finance.transaction.confirm", "finance.transaction.void", "finance.transaction.delete", "finance.transaction.refund", "finance.preset.create", "finance.preset.update", "finance.preset.delete", "finance.installment.create", "finance.installment.update", "finance.installment.delete", "finance.installment.finish", "finance.loan.adjustment.save":
 	default:
 		// 拒绝本次操作：不支持的同步操作。
 		return nil, Invalid("不支持的同步操作")

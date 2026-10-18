@@ -11,19 +11,20 @@ struct DiscountEntryPanel: View {
     @State private var operand: String?
     @State private var operation: String?
     @State private var error: String?
-    private let gap: CGFloat = 4
+    @ScaledMetric(relativeTo: .title2) private var keypadRowHeight: CGFloat = 44
+    private let gap = AppVisualStyle.compactKeypadSpacing
 
-    /// 构建紧凑金额面板；参数：无；返回值：关闭／完成、金额框及四列专用键盘，常态面板高 320 点、错误时增高容纳提示，不弹系统键盘，取消保留原值。
+    /// 构建紧凑金额面板；参数：无；返回值：关闭／完成、金额框及四列专用键盘，常态面板高 320 点，字号和错误可增高面板，不弹系统键盘，取消保留原值。
     var body: some View {
         VStack(spacing: 8) {
             HStack {
                 // 关闭回调无参数、无返回值；丢弃本次尚未确认的优惠编辑。
                 Button { dismiss() } label: { Image(systemName: "xmark").frame(width: 44, height: 44) }
-                    .foregroundStyle(.secondary).accessibilityLabel("取消优惠输入")
+                    .buttonStyle(.glass).buttonBorderShape(.circle).accessibilityLabel("取消优惠输入")
                 Spacer()
                 Text("优惠").font(.headline)
                 Spacer()
-                Button("完成") { complete() }.frame(minWidth: 44, minHeight: 44)
+                Button("完成") { complete() }.frame(minWidth: 44, minHeight: 44).buttonStyle(.glassProminent)
             }
             HStack(spacing: 10) {
                 VStack(alignment: .leading, spacing: 3) {
@@ -48,26 +49,24 @@ struct DiscountEntryPanel: View {
                                 Group {
                                     if key == "删除" { Image(systemName: "delete.left") }
                                     else { Text(key) }
-                                }.font(.title3).frame(maxWidth: .infinity).frame(height: 44)
-                                    .background(Color(uiColor: .tertiarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 12))
-                            }.buttonStyle(.plain).accessibilityLabel(key == "删除" ? "删除一位" : key)
+                                }.font(AppVisualStyle.keypadFont).frame(maxWidth: .infinity).frame(height: keypadRowHeight)
+                            }.buttonStyle(AmountKeyStyle()).accessibilityLabel(key == "删除" ? "删除一位" : key)
                         }
                     }.frame(width: width * 3 + gap * 2)
                     VStack(spacing: gap) {
                         operatorMenu("+ ×", operations: ["+", "×"])
                         operatorMenu("− ÷", operations: ["−", "÷"])
                         Button { complete() } label: {
-                            Text("完成").font(.headline).foregroundStyle(.black)
-                                .frame(maxWidth: .infinity).frame(height: 92)
-                                .background(Color.yellow, in: RoundedRectangle(cornerRadius: 14))
-                        }.buttonStyle(.plain)
+                            Text("完成").font(.headline)
+                                .frame(maxWidth: .infinity).frame(height: keypadRowHeight * 2 + gap)
+                        }.buttonStyle(AmountKeyStyle(accent: .yellow, emphasized: true, foreground: .black))
                     }.frame(width: width)
                 }
-            }.frame(height: 188)
+            }.frame(height: keypadRowHeight * 4 + gap * 3)
         }.padding(.horizontal, 12).padding(.top, 8).padding(.bottom, 8)
             .frame(maxWidth: 600).frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             .background(Color(uiColor: .secondarySystemGroupedBackground))
-            .presentationDetents([.height(error == nil ? 320 : 360)])
+            .presentationDetents([.height(keypadRowHeight * 4 + gap * 3 + 132 + (error == nil ? 0 : 40)), .large])
             .task {
                 // 初始化回调无参数、无返回值；零值显示占位提示，首次输入替换旧金额。
                 guard !populated else { return }; populated = true
@@ -80,9 +79,9 @@ struct DiscountEntryPanel: View {
             // 菜单回调接收运算符，按钮回调无参数、无返回值，仅更新计算草稿。
             ForEach(operations, id: \.self) { symbol in Button(symbol) { setOperation(symbol) } }
         } label: {
-            Text(title).font(.title3).foregroundStyle(.primary).frame(maxWidth: .infinity).frame(height: 44)
-                .background(Color(uiColor: .tertiarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 12))
-        }
+            Text(title).font(AppVisualStyle.keypadFont).lineLimit(1).minimumScaleFactor(0.7)
+                .frame(maxWidth: .infinity).frame(height: keypadRowHeight)
+        }.buttonStyle(AmountKeyStyle())
     }
     /// 输入数字或删除；参数：key 为键名；返回值：无；文本金额保持两位小数限制，首次数字替换已有金额。
     private func input(_ key: String) {
