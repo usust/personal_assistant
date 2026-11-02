@@ -4,7 +4,6 @@ import SwiftUI
 struct AccountCardWallet: View {
     @Binding var cards: [AccountCard]
     let provider: AccountProvider
-    let accountID: Int?
     @Environment(AppStore.self) private var store
     @State private var stackIDs: [String] = []
     @State private var artwork: [String: SavedCardArtwork] = [:]
@@ -36,8 +35,8 @@ struct AccountCardWallet: View {
         UserDefaults.standard.set(other + cards.map { key($0.id) }, forKey: preference)
     }
 
-    /// 计算稳定缓存键；参数：id 为卡片 ID；返回值：包含当前用户空间的隔离键，兼容旧卡固定 ID。
-    private func key(_ id: String) -> String { (store.finance?.activeKey ?? "preview") + ":" + (id == "legacy" ? "account-\(accountID ?? 0)" : id) }
+    /// 计算稳定缓存键；参数：id 为当前卡片的唯一标识；返回值：包含当前用户空间的隔离键，无副作用。
+    private func key(_ id: String) -> String { (store.finance?.activeKey ?? "preview") + ":" + id }
     /// 生成本机卡面加载标识；参数：无；返回值：卡片或空间改变时重新读取本机偏好，不联网。
     private var artworkIdentity: String { (store.finance?.activeKey ?? "") + provider.name + cards.map { $0.id + $0.name }.joined(separator: "|") }
     /// 绘制始终层叠的钱包；参数：无；返回值：单一卡堆和右侧滑出操作栏，编辑另开表单，不重复绘制选中卡。
@@ -203,7 +202,7 @@ struct AccountCardWalletPreview: View {
     /// 展示隔离钱包；参数：无；返回值：可检查卡片堆叠和槽位交换的预览页面。
     var body: some View {
         NavigationStack {
-            ScrollView { AccountCardWallet(cards: $cards, provider: .defaultBank, accountID: nil).padding(20) }
+            ScrollView { AccountCardWallet(cards: $cards, provider: .defaultBank).padding(20) }
                 .background(Color(uiColor: .systemGroupedBackground)).navigationTitle("招商银行信用账户")
         }
     }

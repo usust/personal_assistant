@@ -14,6 +14,26 @@ final class FinanceLocalStore {
     private let databaseURL: URL
     var onChange: (() -> Void)?
     var onMutation: (() -> Void)?
+    private(set) var syncAuthorization = UUID()
+
+    /// 暂停当前空间上传；参数：无；返回值：无；保留账本和待上传命令，作废已在途同步授权。
+    func pauseSync() throws {
+        syncAuthorization = UUID()
+        var next = space
+        next["enabled"] = false
+        try saveSpace(next)
+    }
+
+    /// 升级为明确授权同步；参数：无；返回值：无；首次升级冻结所有旧空间上传，原始数据及队列不变。
+    func requireExplicitSyncConsent() throws {
+        guard document["explicitSyncConsent"] as? Bool != true else { return }
+        var next = document
+        var all = spaces
+        for key in all.keys { all[key]?["enabled"] = false }
+        next["spaces"] = all
+        next["explicitSyncConsent"] = true
+        try commit(next)
+    }
 
     /// 打开受设备保护的本地数据库；参数：url 为测试可注入路径，nil 使用 Application Support；返回值：账本；读写失败抛错，绝不覆盖损坏的原文件。
     init(url: URL? = nil) throws {
@@ -98,19 +118,20 @@ final class FinanceLocalStore {
         var updated = document; var all = spaces; all[activeKey] = next; updated["spaces"] = all
         try commit(updated)
     }
-    /// 开启账号同步并自动接收未归属游客记录；参数：server 为规范化地址，profile 为已认证身份；返回值：无；保留同名独立记录，原游客队列原子转移，仅绑定一次。
+    /// 明确授权当前空间同步；参数：server 为规范化地址，profile 为已验证身份；返回值：无；不合并或切换空间，拒绝绑定到另一账号。
     func enable(server: String, profile: Profile) throws {
-        let key = server + "#" + String(profile.id)
-        var all = spaces; var target = all[key] ?? Self.emptySpace()
-        let guest = all["guest"] ?? Self.emptySpace()
-        for table in ["accounts", "categories", "transactions", "presets", "queue"] {
-            target[table] = (target[table] as? [[String: Any]] ?? []) + (guest[table] as? [[String: Any]] ?? [])
+        if let owner = cachedProfile {
+            guard owner.id == profile.id, space["server"] as? String == server else {
+                throw Self.failure("本机账本属于其他账号，请切换到原账号后同步")
+            }
         }
-        target["enabled"] = true; target["server"] = server
+        var target = space
+        target["enabled"] = true
+        target["server"] = server
         target["profile"] = try JSONSerialization.jsonObject(with: JSONEncoder().encode(profile))
-        all[key] = target; all["guest"] = Self.emptySpace()
-        var next = document; next["spaces"] = all; next["active"] = key
-        try commit(next); syncError = nil
+        try saveSpace(target)
+        syncAuthorization = UUID()
+        syncError = nil
     }
     /// 退出到独立游客空间；参数：无；返回值：无；不删除原账号及未同步记录，旧网络响应由空间键校验丢弃。
     func useGuest() throws {

@@ -3,6 +3,7 @@ import Foundation
 extension FinanceLocalStore {
     /// 查询完整本地账本；参数：path 为固定财务路径，query 为列表筛选；返回值：可直接编码的结果，nil 表示需要专用联网能力，失败抛错。
     func readLocal(_ path: String, query: [URLQueryItem]) throws -> Any? {
+        if let plan = try readLocalPlan(path, query: query) { return plan }
         let parts = path.split(separator: "/").map(String.init)
         guard parts.count >= 2 else { return nil }
         let table = parts[1], target = parts.count > 2 ? Int(parts[2]) ?? 0 : 0
@@ -10,17 +11,14 @@ extension FinanceLocalStore {
         for item in query { filters[item.name] = item.value }
         switch table {
         case "accounts":
-            if parts.count == 2 { return rows(table).filter { $0["archived"] as? Bool != true } }
+            if parts.count == 2 { return try Self.localPlanAccounts(space: space).filter { $0["archived"] as? Bool != true } }
             if parts.last == "impact" {
                 let related = rows("transactions").filter { Self.id($0, "accountId") == target || Self.id($0, "targetAccountId") == target }
                 return ["transactions": related.count, "snapshots": 0, "pending": related.filter { $0["status"] as? String == "pending" }.count]
             }
             if parts.last == "loan-plan" {
-                // 同步账户只携带贷款摘要；缺少逐期明细时交由完整计划接口读取，不能把摘要当作未配置的计划。
-                guard let account = rows("accounts").first(where: { Self.id($0) == target }),
-                      let plan = account["loanPlan"] as? [String: Any],
-                      plan["schedule"] is [[String: Any]] else { return nil }
-                return plan
+                guard let account = rows("accounts").first(where: { Self.id($0) == target && $0["archived"] as? Bool != true }) else { throw Self.failure("账户不存在") }
+                return try Self.localLoanPlan(account)
             }
             if parts.last == "statement" || parts.last == "statements" { return try statement(target, summary: parts.last == "statement", filters: filters) }
         case "categories", "presets": return rows(table)

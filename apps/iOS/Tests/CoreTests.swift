@@ -360,7 +360,7 @@ final class StubProtocol: URLProtocol, @unchecked Sendable {
         // 错误响应替身：输入为请求（未使用）；输出为 409 业务冲突，测试不自动重试。
         StubProtocol.handler = { _ in (409, Data(#"{"error":"账户余额不足"}"#.utf8)) }
         do { try await api.mutate("/finance/transactions"); check(false, "409 应抛错") }
-        catch let error as APIError { check(error.status == 409 && error.message == "账户余额不足", "保留后端业务错误") }
+        catch let error as APIError { check(error.status == 409 && error.message == "请求失败（409），请稍后重试。", "不再读取旧 error 字段") }
         // 新协议错误回调输入请求（未使用），返回 message/data 信封；旧 error 字段不得覆盖当前业务错误。
         StubProtocol.handler = { _ in (409, Data(#"{"code":409,"message":"当前业务错误","data":null,"error":"旧错误"}"#.utf8)) }
         do { try await api.mutate("/finance/transactions"); check(false, "新协议冲突应抛错") }

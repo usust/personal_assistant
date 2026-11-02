@@ -246,7 +246,7 @@ final class CategoryRecreationSyncServer: @unchecked Sendable {
     }
     /// 验证分类墓碑、同名重建和临时 ID 重映射；参数：无；返回值：无；隔离账本验证新 ID、历史引用与外观、多轮重建和活动名称唯一，失败抛错或断言，不访问真实数据。
     static func categoryTombstones() throws {
-        let legacy = Data(#"{"id": 3, "name": "旧分类", "type": "expense", "color": "#123456"}"#.utf8)
+        let legacy = Data(##"{"id": 3, "name": "旧分类", "type": "expense", "color": "#123456"}"##.utf8)
         let decoded = try JSONDecoder().decode(TransactionCategory.self, from: legacy)
         CoreTests.check(decoded.deleted == false, "旧分类 JSON 缺少 deleted 时默认为未删除")
 

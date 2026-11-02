@@ -11,6 +11,44 @@ nonisolated enum TaskDisplayMode: String, CaseIterable {
     var title: String { self == .tree ? "树状展示" : "逐级展示" }
 }
 
+/// 表单中的业务类型；待办与量化任务共用 subtask 存储，主任务沿用 main，不新增接口类型。
+nonisolated enum TaskEditorKind: String, CaseIterable {
+    case todo, task, main
+
+    /// 读取类型名称；参数：无；返回值：类型选择及导航标题使用的中文名称；无副作用。
+    var title: String {
+        switch self {
+        case .todo: return "待办"
+        case .task: return "任务"
+        case .main: return "主任务"
+        }
+    }
+
+    /// 映射接口类型；参数：无；返回值：服务端已支持的 main 或 subtask；无副作用。
+    var taskType: String { self == .main ? "main" : "subtask" }
+
+    /// 识别已有实体的表单类型；参数：task 为已保存实体，all 为完整任务快照；返回值：仅标准一次完成叶节点识别为待办，历史容器及自定义进度保留为任务；无副作用。
+    static func kind(for task: AssistantTask, in all: [AssistantTask]) -> TaskEditorKind {
+        if task.taskType == "main" { return .main }
+        if !all.contains(where: { $0.parentId == task.id }), task.progressTotal == 1, task.progressStep == 1,
+           task.progressUnit == "次", task.progressCompleted == 0 || task.progressCompleted == 1 { return .todo }
+        return .task
+    }
+
+    /// 构造进度白名单；参数：total、completed、step、unit 为保留原样的进度草稿，量化任务由调用者校验；返回值：主任务为空，任务保留全部草稿，待办固定一次完成且保留是否已完成；无副作用，不修改切换前的量化草稿。
+    func progressFields(total: String, completed: String, step: String, unit: String) -> [String: Any] {
+        switch self {
+        case .main: return [:]
+        case .task: return ["progressTotal": total, "progressCompleted": completed, "progressStep": step, "progressUnit": unit]
+        case .todo:
+            // 转为待办只保留完成状态；部分进度视为未完成，避免将尚未完成的量化任务误标为完成。
+            let target = Decimal(string: total) ?? 0
+            let done = Decimal(string: completed) ?? 0
+            return ["progressTotal": "1", "progressCompleted": target > 0 && done >= target ? "1" : "0", "progressStep": "1", "progressUnit": "次"]
+        }
+    }
+}
+
 /// 待办的智能范围；只改变显示，不新增独立任务数据或改变任务树。
 nonisolated enum TaskTodoFilter: String, CaseIterable {
     case pending, today, overdue, upcoming, important, unscheduled, completed
@@ -61,6 +99,18 @@ nonisolated enum TaskTodoGroup: String, CaseIterable {
 
 /// 日常待办的纯规则；复用已存在的具体任务与进度，不引入第二套持久化或伪造完成日期。
 nonisolated enum TaskTodoRules {
+    /// 读取项目直接下级；参数：parentID 为已保存项目 ID，all 为同一身份完整快照；返回值：同清单、保持原顺序的直接子节点，包含归档供查看；父级不存在或已变叶时为空，无副作用。
+    static func projectChildren(of parentID: Int, in all: [AssistantTask]) -> [AssistantTask] {
+        guard let parent = all.first(where: { $0.id == parentID }), TaskBrowsing.isContainer(parent, all: all) else { return [] }
+        return all.filter { $0.parentId == parent.id && $0.listId == parent.listId }
+    }
+
+    /// 读取项目内允许勾选的待办；参数：parentID 为当前项目 ID，all 为当前身份完整快照；返回值：当前项目的活动直接叶任务，含已完成项以供撤销，不包含其他项目、嵌套项目后代和归档祖先后代；无副作用。
+    static func projectTodos(of parentID: Int, in all: [AssistantTask]) -> [AssistantTask] {
+        let childIDs = Set(projectChildren(of: parentID, in: all).map(\.id))
+        return actionable(in: all).filter { childIDs.contains($0.id) }
+    }
+
     /// 获取可执行任务；参数：all 为同一身份的完整快照，listID 为清单 ID、0 表示全部；返回值：排除归档祖先、主任务及历史容器的具体叶节点；无副作用。
     static func actionable(in all: [AssistantTask], listID: Int = 0) -> [AssistantTask] {
         let parents = Set(all.compactMap(\.parentId))

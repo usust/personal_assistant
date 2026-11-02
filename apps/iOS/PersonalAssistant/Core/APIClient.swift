@@ -46,6 +46,9 @@ final class APIClient {
     var onUnauthorized: (() -> Void)?
     var localFinance: FinanceLocalStore?
     var localFinanceError: String?
+    var localTasks: TaskLocalStore?
+    var localHealth: HealthLocalStore?
+    var localStorageError: String?
     private let session: URLSession
 
     /// 初始化 API 客户端；参数：baseURL 为含 /api 的地址，session 可注入测试会话，nil 使用无磁盘缓存的临时会话；返回值：客户端；不发起网络请求。
@@ -116,6 +119,21 @@ final class APIClient {
 
     /// 优先分发财务请求到本机；参数：path/method/body/query 为原请求；返回值：信封字节；账本打开失败时阻止财务写入，其他模块保持网络访问。
     private func routedData(_ path: String, method: String, body: [String: Any]?, query: [URLQueryItem] = []) async throws -> Data {
+        if path == "/tasks" || path.hasPrefix("/tasks/") || path == "/task-lists" || path.hasPrefix("/task-lists/") {
+            if let localStorageError { throw APIError(status: 0, message: localStorageError) }
+            if let localTasks { return try localTasks.handle(path, method: method, body: body, query: query) }
+        }
+        if path == "/health-management" || path.hasPrefix("/health-management/") {
+            if let localStorageError { throw APIError(status: 0, message: localStorageError) }
+            if let localHealth {
+                if HealthLocalStore.handles(path, method: method) {
+                    return try localHealth.handle(path, method: method, body: body, query: query)
+                }
+                guard method == "POST", ["/health-management/meal-analysis", "/health-management/reports"].contains(path) else {
+                    throw HealthLocalStore.StoreError.notLocalRoute
+                }
+            }
+        }
         if path.hasPrefix("/finance/") {
             if let localFinanceError { throw APIError(status: 0, message: localFinanceError) }
             if let localFinance { return try await localFinance.handle(path, method: method, body: body, query: query, api: self) }
@@ -123,7 +141,7 @@ final class APIClient {
         return try await networkData(path, method: method, body: body, query: query)
     }
 
-    /// 发送 JSON；参数：path 为路径（餐食视觉与健康报告允许110秒），method 为方法，body 为可选字典，query 为查询；返回值：响应字节；401 清理会话，禁止携带凭证跟随重定向。
+    /// 发送 JSON；参数：path 为路径（餐食视觉、健康报告与完整备份允许110秒），method 为方法，body 为可选字典，query 为查询；返回值：响应字节；401 清理会话，禁止携带凭证跟随重定向。
     func networkData(_ path: String, method: String, body: [String: Any]?, query: [URLQueryItem] = []) async throws -> Data {
         let base = try Self.normalize(baseURL)
         let requestToken = token
@@ -132,7 +150,7 @@ final class APIClient {
         guard let url = components.url else { throw APIError(status: 0, message: "请求地址无效") }
         var request = URLRequest(url: url)
         request.httpMethod = method
-        request.timeoutInterval = path == "/health" ? 10 : (path == "/ai/chat" || path == "/ai/screenshot" || path == "/health-management/reports" || path == "/health-management/meal-analysis") ? 110 : 20
+        request.timeoutInterval = path == "/health" ? 10 : (path == "/ai/chat" || path == "/ai/screenshot" || path == "/health-management/reports" || path == "/health-management/meal-analysis" || path == "/backup/export") ? 110 : 20
         request.cachePolicy = .reloadIgnoringLocalCacheData
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         if let token { request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization") }
@@ -144,9 +162,9 @@ final class APIClient {
         guard let http = response as? HTTPURLResponse else { throw APIError(status: 0, message: "服务器响应无效") }
         guard (200..<300).contains(http.statusCode) else {
             if http.statusCode == 401 && requestToken != nil && token == requestToken && baseURL == base { onUnauthorized?() }
-            // 当前后端统一使用 message；旧 error 仅用于兼容历史服务，不能覆盖新协议提示。
+            // 错误文案只读取当前协议的 message；非 JSON 响应使用通用提示。
             let error = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any]
-            throw APIError(status: http.statusCode, message: error?["message"] as? String ?? error?["error"] as? String ?? "请求失败（\(http.statusCode)），请稍后重试。")
+            throw APIError(status: http.statusCode, message: error?["message"] as? String ?? "请求失败（\(http.statusCode)），请稍后重试。")
         }
         return data
     }

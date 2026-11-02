@@ -32,7 +32,8 @@ extension APIClient {
             throw APIError(status: 0, message: "未读取到健康数据，本次未上传。请先在 iPhone 健康 App 确认有记录，并检查本应用的读取权限。")
         }
         let json = try JSONSerialization.jsonObject(with: JSONEncoder().encode(days))
-        let receipt: HealthSyncReceipt = try await request("/health-management/sync", method: "POST", body: ["days": json])
+        let response = try await networkData("/health-management/sync", method: "POST", body: ["days": json])
+        let receipt = try JSONDecoder().decode(Envelope<HealthSyncReceipt>.self, from: response).data
         guard receipt.synced == days.count else {
             throw APIError(status: 0, message: "服务器同步回执不完整，请刷新核对后重试。")
         }

@@ -147,7 +147,7 @@ nonisolated struct AccountCard: Codable, Identifiable, Equatable {
 }
 
 nonisolated struct FinanceTransaction: Codable, Identifiable {
-    /// 空值或空字符串表示无需报销；pending 为待报销，reimbursed 为已报销，兼容旧账本。
+    /// 报销开关的协议值：空值或空字符串表示无需报销，pending、reimbursed 均表示需要报销；兼容旧账本。
     var reimbursementStatus: String? = nil
     var screenshotJobID: String? = nil
     var screenshotIssue: String? = nil

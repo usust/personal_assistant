@@ -61,8 +61,8 @@ func mysqlDSN(cfg MySQLOptions) (string, error) {
 		Params:    map[string]string{"charset": cfg.Charset},
 		ParseTime: parseTime,
 		Loc:       loc,
-		// 兼容仍使用 mysql_native_password 插件的现有数据库账户。
-		AllowNativePasswords: true,
+		// 仅允许当前认证协议，拒绝已弃用的 mysql_native_password。
+		AllowNativePasswords: false,
 	}
 	// 生成驱动使用的数据库连接串。
 	return dsnConfig.FormatDSN(), nil

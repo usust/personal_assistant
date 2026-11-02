@@ -23,7 +23,7 @@ struct TransactionDetailView: View {
     private var refundableExpense: Bool {
         transaction.type == "expense" && transaction.status == "posted" && transaction.refundParentId == nil
     }
-    /// 构建详情页；参数：无；返回值：快捷操作、真实流水字段及原支出的报销状态入口，修改状态仅更新资料。
+    /// 构建详情页；参数：无；返回值：快捷操作、真实流水字段及原支出的报销开关，修改开关仅更新资料。
     var body: some View {
         List {
             Section {
@@ -52,10 +52,11 @@ struct TransactionDetailView: View {
                 if transaction.status == "pending" && transaction.installmentParentId == nil { Button("确认入账") { confirming = true } }
                 if transaction.type == "expense", transaction.refundParentId == nil, transaction.rebateParentId == nil,
                    ["posted", "pending"].contains(transaction.status) {
-                    // 绑定读取当前流水状态；写入回调输入状态键、返回无，异步保存成功后由父页提供新流水，失败保留原值。
-                    Picker("报销状态", selection: Binding(get: { transaction.reimbursementStatus ?? "" }, set: { value in Task { await saveReimbursement(value) } })) {
-                        ForEach(ReimbursementStatus.options, id: \.self) { value in Text(ReimbursementStatus.title(value)).tag(value) }
-                    }.pickerStyle(.menu)
+                    // 绑定读取是否已开启报销；写入回调接收开关值、返回无，异步保存成功后由父页提供新流水，失败保留原值；开关使用紧凑玻璃样式，避免系统开关在详情行内过大。
+                    Toggle(isOn: Binding(get: { ReimbursementStatus.isEnabled(transaction.reimbursementStatus) },
+                                              set: { enabled in Task { await saveReimbursement(enabled) } })) {
+                        Text("报销")
+                    }.toggleStyle(CompactGlassToggleStyle())
                 }
             }
             Section {
@@ -94,8 +95,9 @@ struct TransactionDetailView: View {
                 Button("取消", role: .cancel) { }
             }
     }
-    /// 更新原支出的报销状态；参数：value 为无需报销空键、pending 或 reimbursed；返回值：无；仅提交变化字段，失败显示错误，不生成收入或重算余额。
-    private func saveReimbursement(_ value: String) async {
+    /// 更新原支出的报销开关；参数：enabled 为用户目标开关值；返回值：无；仅提交变化字段，保留历史已开启状态，失败显示错误，不生成收入或重算余额。
+    private func saveReimbursement(_ enabled: Bool) async {
+        let value = ReimbursementStatus.value(for: enabled, preserving: transaction.reimbursementStatus)
         guard !busy, value != (transaction.reimbursementStatus ?? "") else { return }
         busy = true; error = nil; defer { busy = false }
         do {
@@ -166,8 +168,8 @@ private struct TransactionTemplateSheet: View {
             // 新模板是新的分类引用；历史流水的墓碑分类不能随模板复制。
             value["categoryId"] = category
         }
-        // 模板只继承需报销的意向，新生成支出不能直接继承上一笔的已报销结果。
-        if !(transaction.reimbursementStatus ?? "").isEmpty { value["reimbursementStatus"] = "pending" }
+        // 模板只继承报注意向，新生成支出仍需重新标记，不能直接沿用上一笔的历史状态。
+        if ReimbursementStatus.isEnabled(transaction.reimbursementStatus) { value["reimbursementStatus"] = "pending" }
         if let target = transaction.targetAccountId { value["targetAccountId"] = target }
         if let rebate = transaction.rebate { value["rebate"] = rebate; value["rebateAccountId"] = transaction.rebateAccountId ?? transaction.accountId; value["rebatePending"] = transaction.rebatePending ?? false }
         var body: [String: Any] = ["name": name.trimmingCharacters(in: .whitespacesAndNewlines), "frequency": "", "startDate": Values.day(.now), "transaction": value]

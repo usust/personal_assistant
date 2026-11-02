@@ -19,6 +19,7 @@ import (
 	"personal_assistant_server/internal/auth"
 	authhandler "personal_assistant_server/internal/auth/handler"
 	authservice "personal_assistant_server/internal/auth/service"
+	"personal_assistant_server/internal/backup"
 	"personal_assistant_server/internal/capability"
 	"personal_assistant_server/internal/config"
 	financecapability "personal_assistant_server/internal/finance/capability"
@@ -83,13 +84,15 @@ func New(cfg config.Config, db *gorm.DB, logger *zap.Logger, modelClient *http.C
 	gin.SetMode(cfg.RunMode)
 	// 创建当前流程所需的组件。
 	handlers := router.Handlers{
-		Health:       healthhandler.New(healthservice.NewService(db, configs, airepository.NewHTTPClient(modelClient))),
-		Finance:      financehandler.NewHandler(finances),
-		Tasks:        taskhandler.NewHandler(tasks),
-		Auth:         authhandler.New(authService),
-		Users:        userhandler.New(users),
-		AI:           aihandler.NewHandler(chatService),
-		AIConfig:     aiconfighandler.NewHandler(configs, modelClient),
+		Health:   healthhandler.New(healthservice.NewService(db, configs, airepository.NewHTTPClient(modelClient))),
+		Finance:  financehandler.NewHandler(finances),
+		Tasks:    taskhandler.NewHandler(tasks),
+		Auth:     authhandler.New(authService),
+		Users:    userhandler.New(users),
+		AI:       aihandler.NewHandler(chatService),
+		AIConfig: aiconfighandler.NewHandler(configs, modelClient),
+		// 备份模块独立组装，使用共享数据库并通过路由层统一要求登录。
+		Backup:       backup.NewHandler(backup.NewService(db)),
 		RequireLogin: auth.RequireLogin(authService),
 	}
 	// 注册业务接口及对应的请求处理入口。

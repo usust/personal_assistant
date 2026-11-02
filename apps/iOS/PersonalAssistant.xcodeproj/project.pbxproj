@@ -338,7 +338,7 @@
 				INFOPLIST_FILE = Config/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "个人助理";
 				INFOPLIST_KEY_NSCameraUsageDescription = "拍摄用餐照片，经你确认后发送至所选 AI 服务估算食物热量。";
-				INFOPLIST_KEY_NSHealthShareUsageDescription = "读取步数、活动能量、距离、静息心率和体重，经你同意同步至个人服务器用于健康管理。";
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "读取身体资料、活动、睡眠、心率、呼吸及营养数据，在本机展示健康概览和估算每日能量参考；只有另行确认同步时才上传指定日汇总。";
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "连接您配置的个人助理本地服务器。";
 				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -377,7 +377,7 @@
 				INFOPLIST_FILE = Config/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "个人助理";
 				INFOPLIST_KEY_NSCameraUsageDescription = "拍摄用餐照片，经你确认后发送至所选 AI 服务估算食物热量。";
-				INFOPLIST_KEY_NSHealthShareUsageDescription = "读取步数、活动能量、距离、静息心率和体重，经你同意同步至个人服务器用于健康管理。";
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "读取身体资料、活动、睡眠、心率、呼吸及营养数据，在本机展示健康概览和估算每日能量参考；只有另行确认同步时才上传指定日汇总。";
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "连接您配置的个人助理本地服务器。";
 				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;

@@ -80,7 +80,7 @@ struct SettingsView: View {
     @AppStorage(TaskDisplayMode.storageKey) private var taskDisplayMode = TaskDisplayMode.tree.rawValue
     @State private var editingServer = false
 
-    /// 构建一级设置页面；参数：无；返回值：以共享 headline 标题和系统符号分组的设置表单，服务器地址可完整换行；任务与外观仅保存原有本机偏好，连接编辑仍需独立确认。
+    /// 构建一级设置页面；参数：无；返回值：以共享 headline 标题和系统符号分组的设置表单，提供数据导出入口且服务器地址可完整换行；任务与外观仅保存原有本机偏好，连接编辑仍需独立确认。
     var body: some View {
         Form {
             if store.profile != nil {
@@ -88,6 +88,11 @@ struct SettingsView: View {
                     NavigationLink { AISettingsView() } label: { Label("模型服务", systemImage: "cpu") }
                 } header: { AppSectionHeading(title: "AI 设置").textCase(nil) }
             }
+            Section {
+                // 导航回调无输入，返回原生文件导出页；游客同样可以保存当前本机账本。
+                NavigationLink { DataExportView() } label: { Label("数据导出", systemImage: "externaldrive") }
+                    .accessibilityIdentifier("settingsDataExport")
+            } header: { AppSectionHeading(title: "数据").textCase(nil) }
             Section {
                 NavigationLink { ScreenshotSetupView() } label: { Label("截图记账", systemImage: "camera.viewfinder") }
             } header: { AppSectionHeading(title: "快捷指令").textCase(nil) }
@@ -225,7 +230,8 @@ struct UserAccountView: View {
                 }.padding(.vertical, 12)
             }
             Section {
-                // 同步按钮回调无输入和返回；未登录打开认证，已登录直接开启并执行，不展示合并选择。
+                LabeledContent("数据存储", value: "iPhone 本机")
+                // 同步按钮回调无输入和返回；登录只恢复身份，用户再次点击才明确授权当前账本上传。
                 Button {
                     if store.api.token == nil { loggingIn = true }
                     else { Task { await store.enableFinanceSync() } }
@@ -237,6 +243,13 @@ struct UserAccountView: View {
                         else { Text(syncStatus).font(.caption).foregroundStyle(.secondary) }
                     }
                 }.disabled(store.finance?.syncing == true)
+                if store.finance?.enabled == true {
+                    // 停止回调无输入和返回；撤销后续上传并保留本机队列，写盘失败显示原错误。
+                    Button("停止同步", role: .destructive) {
+                        do { try store.finance?.pauseSync() }
+                        catch { store.finance?.syncError = error.localizedDescription }
+                    }
+                }
                 if let message = store.finance?.syncError { Text(message).font(.caption).foregroundStyle(.secondary) }
             }
             if store.profile?.isAdmin == true {

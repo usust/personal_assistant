@@ -510,17 +510,14 @@ struct AccountEditor: View {
     }
     /// 构建共用账单卡片表单；参数：无；返回值：可添加、编辑和删除卡片的内联区域，操作仅改变草稿。
     private var cardFields: some View {
-        AccountCardWallet(cards: $cards, provider: provider, accountID: account?.id)
+        AccountCardWallet(cards: $cards, provider: provider)
     }
-    /// 首次初始化；参数无；返回无；编辑保留全部原值，新建必须先选择账户，返回时不重置草稿，旧信用卡尾号显示为首张卡。
+    /// 首次初始化；参数：无；返回值：无；编辑读取当前账户和卡片资料，新建必须先选择账户，返回时不重置草稿。
     private func populate() {
         guard !populated else { return }
         populated = true
         if let account { hasChoice = true; name = account.name; provider = .resolve(type: account.accountType, institution: account.institution); number = account.maskedAccountNumber; balance = account.balance; include = account.includeInNetWorth; notes = account.notes }
         cards = account?.cards ?? []
-        if cards.isEmpty, provider.isCredit, !isLoan, !number.isEmpty {
-            cards = [AccountCard(id: "legacy", name: name, maskedAccountNumber: number)]
-        }
         loan = LoanAccountDraft(account: account)
         if let account {
             debt = account.balance.hasPrefix("-") ? String(account.balance.dropFirst()) : (Decimal(string: account.balance) == 0 ? "0.00" : "-" + account.balance)
@@ -533,11 +530,6 @@ struct AccountEditor: View {
             billDayInclusive = account.billDayInclusive ?? true; selectable = account.selectable ?? true
         }
         original = fields
-        // 旧单卡字段以真实持久值作为 PATCH 基线，迁移卡片时清除旧入口，避免删除卡片后仍按旧尾号命中。
-        if provider.isCredit && !isLoan, let account {
-            original["maskedAccountNumber"] = account.maskedAccountNumber
-            original["cards"] = (account.cards ?? []).map { ["id": $0.id, "name": $0.name, "maskedAccountNumber": $0.maskedAccountNumber] }
-        }
     }
     /// 保存资料；参数无；返回无；阻止重复提交及空名称，PATCH 仅实际变化；信用欠款校准由服务端留存快照，普通期初余额仅创建时发送。
     private func save() async {

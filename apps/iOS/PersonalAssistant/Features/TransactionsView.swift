@@ -40,7 +40,7 @@ struct TransactionsView: View {
         guard let book = try? store.finance?.screenshotBook() else { return [] }
         return book.jobs.filter { $0.transactionID == nil && ["queued", "processing", "review", "failed"].contains($0.state) }
     }
-    /// 构建流水列表；参数：无；返回值：首页按所选月份展示日流水和汇总卡片，卡片后提供独立的当前月财务分析入口，导航栏提供账户与原生记账菜单；独立全局或账户页保留月份折叠与分页，读取、写入与会话保护沿用原有流程。
+    /// 构建流水列表；参数：无；返回值：首页按所选月份展示日流水和汇总卡片，导航栏提供账户与原生记账菜单，财务分析入口位于财务管理菜单内；独立全局或账户页保留月份折叠与分页，读取、写入与会话保护沿用原有流程。
     var body: some View {
         List {
             if financeHome {
@@ -48,13 +48,6 @@ struct TransactionsView: View {
                     FinanceDashboardHeader(month: $month, summary: monthSummary, overview: store.overview)
                         .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
                         .listRowBackground(Color.clear).listRowSeparator(.hidden)
-                }
-                Section {
-                    // 导航构造回调无参数、返回完整总览分析页；与首页月份筛选独立，固定分析当前月及近六个月，不使用分页流水。
-                    NavigationLink { BillAnalysisView() } label: {
-                        Label("财务分析", systemImage: "chart.bar.xaxis")
-                            .frame(minHeight: 44)
-                    }.accessibilityIdentifier("finance-analysis-entry")
                 }
                 if store.accounts.isEmpty && !loading {
                     Section { Button("添加账户", systemImage: "creditcard") { addingAccount = true } }
@@ -95,6 +88,12 @@ struct TransactionsView: View {
                     }
                     ToolbarItem(placement: .topBarTrailing) {
                         Menu {
+                            Section {
+                                // 导航构造回调无参数、返回完整总览分析页；与首页月份筛选独立，固定分析当前月及近六个月，不使用分页流水。
+                                NavigationLink { BillAnalysisView() } label: {
+                                    Label("财务分析", systemImage: "chart.bar.xaxis")
+                                }.accessibilityIdentifier("finance-analysis-entry")
+                            }
                             Section {
                                 NavigationLink { CategoriesView() } label: { Label("分类管理", systemImage: "square.grid.2x2") }
                                 NavigationLink { FinancePresetsView(kind: .template) } label: { Label("记账模板", systemImage: "doc.on.doc") }
@@ -581,7 +580,7 @@ struct TransactionEditor: View {
     @State private var rebateAccountID = 0
     @State private var rebatePending = false
     @State private var discount = "0.00"
-    @State private var reimbursementStatus = ""
+    @State private var reimbursementEnabled = false
     @State private var showingDiscount = false
     @State private var entryDateChanged = false
     @State private var calculation = AmountCalculation()
@@ -631,6 +630,14 @@ struct TransactionEditor: View {
     private var entryColor: Color { FinanceVisualStyle.color(for: type) }
     /// 返回可记账的账户；参数：无；返回值：未禁用的真实账户，不生成示例账户。
     private var availableAccounts: [FinancialAccount] { store.accounts.filter { $0.selectable != false } }
+    /// 生成待提交的报销状态；参数：无；返回值：支出按开关生成协议值，编辑时保留已开启的历史状态；其他类型为空；不改变金额或余额。
+    private var submittedReimbursementStatus: String {
+        guard type == "expense" else { return "" }
+        // 编辑已有流水时保留历史状态；编辑模板时沿用模板状态；由模板新建的支出重置为待报销。
+        if let transaction = editingTransaction { return ReimbursementStatus.value(for: reimbursementEnabled, preserving: transaction.reimbursementStatus) }
+        if initialMode != "transaction", let preset = initialPreset { return ReimbursementStatus.value(for: reimbursementEnabled, preserving: preset.transaction.reimbursementStatus) }
+        return ReimbursementStatus.value(for: reimbursementEnabled, preserving: nil)
+    }
     /// 构建分类优先的记账页；参数：无；返回值：分类网格、紧凑字段栏和底部金额键盘，真实保存沿用账本接口。
     /// 副作用：交互更新本页草稿，切换收支类型时清除不匹配分类，仅编辑原流水时允许保留原已删除分类；错误由保存流程呈现，本属性不抛错。
     var body: some View {
@@ -678,7 +685,7 @@ struct TransactionEditor: View {
                     let retainingOriginal = editingTransaction?.categoryId == categoryID && editingTransaction?.type == value
                     if category?.type != value || (category?.deleted == true && !retainingOriginal) { categoryID = 0 }
                     if categoryTemplate?.group.type != value { categoryTemplate = nil }
-                    if value != "expense" { reimbursementStatus = "" }
+                    if value != "expense" { reimbursementEnabled = false }
                     saved = false
                 }
                 .task { populate() }
@@ -736,16 +743,10 @@ struct TransactionEditor: View {
                         }.buttonStyle(.plain).accessibilityLabel("设置优惠")
                     }
                     if type == "expense", editingTransaction?.refundParentId == nil, editingTransaction?.rebateParentId == nil {
-                        Menu {
-                            Picker("报销状态", selection: $reimbursementStatus) {
-                                ForEach(ReimbursementStatus.options, id: \.self) { value in Text(ReimbursementStatus.title(value)).tag(value) }
-                            }
-                        } label: {
-                            Label(reimbursementStatus.isEmpty ? "报销" : ReimbursementStatus.title(reimbursementStatus), systemImage: "receipt")
-                                .font(.caption).lineLimit(1).padding(.horizontal, 8).frame(minHeight: 44)
-                                .foregroundStyle(reimbursementStatus.isEmpty ? Color.secondary : Color.accentColor)
-                                .background(Color(uiColor: .secondarySystemGroupedBackground), in: Capsule())
-                        }.accessibilityLabel("报销状态，" + ReimbursementStatus.title(reimbursementStatus))
+                        Toggle("报销", isOn: $reimbursementEnabled)
+                            .font(.caption)
+                            .frame(minHeight: 44)
+                            .accessibilityLabel("报销")
                     }
 
                 }
@@ -951,7 +952,7 @@ struct TransactionEditor: View {
             }
             rebate = transaction.rebate ?? "0.00"; rebateAccountID = transaction.rebateAccountId ?? 0; rebatePending = transaction.rebatePending ?? false
             categoryID = transaction.categoryId ?? 0; counterparty = transaction.counterparty; description = transaction.description
-            reimbursementStatus = transaction.reimbursementStatus ?? ""
+            reimbursementEnabled = ReimbursementStatus.isEnabled(transaction.reimbursementStatus)
             let formatter = DateFormatter()
             formatter.locale = Locale(identifier: "en_US_POSIX")
             formatter.dateFormat = "yyyy-MM-dd HH:mm"
@@ -964,7 +965,7 @@ struct TransactionEditor: View {
             presetName = initialPreset.name
             let value = initialPreset.transaction
             // 模板表示报销意向，使用模板创建的新支出仍需重新确认是否已经报销。
-            reimbursementStatus = initialMode == "transaction" && !(value.reimbursementStatus ?? "").isEmpty ? "pending" : value.reimbursementStatus ?? ""
+            reimbursementEnabled = ReimbursementStatus.isEnabled(value.reimbursementStatus)
             type = value.type; accountID = value.accountId; targetID = value.targetAccountId ?? 0; amount = value.amount; discount = value.discount ?? "0.00"; fee = value.fee ?? "0.00"; rebate = value.rebate ?? "0.00"; rebateAccountID = value.rebateAccountId ?? 0; rebatePending = value.rebatePending ?? false; counterparty = value.counterparty; description = value.description; categoryID = store.categories.first(where: { !$0.deleted && $0.id == (value.categoryId ?? 0) })?.id ?? 0
         }
         if let initialLoanID { type = "transfer"; targetID = initialLoanID; description = "贷款本金还款" }
@@ -982,7 +983,7 @@ struct TransactionEditor: View {
         if let transaction = editingTransaction {
             // 构造与新增一致的财务草稿，仅提交实际变化的白名单字段，保留空值和零值。
             let originalAmount = (Decimal(string: transaction.amount) ?? 0) + (Decimal(string: transaction.discount ?? "0") ?? 0)
-            let current: [String: Any] = ["reimbursementStatus": type == "expense" ? reimbursementStatus : "", "type": type, "accountId": accountID, "targetAccountId": type == "transfer" ? targetID as Any : NSNull(), "amount": amount, "discount": type == "expense" ? discount : "0.00", "fee": type == "transfer" ? fee : "0.00", "rebate": type == "transfer" ? rebate : "0.00", "rebateAccountId": type == "transfer" && (Decimal(string: rebate) ?? 0) > 0 ? (rebateAccountID == 0 ? accountID : rebateAccountID) as Any : NSNull(), "rebatePending": type == "transfer" && (Decimal(string: rebate) ?? 0) > 0 && rebatePending, "categoryId": type != "transfer" && categoryID > 0 ? categoryID as Any : NSNull(), "counterparty": counterparty, "description": description, "transactionDate": entryDateChanged ? Values.day(date) : transaction.transactionDate, "transactionTime": entryDateChanged ? Values.time(date) : transaction.transactionTime ?? ""]
+            let current: [String: Any] = ["reimbursementStatus": submittedReimbursementStatus, "type": type, "accountId": accountID, "targetAccountId": type == "transfer" ? targetID as Any : NSNull(), "amount": amount, "discount": type == "expense" ? discount : "0.00", "fee": type == "transfer" ? fee : "0.00", "rebate": type == "transfer" ? rebate : "0.00", "rebateAccountId": type == "transfer" && (Decimal(string: rebate) ?? 0) > 0 ? (rebateAccountID == 0 ? accountID : rebateAccountID) as Any : NSNull(), "rebatePending": type == "transfer" && (Decimal(string: rebate) ?? 0) > 0 && rebatePending, "categoryId": type != "transfer" && categoryID > 0 ? categoryID as Any : NSNull(), "counterparty": counterparty, "description": description, "transactionDate": entryDateChanged ? Values.day(date) : transaction.transactionDate, "transactionTime": entryDateChanged ? Values.time(date) : transaction.transactionTime ?? ""]
             if let jobID = transaction.screenshotJobID {
                 do {
                     guard let finance = store.finance else { throw APIError(status: 0, message: "本机账本不可用") }
@@ -1009,7 +1010,7 @@ struct TransactionEditor: View {
         var body: [String: Any] = ["type": type, "accountId": accountID, "amount": amount, "transactionDate": Values.day(date), "transactionTime": Values.time(date), "counterparty": counterparty, "description": description, "fee": type == "transfer" ? fee : "0.00"]
         if type == "expense" {
             body["discount"] = discount
-            body["reimbursementStatus"] = reimbursementStatus
+            body["reimbursementStatus"] = submittedReimbursementStatus
         }
         if type == "transfer" {
             body["targetAccountId"] = targetID
@@ -1033,7 +1034,7 @@ struct TransactionEditor: View {
             }
             // 主写入成功即完成本笔，避免后续刷新失败被当作保存失败而重复记账。
             if continueEntry {
-                amount = ""; description = ""; counterparty = ""; discount = "0.00"; fee = "0.00"; rebate = "0.00"; rebateAccountID = 0; rebatePending = false; reimbursementStatus = ""
+                amount = ""; description = ""; counterparty = ""; discount = "0.00"; fee = "0.00"; rebate = "0.00"; rebateAccountID = 0; rebatePending = false; reimbursementEnabled = false
                 submittedBody = nil; requestID = UUID().uuidString; saved = true
             } else { dismiss() }
             await store.refreshAfterMutation(.finance)

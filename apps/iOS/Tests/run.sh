@@ -2,9 +2,14 @@
 set -euo pipefail
 # 从脚本目录定位工程；参数：无；返回：测试退出码；构建产物只写临时目录。
 PROJECT_ROOT="${0:A:h:h}"
-BUILD_DIR="$(mktemp -d /tmp/pa-ios-tests.XXXXXX)"
+BUILD_DIR="$(mktemp -d "${TMPDIR:-/tmp}/pa-ios-tests.XXXXXX")"
 trap 'rm -rf "$BUILD_DIR"' EXIT
 export DEVELOPER_DIR="${DEVELOPER_DIR:-/Applications/Xcode.app/Contents/Developer}"
+# 文件格式测试独立于宏插件及模拟器，验证精度、数据范围和不完整备份拒绝。
+xcrun swiftc -module-cache-path "$BUILD_DIR/module-cache" -parse-as-library -swift-version 5 -sdk "$(xcrun --sdk macosx --show-sdk-path)" -D DATA_BACKUP_TEST_MAIN \
+  "$PROJECT_ROOT/PersonalAssistant/Core/DataBackup.swift" \
+  "$PROJECT_ROOT/Tests/DataBackupTests.swift" -o "$BUILD_DIR/backup-tests"
+"$BUILD_DIR/backup-tests"
 xcrun swiftc -module-cache-path "$BUILD_DIR/module-cache" -parse-as-library -swift-version 5 -sdk "$(xcrun --sdk macosx --show-sdk-path)" \
   "$PROJECT_ROOT/PersonalAssistant/Core/Models.swift" \
   "$PROJECT_ROOT/PersonalAssistant/Core/CategoryCatalog.swift" \
@@ -20,8 +25,12 @@ xcrun swiftc -module-cache-path "$BUILD_DIR/module-cache" -parse-as-library -swi
   "$PROJECT_ROOT/PersonalAssistant/Core/TaskBrowsing.swift" \
   "$PROJECT_ROOT/PersonalAssistant/Core/FinanceLocalStore.swift" \
   "$PROJECT_ROOT/PersonalAssistant/Core/FinanceLocalLedger.swift" \
+  "$PROJECT_ROOT/PersonalAssistant/Core/FinanceLocalPlans.swift" \
+  "$PROJECT_ROOT/PersonalAssistant/Core/FinanceLocalLoans.swift" \
   "$PROJECT_ROOT/PersonalAssistant/Core/FinanceLocalQuery.swift" \
   "$PROJECT_ROOT/PersonalAssistant/Core/FinanceSync.swift" \
+  "$PROJECT_ROOT/PersonalAssistant/Core/TaskLocalStore.swift" \
+  "$PROJECT_ROOT/PersonalAssistant/Core/HealthLocalStore.swift" \
   "$PROJECT_ROOT/PersonalAssistant/Core/APIClient.swift" \
   "$PROJECT_ROOT/PersonalAssistant/Core/HealthData.swift" \
   "$PROJECT_ROOT/PersonalAssistant/Core/NutritionData.swift" \

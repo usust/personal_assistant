@@ -12,17 +12,19 @@ import (
 	aihandler "personal_assistant_server/internal/ai/handler"
 	aiconfighandler "personal_assistant_server/internal/aiconfig/handler"
 	authhandler "personal_assistant_server/internal/auth/handler"
+	"personal_assistant_server/internal/backup"
 	financehandler "personal_assistant_server/internal/finance/handler"
 	healthhandler "personal_assistant_server/internal/health/handler"
 	taskhandler "personal_assistant_server/internal/task/handler"
 	userhandler "personal_assistant_server/internal/user/handler"
 )
 
-// TestBusinessRoutesMatchOpenAPI 验证全部业务路由（含餐食）与 OpenAPI 契约双向一致；参数：t 为非空测试上下文；返回值：无，集合为空或路由不一致时报告测试失败；只注册内存路由，不调用数据库、模型或业务处理器。
+// TestBusinessRoutesMatchOpenAPI 验证全部业务路由（含餐食、备份）与 OpenAPI 契约双向一致；参数：t 为非空测试上下文；返回值：无，集合为空或路由不一致时报告测试失败；只注册内存路由，不调用数据库、模型或业务处理器。
 func TestBusinessRoutesMatchOpenAPI(t *testing.T) {
 	// 认证占位回调只用于路由注册；参数：c 为上下文；返回值：无，不处理实际 HTTP 请求。
 	login := func(c *gin.Context) { c.Next() }
-	engine := Register(Handlers{Health: &healthhandler.Handler{}, Finance: &financehandler.Handler{}, Tasks: &taskhandler.Handler{}, Auth: &authhandler.Handler{}, Users: &userhandler.Handler{}, AI: &aihandler.Handler{}, AIConfig: &aiconfighandler.Handler{}, RequireLogin: login})
+	// 空处理器仅用于汇总路由，备份模块同样纳入契约检查且不执行实际业务。
+	engine := Register(Handlers{Health: &healthhandler.Handler{}, Finance: &financehandler.Handler{}, Tasks: &taskhandler.Handler{}, Auth: &authhandler.Handler{}, Users: &userhandler.Handler{}, AI: &aihandler.Handler{}, AIConfig: &aiconfighandler.Handler{}, Backup: &backup.Handler{}, RequireLogin: login})
 	raw, err := os.ReadFile("../../../docs/api/internal.openapi.json")
 	if err != nil {
 		t.Fatal(err)

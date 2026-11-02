@@ -126,7 +126,7 @@ struct TodayView: View {
 
     /// 独立读取任务卡；参数：无；返回值：无；只有同会话最新完整快照成功才确认为已加载，取消静默，失败保留缓存。
     private func reloadTasks() async {
-        guard store.canUseCloud else { return }
+        guard store.canUseLocalData else { return }
         let generation = store.cloudSessionID
         taskReadSequence += 1
         let sequence = taskReadSequence
@@ -143,7 +143,7 @@ struct TodayView: View {
     }
     /// 按原顺序刷新首页模块；参数：无；返回值：无；任务失败仍读财务，旧会话或过期首页读取不继续财务，财务错误单独显示。
     private func reload() async {
-        guard store.canUseCloud else { return }
+        guard store.canUseLocalData else { return }
         let generation = store.cloudSessionID
         reloadSequence += 1
         let sequence = reloadSequence

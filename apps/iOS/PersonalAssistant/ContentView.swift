@@ -22,7 +22,7 @@ struct ContentView: View {
             else if let error = store.localStorageError { ContentUnavailableView("无法打开本机账本", systemImage: "externaldrive.badge.exclamationmark", description: Text(error)) }
             else {
                 TabView(selection: $selectedTab) {
-                    if store.canUseCloud {
+                    if store.canUseLocalData {
                         Tab("今日", systemImage: "sun.max", value: "today") { TabRootNavigation { TodayView() } }
                         Tab("任务", systemImage: "checklist", value: "tasks") { TabRootNavigation { TasksView() } }
                     }

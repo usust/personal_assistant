@@ -23,6 +23,7 @@ deploy/              Web 和后端部署配置
 ```
 
 - [当前架构与依赖方向](docs/architecture.md)
+- [数据备份格式与迁移约定](docs/data-backup.md)
 - [AI 对话与工具接入](docs/ai-chat.md)
 - [部署说明](docs/deployment.md)
 - [历史后端移植记录](docs/migrations/backend-migration.md)

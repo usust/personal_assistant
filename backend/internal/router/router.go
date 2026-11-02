@@ -12,6 +12,7 @@ import (
 	aiconfighandler "personal_assistant_server/internal/aiconfig/handler"
 	"personal_assistant_server/internal/auth"
 	authhandler "personal_assistant_server/internal/auth/handler"
+	"personal_assistant_server/internal/backup"
 	"personal_assistant_server/internal/finance"
 	financehandler "personal_assistant_server/internal/finance/handler"
 	healthmodule "personal_assistant_server/internal/health"
@@ -31,6 +32,7 @@ type Handlers struct {
 	Users        *userhandler.Handler
 	AI           *aihandler.Handler
 	AIConfig     *aiconfighandler.Handler
+	Backup       *backup.Handler
 	RequireLogin gin.HandlerFunc
 }
 
@@ -57,5 +59,7 @@ func Register(handlers Handlers) *gin.Engine {
 	finance.RegisterRoutes(api, handlers.Finance, handlers.RequireLogin)
 	// 注册业务接口及对应的请求处理入口。
 	healthmodule.RegisterRoutes(api, handlers.Health, handlers.RequireLogin)
+	// 备份接口复用统一登录中间件，具体路径由独立备份模块管理。
+	backup.RegisterRoutes(api, handlers.Backup, handlers.RequireLogin)
 	return r
 }

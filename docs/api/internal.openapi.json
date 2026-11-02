@@ -7379,6 +7379,139 @@
           }
         }
       }
+    },
+    "/api/backup/export": {
+      "get": {
+        "operationId": "backup_export",
+        "summary": "导出本人完整业务备份",
+        "tags": [
+          "backup"
+        ],
+        "description": "需要 Bearer JWT，数据归属仅取自服务端认证上下文，不接受客户端指定用户。通过单个只读一致性事务读取本人完整业务快照，不分页、不截断、不修改业务记录。包含任务、财务、健康和仅本人创建的模型配置元数据；不包含同步回执、密码、认证令牌或 APIKey 等凭证字段。响应 code 与 HTTP 状态码一致，成功为 code=200、message=ok、data=Snapshot；导出时间为 UTC RFC3339Nano。读取或 JSON 编码失败返回 500、data=null，不返回部分快照或内部错误详情。所有响应（含认证失败）均设置 Cache-Control: no-store。",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功返回完整版本 1 快照；各业务顶层集合及 modelConfigs 均非 null，无数据时为 []。",
+            "headers": {
+              "Cache-Control": {
+                "description": "所有成功与失败响应均禁止缓存。",
+                "required": true,
+                "schema": {
+                  "type": "string",
+                  "enum": [
+                    "no-store"
+                  ]
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "enum": [
+                        200
+                      ]
+                    },
+                    "message": {
+                      "type": "string",
+                      "enum": [
+                        "ok"
+                      ]
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/BackupSnapshot"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "message",
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "未登录或登录失效；data 为 null。",
+            "headers": {
+              "Cache-Control": {
+                "description": "所有成功与失败响应均禁止缓存。",
+                "required": true,
+                "schema": {
+                  "type": "string",
+                  "enum": [
+                    "no-store"
+                  ]
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ApiError"
+                    },
+                    {
+                      "properties": {
+                        "code": {
+                          "enum": [
+                            401
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "认证、读取或序列化失败；data 为 null，不返回部分数据或内部错误详情。",
+            "headers": {
+              "Cache-Control": {
+                "description": "所有成功与失败响应均禁止缓存。",
+                "required": true,
+                "schema": {
+                  "type": "string",
+                  "enum": [
+                    "no-store"
+                  ]
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ApiError"
+                    },
+                    {
+                      "properties": {
+                        "code": {
+                          "enum": [
+                            500
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "x-apifox-folder": "数据备份/完整导出"
+      }
     }
   },
   "components": {
@@ -10756,6 +10889,1564 @@
             }
           }
         ]
+      },
+      "BackupAccountCard": {
+        "type": "object",
+        "description": "账户中原始保存的附属卡片；字段均完整输出。",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "持久化记录 ID。"
+          },
+          "name": {
+            "type": "string",
+            "description": "保存的名称。"
+          },
+          "maskedAccountNumber": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "maskedAccountNumber"
+        ],
+        "additionalProperties": false
+      },
+      "BackupFinanceAccount": {
+        "type": "object",
+        "description": "财务账户原始持久化字段，含贷款参数和原始计划 JSON，不包含可用余额或分期汇总等派生字段。",
+        "properties": {
+          "loanPrincipal": {
+            "$ref": "#/components/schemas/BackupMoney",
+            "description": "保存的贷款本金金额。"
+          },
+          "loanAnnualRate": {
+            "type": "string",
+            "description": "保存的贷款年利率字符串。"
+          },
+          "loanMethod": {
+            "type": "string",
+            "description": "保存的贷款还款方式。"
+          },
+          "loanPeriods": {
+            "type": "integer",
+            "description": "保存的贷款总期数。"
+          },
+          "loanPaidPeriods": {
+            "type": "integer",
+            "description": "保存的已还期数。"
+          },
+          "loanFirstPaymentDate": {
+            "type": "string",
+            "description": "保存的首期还款日期，未设置时为空字符串。"
+          },
+          "loanLender": {
+            "type": "string",
+            "description": "保存的贷款机构名称。"
+          },
+          "loanReceivingAccountId": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "保存的贷款收款账户 ID，未设置时可为 0。"
+          },
+          "loanScheduleJSON": {
+            "type": "string",
+            "description": "原始持久化贷款还款计划 JSON 文本，按字符串输出；允许空字符串，不展开或重算。"
+          },
+          "loanRevision": {
+            "type": "integer",
+            "description": "保存的贷款计划修订版本。"
+          },
+          "reminderDays": {
+            "type": "integer",
+            "description": "保存的提前提醒天数，-1 表示关闭。"
+          },
+          "reminderTime": {
+            "type": "string",
+            "description": "保存的提醒时分。"
+          },
+          "creditLimit": {
+            "$ref": "#/components/schemas/BackupMoney",
+            "description": "保存的信用额度金额。"
+          },
+          "billingDay": {
+            "type": "integer",
+            "description": "保存的账单日。"
+          },
+          "repaymentDay": {
+            "type": "integer",
+            "description": "保存的还款日。"
+          },
+          "billDayInclusive": {
+            "type": "boolean",
+            "description": "保存的账单日是否计入本期设置。"
+          },
+          "selectable": {
+            "type": "boolean",
+            "description": "保存的是否可选设置。"
+          },
+          "id": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "持久化记录 ID。"
+          },
+          "ownerId": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "原始数据归属用户 ID，保留跨记录关联。"
+          },
+          "name": {
+            "type": "string",
+            "description": "保存的名称。"
+          },
+          "accountType": {
+            "type": "string",
+            "description": "保存的账户类型。"
+          },
+          "institution": {
+            "type": "string",
+            "description": "保存的金融机构名称。"
+          },
+          "maskedAccountNumber": {
+            "type": "string",
+            "description": "保存的掩码账号。"
+          },
+          "cards": {
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/BackupAccountCard"
+                }
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "原始存储的附属卡片集合；未保存集合时可为 null，不补为空数组。"
+          },
+          "balance": {
+            "$ref": "#/components/schemas/BackupMoney",
+            "description": "原始保存余额，以固定两位小数的金额字符串输出。"
+          },
+          "currency": {
+            "type": "string",
+            "description": "保存的币种代码。"
+          },
+          "includeInNetWorth": {
+            "type": "boolean",
+            "description": "保存的是否计入净资产设置。"
+          },
+          "sortOrder": {
+            "type": "integer",
+            "description": "保存的排序值。"
+          },
+          "notes": {
+            "type": "string",
+            "description": "保存的账户备注。"
+          },
+          "archived": {
+            "type": "boolean",
+            "description": "保存的归档状态；归档记录仍包含在备份中。"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "原始创建时间。"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "原始更新时间。"
+          }
+        },
+        "required": [
+          "loanPrincipal",
+          "loanAnnualRate",
+          "loanMethod",
+          "loanPeriods",
+          "loanPaidPeriods",
+          "loanFirstPaymentDate",
+          "loanLender",
+          "loanReceivingAccountId",
+          "loanScheduleJSON",
+          "loanRevision",
+          "reminderDays",
+          "reminderTime",
+          "creditLimit",
+          "billingDay",
+          "repaymentDay",
+          "billDayInclusive",
+          "selectable",
+          "id",
+          "ownerId",
+          "name",
+          "accountType",
+          "institution",
+          "maskedAccountNumber",
+          "cards",
+          "balance",
+          "currency",
+          "includeInNetWorth",
+          "sortOrder",
+          "notes",
+          "archived",
+          "createdAt",
+          "updatedAt"
+        ],
+        "additionalProperties": false
+      },
+      "BackupFinanceCategory": {
+        "type": "object",
+        "description": "财务分类原始持久化字段，含名称版本及删除墓碑。",
+        "properties": {
+          "groupKey": {
+            "type": "string",
+            "description": "保存的分类分组键。"
+          },
+          "icon": {
+            "type": "string",
+            "description": "保存的跨端图标键。"
+          },
+          "id": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "持久化记录 ID。"
+          },
+          "ownerId": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "原始数据归属用户 ID，保留跨记录关联。"
+          },
+          "name": {
+            "type": "string",
+            "description": "保存的名称。"
+          },
+          "type": {
+            "type": "string",
+            "description": "保存的分类收支类型。"
+          },
+          "nameVersion": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "保存的分类名称版本，保留历史流水关联语义。"
+          },
+          "color": {
+            "type": "string",
+            "description": "保存的颜色值。"
+          },
+          "isDefault": {
+            "type": "boolean",
+            "description": "保存的默认分类标记。"
+          },
+          "deleted": {
+            "type": "boolean",
+            "description": "分类删除墓碑，删除记录仍完整导出。"
+          }
+        },
+        "required": [
+          "groupKey",
+          "icon",
+          "id",
+          "ownerId",
+          "name",
+          "type",
+          "nameVersion",
+          "color",
+          "isDefault",
+          "deleted"
+        ],
+        "additionalProperties": false
+      },
+      "BackupFinanceData": {
+        "type": "object",
+        "description": "全部本人持久化财务数据，不包含同步回执。",
+        "properties": {
+          "accounts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BackupFinanceAccount"
+            },
+            "description": "全部财务账户，含归档账户；无记录时为 []。"
+          },
+          "categories": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BackupFinanceCategory"
+            },
+            "description": "全部保存分类，含 deleted=true 的删除墓碑；无记录时为 []。"
+          },
+          "transactions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BackupFinanceTransaction"
+            },
+            "description": "全部持久化流水，保留历史状态和关联字段；无记录时为 []。"
+          },
+          "presets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BackupFinancePreset"
+            },
+            "description": "全部预设及周期规则，含停用规则；无记录时为 []。"
+          },
+          "events": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BackupFinanceEvent"
+            },
+            "description": "全部财务操作事件；无记录时为 []。"
+          },
+          "snapshots": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BackupFinanceSnapshot"
+            },
+            "description": "全部持久化账户余额快照；无记录时为 []。"
+          }
+        },
+        "required": [
+          "accounts",
+          "categories",
+          "transactions",
+          "presets",
+          "events",
+          "snapshots"
+        ],
+        "additionalProperties": false
+      },
+      "BackupFinanceEvent": {
+        "type": "object",
+        "description": "财务操作事件原始持久化字段。",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "持久化记录 ID。"
+          },
+          "ownerId": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "原始数据归属用户 ID，保留跨记录关联。"
+          },
+          "entityId": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "操作关联的原始实体 ID。"
+          },
+          "operation": {
+            "type": "string",
+            "description": "保存的操作类型。"
+          },
+          "source": {
+            "type": "string",
+            "description": "记录的操作或创建来源。"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "原始创建时间。"
+          }
+        },
+        "required": [
+          "id",
+          "ownerId",
+          "entityId",
+          "operation",
+          "source",
+          "createdAt"
+        ],
+        "additionalProperties": false
+      },
+      "BackupFinancePreset": {
+        "type": "object",
+        "description": "预设及周期规则原始持久化字段。",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "持久化记录 ID。"
+          },
+          "ownerId": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "原始数据归属用户 ID，保留跨记录关联。"
+          },
+          "key": {
+            "type": "string",
+            "description": "保存的预设唯一键。"
+          },
+          "name": {
+            "type": "string",
+            "description": "保存的名称。"
+          },
+          "transaction": {
+            "$ref": "#/components/schemas/BackupPresetTransaction",
+            "description": "预设保存的完整交易输入字段；全部字段输出，指针字段允许 null。"
+          },
+          "frequency": {
+            "type": "string",
+            "description": "保存的执行频率。"
+          },
+          "startDate": {
+            "type": "string",
+            "description": "保存的周期开始日期。"
+          },
+          "endDate": {
+            "type": "string",
+            "description": "保存的周期结束日期，未设置时为空字符串。"
+          },
+          "nextDate": {
+            "type": "string",
+            "description": "保存的下一次执行日期。"
+          },
+          "enabled": {
+            "type": "boolean",
+            "description": "保存的周期规则启用状态。"
+          },
+          "lastError": {
+            "type": "string",
+            "description": "保存的最近执行错误，未记录时为空字符串。"
+          }
+        },
+        "required": [
+          "id",
+          "ownerId",
+          "key",
+          "name",
+          "transaction",
+          "frequency",
+          "startDate",
+          "endDate",
+          "nextDate",
+          "enabled",
+          "lastError"
+        ],
+        "additionalProperties": false
+      },
+      "BackupFinanceSnapshot": {
+        "type": "object",
+        "description": "持久化账户余额快照。",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "持久化记录 ID。"
+          },
+          "ownerId": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "原始数据归属用户 ID，保留跨记录关联。"
+          },
+          "accountId": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "关联的原始财务账户 ID。"
+          },
+          "balance": {
+            "$ref": "#/components/schemas/BackupMoney",
+            "description": "原始保存余额，以固定两位小数的金额字符串输出。"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "原始创建时间。"
+          }
+        },
+        "required": [
+          "id",
+          "ownerId",
+          "accountId",
+          "balance",
+          "createdAt"
+        ],
+        "additionalProperties": false
+      },
+      "BackupFinanceTransaction": {
+        "type": "object",
+        "description": "交易流水原始持久化字段，保留归属、幂等指纹及分期内部状态，不包含 gorm:- 派生字段。",
+        "properties": {
+          "discount": {
+            "$ref": "#/components/schemas/BackupMoney",
+            "description": "保存的支出减免金额。"
+          },
+          "refundParentId": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0,
+                "description": "退款关联的原支出 ID；未关联时为 null。"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "退款关联的原支出 ID；未关联时为 null。"
+          },
+          "reimbursementStatus": {
+            "type": "string",
+            "description": "保存的报销状态；历史记录可为空字符串。"
+          },
+          "rebate": {
+            "$ref": "#/components/schemas/BackupMoney",
+            "description": "保存的返利金额。"
+          },
+          "rebateAccountId": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0,
+                "description": "返利入账账户 ID；未关联时为 null。"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "返利入账账户 ID；未关联时为 null。"
+          },
+          "rebatePending": {
+            "type": "boolean",
+            "description": "保存的返利待入账标记。"
+          },
+          "rebateParentId": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0,
+                "description": "返利关联的原交易 ID；未关联时为 null。"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "返利关联的原交易 ID；未关联时为 null。"
+          },
+          "fee": {
+            "$ref": "#/components/schemas/BackupMoney",
+            "description": "保存的手续费金额。"
+          },
+          "installmentJSON": {
+            "type": "string",
+            "description": "原始持久化分期计划 JSON 文本，按字符串输出；允许空字符串，不展开或重算。"
+          },
+          "installmentParentId": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0,
+                "description": "分期子流水关联的主记录 ID；未关联时为 null。"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "分期子流水关联的主记录 ID；未关联时为 null。"
+          },
+          "installmentPeriod": {
+            "type": "integer",
+            "description": "保存的分期期次，非分期记录可为 0。"
+          },
+          "installmentEditRemoved": {
+            "type": "boolean",
+            "description": "因分期规则编辑移出生成范围的标记，用于区别于用户删除并支持后续恢复。"
+          },
+          "id": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "持久化记录 ID。"
+          },
+          "ownerId": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "原始数据归属用户 ID，保留跨记录关联。"
+          },
+          "requestId": {
+            "type": "string",
+            "description": "保存的流水幂等请求 ID；不是同步回执。"
+          },
+          "fingerprint": {
+            "type": "string",
+            "description": "保存的流水幂等指纹，不重新计算。"
+          },
+          "accountId": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "关联的原始财务账户 ID。"
+          },
+          "targetAccountId": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0,
+                "description": "关联目标账户 ID；未关联时为 null。"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "关联目标账户 ID；未关联时为 null。"
+          },
+          "type": {
+            "type": "string",
+            "description": "保存的流水类型。"
+          },
+          "amount": {
+            "$ref": "#/components/schemas/BackupMoney",
+            "description": "保存的交易金额。"
+          },
+          "categoryId": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0,
+                "description": "关联分类 ID；未关联时为 null。"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "关联分类 ID；未关联时为 null。"
+          },
+          "counterparty": {
+            "type": "string",
+            "description": "保存的交易对方，允许空字符串。"
+          },
+          "transactionTime": {
+            "type": "string",
+            "description": "保存的交易当地时分；历史或计划记录可为空字符串。"
+          },
+          "transactionDate": {
+            "type": "string",
+            "description": "保存的交易日期字符串。"
+          },
+          "description": {
+            "type": "string",
+            "description": "保存的交易说明，允许空字符串。"
+          },
+          "status": {
+            "type": "string",
+            "description": "保存的流水状态，含历史及已删除状态。"
+          },
+          "source": {
+            "type": "string",
+            "description": "记录的操作或创建来源。"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "原始创建时间。"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "原始更新时间。"
+          }
+        },
+        "required": [
+          "discount",
+          "refundParentId",
+          "reimbursementStatus",
+          "rebate",
+          "rebateAccountId",
+          "rebatePending",
+          "rebateParentId",
+          "fee",
+          "installmentJSON",
+          "installmentParentId",
+          "installmentPeriod",
+          "installmentEditRemoved",
+          "id",
+          "ownerId",
+          "requestId",
+          "fingerprint",
+          "accountId",
+          "targetAccountId",
+          "type",
+          "amount",
+          "categoryId",
+          "counterparty",
+          "transactionTime",
+          "transactionDate",
+          "description",
+          "status",
+          "source",
+          "createdAt",
+          "updatedAt"
+        ],
+        "additionalProperties": false
+      },
+      "BackupHealthData": {
+        "type": "object",
+        "description": "全部本人已保存健康数据，保留原始内容，不生成默认值。",
+        "properties": {
+          "days": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BackupHealthDay"
+            },
+            "description": "全部每日健康指标；无记录时为 []。"
+          },
+          "reports": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BackupHealthReport"
+            },
+            "description": "全部已保存分析报告及原始快照；无记录时为 []。"
+          },
+          "meals": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BackupHealthMeal"
+            },
+            "description": "全部已确认并保存的餐食；无记录时为 []。"
+          },
+          "nutritionGoals": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BackupNutritionGoal"
+            },
+            "description": "仅已保存的手动营养目标，不补默认值；无记录时为 []。"
+          }
+        },
+        "required": [
+          "days",
+          "reports",
+          "meals",
+          "nutritionGoals"
+        ],
+        "additionalProperties": false
+      },
+      "BackupHealthDay": {
+        "type": "object",
+        "description": "每日健康指标原始持久化字段；未保存指标输出 null。",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "持久化记录 ID。"
+          },
+          "userId": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "原始健康数据归属用户 ID。"
+          },
+          "date": {
+            "type": "string",
+            "description": "原始保存的日期字符串。"
+          },
+          "steps": {
+            "anyOf": [
+              {
+                "type": "number",
+                "description": "原始步数；没有保存该指标时为 null。"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "原始步数；没有保存该指标时为 null。"
+          },
+          "active_energy": {
+            "anyOf": [
+              {
+                "type": "number",
+                "description": "原始活动能量指标；没有保存时为 null。"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "原始活动能量指标；没有保存时为 null。"
+          },
+          "distance": {
+            "anyOf": [
+              {
+                "type": "number",
+                "description": "原始距离指标；没有保存时为 null。"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "原始距离指标；没有保存时为 null。"
+          },
+          "resting_heart_rate": {
+            "anyOf": [
+              {
+                "type": "number",
+                "description": "原始静息心率；没有保存时为 null。"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "原始静息心率；没有保存时为 null。"
+          },
+          "weight": {
+            "anyOf": [
+              {
+                "type": "number",
+                "description": "原始体重指标；没有保存时为 null。"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "原始体重指标；没有保存时为 null。"
+          },
+          "timezone": {
+            "type": "string",
+            "description": "原始记录时区。"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "原始更新时间。"
+          }
+        },
+        "required": [
+          "id",
+          "userId",
+          "date",
+          "steps",
+          "active_energy",
+          "distance",
+          "resting_heart_rate",
+          "weight",
+          "timezone",
+          "updated_at"
+        ],
+        "additionalProperties": false
+      },
+      "BackupHealthMeal": {
+        "type": "object",
+        "description": "已保存餐食原始持久化字段；items 保留存储中的 null。",
+        "properties": {
+          "userId": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "原始健康数据归属用户 ID。"
+          },
+          "id": {
+            "type": "string",
+            "description": "原始餐食字符串 ID。"
+          },
+          "date": {
+            "type": "string",
+            "description": "原始保存的日期字符串。"
+          },
+          "meal_type": {
+            "type": "string",
+            "description": "原始保存的餐次类型。"
+          },
+          "items": {
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/BackupMealItem"
+                }
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "原始存储的食物项；未保存集合时可为 null，不应用创建接口的项数或数值限制。"
+          },
+          "note": {
+            "type": "string",
+            "description": "原始保存的备注，允许空字符串。"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "原始创建时间。"
+          }
+        },
+        "required": [
+          "userId",
+          "id",
+          "date",
+          "meal_type",
+          "items",
+          "note",
+          "created_at"
+        ],
+        "additionalProperties": false
+      },
+      "BackupHealthReport": {
+        "type": "object",
+        "description": "健康报告原始正文和输入快照。",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "持久化记录 ID。"
+          },
+          "userId": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "原始健康数据归属用户 ID。"
+          },
+          "content": {
+            "type": "string",
+            "description": "原始保存的报告正文。"
+          },
+          "snapshot": {
+            "type": "string",
+            "description": "原始保存的报告输入快照字符串，不解析或重算。"
+          },
+          "config_id": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "报告关联的原始模型配置 ID。"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "原始创建时间。"
+          }
+        },
+        "required": [
+          "id",
+          "userId",
+          "content",
+          "snapshot",
+          "config_id",
+          "created_at"
+        ],
+        "additionalProperties": false
+      },
+      "BackupMealItem": {
+        "type": "object",
+        "description": "备份中的原始食物项，不套用普通写入接口的业务校验限制。",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "原始保存的食物名称。"
+          },
+          "grams": {
+            "type": "number",
+            "description": "原始保存的食物重量，单位为克。"
+          },
+          "calories": {
+            "type": "number",
+            "description": "原始保存的热量，单位为千卡。"
+          }
+        },
+        "required": [
+          "name",
+          "grams",
+          "calories"
+        ],
+        "additionalProperties": false
+      },
+      "BackupModelConfig": {
+        "type": "object",
+        "description": "仅本人创建的模型连接元数据白名单，字段严格使用 snake_case，不包含 APIKey。",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "原始模型配置 ID。"
+          },
+          "owner_type": {
+            "type": "string",
+            "description": "原始配置归属类型。"
+          },
+          "owner_id": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0,
+                "description": "原始归属用户 ID；无用户归属时为 null。"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "原始归属用户 ID；无用户归属时为 null。"
+          },
+          "visibility": {
+            "type": "string",
+            "description": "原始共享可见范围。"
+          },
+          "created_by": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0,
+                "description": "原始创建者 ID；DTO 允许 null，导出集合仅选择本人创建的记录。"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "原始创建者 ID；DTO 允许 null，导出集合仅选择本人创建的记录。"
+          },
+          "is_selected": {
+            "type": "boolean",
+            "description": "原始选中标记。"
+          },
+          "name": {
+            "type": "string",
+            "description": "保存的配置名称。"
+          },
+          "provider_name": {
+            "type": "string",
+            "description": "保存的服务商名称。"
+          },
+          "base_url": {
+            "type": "string",
+            "description": "导出的端点字符串仅保留合法 HTTP(S) 地址的协议、主机和路径；移除用户信息、全部查询参数及片段，无效地址输出空字符串。"
+          },
+          "model_name": {
+            "type": "string",
+            "description": "保存的模型名称。"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "原始更新时间。"
+          }
+        },
+        "required": [
+          "id",
+          "owner_type",
+          "owner_id",
+          "visibility",
+          "created_by",
+          "is_selected",
+          "name",
+          "provider_name",
+          "base_url",
+          "model_name",
+          "updated_at"
+        ],
+        "additionalProperties": false
+      },
+      "BackupMoney": {
+        "type": "string",
+        "description": "金额按整数分存储，JSON 始终为固定两位小数的十进制字符串，包括零金额 0.00；不输出浮点数。",
+        "pattern": "^-?[0-9]+\\.[0-9]{2}$",
+        "examples": [
+          "0.00",
+          "12.30",
+          "-45.67"
+        ]
+      },
+      "BackupNutritionGoal": {
+        "type": "object",
+        "description": "本人已保存的每日营养目标。",
+        "properties": {
+          "userId": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "原始健康数据归属用户 ID。"
+          },
+          "daily_goal": {
+            "type": "number",
+            "description": "本人已保存的每日热量目标，单位为千卡；不补默认值。"
+          }
+        },
+        "required": [
+          "userId",
+          "daily_goal"
+        ],
+        "additionalProperties": false
+      },
+      "BackupOwner": {
+        "type": "object",
+        "description": "原始用户身份白名单，不包含密码哈希、角色或认证令牌。",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "原始认证用户 ID。"
+          },
+          "account": {
+            "type": "string",
+            "description": "原始账户名。"
+          },
+          "nickname": {
+            "type": "string",
+            "description": "保存的用户昵称。"
+          }
+        },
+        "required": [
+          "id",
+          "account",
+          "nickname"
+        ],
+        "additionalProperties": false
+      },
+      "BackupPresetTransaction": {
+        "type": "object",
+        "description": "预设中保存的完整交易输入。独立于普通创建请求模型：全部属性必填，空字符串、false、零金额及 null 指针均保留。",
+        "properties": {
+          "reimbursementStatus": {
+            "type": "string",
+            "description": "保存的报销状态；历史记录可为空字符串。"
+          },
+          "discount": {
+            "$ref": "#/components/schemas/BackupMoney",
+            "description": "保存的支出减免金额。"
+          },
+          "rebate": {
+            "$ref": "#/components/schemas/BackupMoney",
+            "description": "保存的返利金额。"
+          },
+          "rebateAccountId": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0,
+                "description": "返利入账账户 ID；未关联时为 null。"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "返利入账账户 ID；未关联时为 null。"
+          },
+          "rebatePending": {
+            "type": "boolean",
+            "description": "保存的返利待入账标记。"
+          },
+          "fee": {
+            "$ref": "#/components/schemas/BackupMoney",
+            "description": "保存的手续费金额。"
+          },
+          "requestId": {
+            "type": "string",
+            "description": "保存的流水幂等请求 ID；不是同步回执。"
+          },
+          "accountId": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "关联的原始财务账户 ID。"
+          },
+          "targetAccountId": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0,
+                "description": "关联目标账户 ID；未关联时为 null。"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "关联目标账户 ID；未关联时为 null。"
+          },
+          "targetCreditCardId": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0,
+                "description": "预设输入中保存的目标信用卡 ID；未关联时为 null。"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "预设输入中保存的目标信用卡 ID；未关联时为 null。"
+          },
+          "type": {
+            "type": "string",
+            "description": "预设输入保存的交易类型。"
+          },
+          "amount": {
+            "$ref": "#/components/schemas/BackupMoney",
+            "description": "保存的交易金额。"
+          },
+          "categoryId": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0,
+                "description": "关联分类 ID；未关联时为 null。"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "关联分类 ID；未关联时为 null。"
+          },
+          "counterparty": {
+            "type": "string",
+            "description": "保存的交易对方，允许空字符串。"
+          },
+          "transactionTime": {
+            "type": "string",
+            "description": "保存的交易当地时分；历史或计划记录可为空字符串。"
+          },
+          "transactionDate": {
+            "type": "string",
+            "description": "保存的交易日期字符串。"
+          },
+          "description": {
+            "type": "string",
+            "description": "保存的交易说明，允许空字符串。"
+          }
+        },
+        "required": [
+          "reimbursementStatus",
+          "discount",
+          "rebate",
+          "rebateAccountId",
+          "rebatePending",
+          "fee",
+          "requestId",
+          "accountId",
+          "targetAccountId",
+          "targetCreditCardId",
+          "type",
+          "amount",
+          "categoryId",
+          "counterparty",
+          "transactionTime",
+          "transactionDate",
+          "description"
+        ],
+        "additionalProperties": false
+      },
+      "BackupSnapshot": {
+        "type": "object",
+        "description": "版本 1 本人完整业务备份。所有属性均输出，空值和零值保留；各业务顶层集合及 modelConfigs 均为非 null 数组。只包含显式 DTO 白名单，不包含 gorm:- 派生展示字段、同步回执或凭证字段。",
+        "properties": {
+          "format": {
+            "type": "string",
+            "description": "备份格式固定为 personal-assistant-backup。",
+            "enum": [
+              "personal-assistant-backup"
+            ]
+          },
+          "schemaVersion": {
+            "type": "integer",
+            "description": "备份协议版本固定为 1，独立于普通列表 API。",
+            "enum": [
+              1
+            ]
+          },
+          "exportedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "导出时间，UTC RFC3339Nano 字符串，以 Z 结尾，小数秒最多九位且省略尾随零。",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,9})?Z$"
+          },
+          "source": {
+            "$ref": "#/components/schemas/BackupSource",
+            "description": "原始账户归属，仅包含身份白名单。"
+          },
+          "task": {
+            "$ref": "#/components/schemas/BackupTaskData",
+            "description": "本人全部任务数据，包含归档记录和父子关系。"
+          },
+          "finance": {
+            "$ref": "#/components/schemas/BackupFinanceData",
+            "description": "本人全部持久化财务数据，包含分类删除墓碑。"
+          },
+          "health": {
+            "$ref": "#/components/schemas/BackupHealthData",
+            "description": "本人全部已保存健康数据，不生成默认营养目标。"
+          },
+          "modelConfigs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BackupModelConfig"
+            },
+            "description": "仅本人创建的模型配置元数据；保留原始归属和共享范围，不包含 APIKey 或其他凭证字段。无记录时为 []。"
+          }
+        },
+        "required": [
+          "format",
+          "schemaVersion",
+          "exportedAt",
+          "source",
+          "task",
+          "finance",
+          "health",
+          "modelConfigs"
+        ],
+        "additionalProperties": false
+      },
+      "BackupSource": {
+        "type": "object",
+        "description": "快照原始账户归属。",
+        "properties": {
+          "owner": {
+            "$ref": "#/components/schemas/BackupOwner",
+            "description": "备份所属的原始认证账户。"
+          }
+        },
+        "required": [
+          "owner"
+        ],
+        "additionalProperties": false
+      },
+      "BackupTask": {
+        "type": "object",
+        "description": "任务原始持久化字段，保留归档、父子关系和进度。",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "持久化记录 ID。"
+          },
+          "ownerId": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "原始数据归属用户 ID，保留跨记录关联。"
+          },
+          "icon": {
+            "type": "string",
+            "description": "保存的跨端图标键。"
+          },
+          "title": {
+            "type": "string",
+            "description": "保存的任务标题。"
+          },
+          "remark": {
+            "type": "string",
+            "description": "保存的备注，允许空字符串。"
+          },
+          "listId": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "所属原始清单 ID。"
+          },
+          "parentId": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0,
+                "description": "父任务 ID；根任务为 null。"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "父任务 ID；根任务为 null。"
+          },
+          "taskType": {
+            "type": "string",
+            "description": "保存的任务类型。"
+          },
+          "priority": {
+            "type": "string",
+            "description": "保存的任务优先级。"
+          },
+          "startDate": {
+            "type": "string",
+            "description": "保存的开始日期；未设置时为空字符串。"
+          },
+          "startTime": {
+            "type": "string",
+            "description": "保存的开始时分；未设置时为空字符串。"
+          },
+          "endDate": {
+            "type": "string",
+            "description": "保存的结束日期；未设置时为空字符串。"
+          },
+          "endTime": {
+            "type": "string",
+            "description": "保存的结束时分；未设置时为空字符串。"
+          },
+          "autoArchive": {
+            "type": "boolean",
+            "description": "保存的完成后自动归档设置。"
+          },
+          "archived": {
+            "type": "boolean",
+            "description": "保存的归档状态；归档记录仍包含在备份中。"
+          },
+          "sortOrder": {
+            "type": "integer",
+            "description": "保存的排序值。"
+          },
+          "progressTotal": {
+            "type": "number",
+            "description": "保存的进度总量。"
+          },
+          "progressCompleted": {
+            "type": "number",
+            "description": "保存的已完成进度。"
+          },
+          "progressStep": {
+            "type": "number",
+            "description": "保存的每次推进量。"
+          },
+          "progressUnit": {
+            "type": "string",
+            "description": "保存的进度单位。"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "原始创建时间。"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "原始更新时间。"
+          }
+        },
+        "required": [
+          "id",
+          "ownerId",
+          "icon",
+          "title",
+          "remark",
+          "listId",
+          "parentId",
+          "taskType",
+          "priority",
+          "startDate",
+          "startTime",
+          "endDate",
+          "endTime",
+          "autoArchive",
+          "archived",
+          "sortOrder",
+          "progressTotal",
+          "progressCompleted",
+          "progressStep",
+          "progressUnit",
+          "createdAt",
+          "updatedAt"
+        ],
+        "additionalProperties": false
+      },
+      "BackupTaskData": {
+        "type": "object",
+        "description": "全部本人任务业务数据。",
+        "properties": {
+          "lists": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BackupTaskList"
+            },
+            "description": "全部任务清单；无记录时为 []。"
+          },
+          "tasks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BackupTask"
+            },
+            "description": "全部任务，含归档及子任务；无记录时为 []。"
+          },
+          "events": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BackupTaskEvent"
+            },
+            "description": "全部任务操作事件；无记录时为 []。"
+          }
+        },
+        "required": [
+          "lists",
+          "tasks",
+          "events"
+        ],
+        "additionalProperties": false
+      },
+      "BackupTaskEvent": {
+        "type": "object",
+        "description": "任务操作事件原始持久化字段。",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "持久化记录 ID。"
+          },
+          "ownerId": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "原始数据归属用户 ID，保留跨记录关联。"
+          },
+          "operation": {
+            "type": "string",
+            "description": "保存的操作类型。"
+          },
+          "entityId": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "操作关联的原始实体 ID。"
+          },
+          "source": {
+            "type": "string",
+            "description": "记录的操作或创建来源。"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "原始创建时间。"
+          }
+        },
+        "required": [
+          "id",
+          "ownerId",
+          "operation",
+          "entityId",
+          "source",
+          "createdAt"
+        ],
+        "additionalProperties": false
+      },
+      "BackupTaskList": {
+        "type": "object",
+        "description": "任务清单原始持久化字段。",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "持久化记录 ID。"
+          },
+          "ownerId": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "原始数据归属用户 ID，保留跨记录关联。"
+          },
+          "name": {
+            "type": "string",
+            "description": "保存的名称。"
+          },
+          "remark": {
+            "type": "string",
+            "description": "保存的备注，允许空字符串。"
+          },
+          "color": {
+            "type": "string",
+            "description": "保存的颜色值。"
+          },
+          "icon": {
+            "type": "string",
+            "description": "保存的跨端图标键。"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "原始创建时间。"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "原始更新时间。"
+          }
+        },
+        "required": [
+          "id",
+          "ownerId",
+          "name",
+          "remark",
+          "color",
+          "icon",
+          "createdAt",
+          "updatedAt"
+        ],
+        "additionalProperties": false
       }
     }
   }

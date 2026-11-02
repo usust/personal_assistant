@@ -9,6 +9,11 @@ final class AppStore {
     var screenshotRunning: Set<String> = []
     let api: APIClient
     var finance: FinanceLocalStore?
+    var localTasks: TaskLocalStore?
+    var localHealth: HealthLocalStore?
+    var canUseLocalData: Bool { isPreview || localStorageError == nil }
+    /// 返回本机附件作用域；参数：无；返回值：固定设备命名空间的摘要，符合附件目录校验且不随登录改变。
+    var localDataScope: String { MealThumbnailStore.scope(server: "local-device", userID: 0) }
     var localStorageError: String?
     private var syncTask: Task<Void, Never>?
     private var identityVerified = false
@@ -55,6 +60,11 @@ final class AppStore {
         api.token = TokenVault.read(api.baseURL)
         do {
             let ledger = try FinanceLocalStore()
+            try ledger.requireExplicitSyncConsent()
+            let taskStore = try TaskLocalStore()
+            let healthStore = try HealthLocalStore()
+            localTasks = taskStore; api.localTasks = taskStore
+            localHealth = healthStore; api.localHealth = healthStore
             finance = ledger; api.localFinance = ledger
             #if os(iOS)
             try ledger.recoverScreenshots(excluding: ScreenshotBackgroundBookkeeping.pendingJobIDs())
@@ -62,7 +72,6 @@ final class AppStore {
             try ledger.recoverScreenshots()
             #endif
             if ledger.space["server"] as? String == api.baseURL { profile = ledger.cachedProfile }
-            else if ledger.activeKey != "guest" { try ledger.useGuest() }
             // 用户允许重复图片记账；恢复当前已登录空间被旧版去重挡住的合格记录，不触及已完成任务。
             if api.token != nil, ledger.cachedProfile != nil { _ = try ledger.resumeRecognizedScreenshots() }
             // 写入回调无输入和返回；合并短时间内保存操作，避免每次按键触发上传。
@@ -74,7 +83,7 @@ final class AppStore {
                 Task { @MainActor [weak self] in self?.scheduleSync() }
             }
             monitor.start(queue: DispatchQueue(label: "finance.reachability")); networkMonitor = monitor
-        } catch { localStorageError = error.localizedDescription; api.localFinanceError = error.localizedDescription }
+        } catch { localStorageError = error.localizedDescription; api.localStorageError = error.localizedDescription; api.localFinanceError = error.localizedDescription }
         installUnauthorizedHandler()
         #if os(iOS)
         if !isPreview { ScreenshotBackgroundBookkeeping.shared.restore(store: self) }
@@ -96,7 +105,7 @@ final class AppStore {
     /// 清理云任务与助手状态；参数：invalidateSession 默认true，false仅用于当前登录身份校验401，保留已于登录开始隔离的代数与认证锁；返回值：无；清业务缓存，导航、财务账本和缓存身份不变。
     private func clearCloudTaskAndAIState(invalidateSession: Bool = true) {
         if invalidateSession { cloudSessionID = UUID(); isAuthenticating = false }
-        tasks = []; lists = []; resetTaskWrites()
+        resetTaskWrites()
         messages = []; actions = []; configs = []; chatConfigID = 0; chatSending = false; syncWarning = nil
     }
     /// 恢复身份但不阻塞本地财务；参数：无；返回值：无；断网保留已隔离的账号副本，只有认证校验通过才允许上传。
@@ -108,7 +117,6 @@ final class AppStore {
         do {
             let user: Profile = try await api.request("/users/me")
             guard generation == cloudSessionID else { return }
-            if let finance, finance.activeKey != "guest", finance.cachedProfile?.id != user.id { try finance.useGuest() }
             profile = user; identityVerified = true
             await syncFinance()
         } catch { if generation == cloudSessionID { sessionError = error.localizedDescription } }
@@ -118,7 +126,6 @@ final class AppStore {
         let server = try APIClient.normalize(raw)
         guard server != api.baseURL else { return }
         signOut()
-        guard finance?.activeKey == "guest" || finance == nil else { throw APIError(status: 0, message: "无法切换本机账本") }
         api.baseURL = server
         UserDefaults.standard.set(server, forKey: "serverURL")
     }
@@ -140,7 +147,6 @@ final class AppStore {
             let user: Profile = try await api.request("/users/me")
             guard generation == cloudSessionID else { throw CancellationError() }
             if !isPreview { try TokenVault.save(response.token, server: api.baseURL) }
-            try finance?.enable(server: api.baseURL, profile: user)
             profile = user; identityVerified = true
             sessionError = nil
             sessionID = UUID()
@@ -153,9 +159,9 @@ final class AppStore {
             throw error
         }
     }
-    /// 退出登录；参数：无；返回值：无；原账号本机账本和队列保留，切到独立游客空间，清除凭证与非财务内存并使旧请求失效。
+    /// 退出云账号；参数：无；返回值：无；暂停同步并清除凭证，保留当前本机空间和业务记录。
     func signOut() {
-        do { try finance?.useGuest() } catch { localStorageError = error.localizedDescription; return }
+        do { try finance?.pauseSync() } catch { localStorageError = error.localizedDescription; return }
         syncTask?.cancel(); syncTask = nil; identityVerified = false
         if !isPreview { CreditReminders.clear() }
         if !isPreview { TokenVault.delete(api.baseURL) }
@@ -168,7 +174,7 @@ final class AppStore {
     /// 刷新任务与清单；参数：无；返回值：无；整体成功后更新，失败保留旧数据；会话、写入代数或读取序号变化及写入期间的响应均抛 CancellationError，不提交或解除保护。
     func loadTasks() async throws {
         // 写请求尚未结束时，读取快照不能确认最终结果；提前取消，不推进读取序号或发起网络请求。
-        guard canUseCloud else { throw CancellationError() }
+        guard canUseLocalData else { throw APIError(status: 0, message: localStorageError ?? "无法读取本机数据") }
         guard !taskWriteBusy else { throw CancellationError() }
         let generation = cloudSessionID
         let revision = taskRevision
@@ -192,7 +198,7 @@ final class AppStore {
     private func resetTaskWrites() { taskRevision += 1; taskReadSequence += 1; taskWriteBusy = false; taskWriteBlocked = false; taskNotice = nil }
     /// 执行任务模块单次写入；类型 T 为响应值；参数：operation 为不自动重试的写请求；返回值：服务器确认结果；跨会话丢弃，结果不明锁定所有任务写入口，明确业务拒绝允许修正。
     func writeTask<T>(_ operation: () async throws -> T) async throws -> T {
-        guard canUseCloud else { throw CancellationError() }
+        guard canUseLocalData else { throw APIError(status: 0, message: localStorageError ?? "无法读取本机数据") }
         guard !taskWriteBusy, !taskWriteBlocked else { throw APIError(status: 409, message: "请先刷新任务，确认上次操作结果。") }
         let generation = cloudSessionID
         taskRevision += 1
@@ -201,13 +207,13 @@ final class AppStore {
         do {
             let result = try await operation()
             guard generation == cloudSessionID else { throw CancellationError() }
-            taskWriteBlocked = true
+            taskWriteBlocked = isPreview
             return result
         } catch {
             guard generation == cloudSessionID else { throw CancellationError() }
             // 拒绝分类回调输入HTTP业务错误、输出是否明确拒绝；5xx、解码和传输错误保守视为结果未知。
             let rejected = (error as? APIError).map { [400, 401, 403, 404, 409, 422].contains($0.status) } ?? false
-            if !rejected {
+            if isPreview && !rejected {
                 taskWriteBlocked = true
                 taskNotice = "操作结果未确认，请刷新后检查任务，避免重复提交。"
             }

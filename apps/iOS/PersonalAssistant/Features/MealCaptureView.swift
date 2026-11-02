@@ -2,7 +2,7 @@ import SwiftUI
 import PhotosUI
 import AVFoundation
 
-/// 拍照、外发同意、识别核对与确认保存分步进行，图片仅留在当前页面内存。
+/// 拍照、外发同意、识别核对与确认保存分步进行；分析图片仅留内存，确认记录后只在本机保留缩略图。
 struct MealCaptureView: View {
     let date: String
     let recorded: Double
@@ -16,6 +16,7 @@ struct MealCaptureView: View {
     @State private var configID = 0
     @State private var consent = false
     @State private var confirmingAnalysis = false
+    @State private var confirmingPhotoDiscard = false
     @State private var busy = false
     @State private var importing = false
     @State private var error: String?
@@ -25,6 +26,8 @@ struct MealCaptureView: View {
     @State private var mealType = "lunch"
     @State private var recordID = UUID().uuidString.lowercased()
     @State private var submitted: [String: Any]?
+    @State private var submittedOwner: String?
+    @State private var confirmedMealID: String?
 
     /// 获取当前配置；参数：无；返回值：本人可用目录中的配置或 nil；无副作用。
     private var config: AIConfig? { store.configs.first { $0.id == configID } }
@@ -85,21 +88,66 @@ struct MealCaptureView: View {
         } message: {
             Text("仅发送本张照片至所选 AI 服务；不会发送健康日汇总。")
         }
+        .confirmationDialog("放弃本机照片？", isPresented: $confirmingPhotoDiscard, titleVisibility: .visible) {
+            Button("不保留照片并完成", role: .destructive, action: finishWithoutPhoto)
+            Button("继续保留并重试", role: .cancel) {}
+        } message: {
+            Text("饮食记录已保存。完成后将释放本次照片，无法再次重试保存。")
+        }
     }
 
-    /// 构建照片来源分组；参数：无；返回值：内存预览、拍照、相册与处理进度；不自动发起网络请求。
+    /// 构建照片来源分组；参数：无；返回值：餐食预览及并列玻璃来源按钮；照片选择只更新内存，不自动上传或保存。
     private var photoSection: some View {
         Section {
-            if let image, let preview = UIImage(data: image) {
-                Image(uiImage: preview).resizable().scaledToFit().frame(maxHeight: 220)
-                    .accessibilityLabel("本次待分析餐食照片")
+            VStack(spacing: 16) {
+                if let image, let preview = UIImage(data: image) {
+                    Image(uiImage: preview)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(maxWidth: .infinity, maxHeight: 240)
+                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                        .accessibilityLabel("本次待分析餐食照片")
+                } else {
+                    VStack(spacing: 10) {
+                        Image(systemName: "fork.knife.circle.fill")
+                            .font(.system(size: 48, weight: .regular))
+                            .foregroundStyle(.tint)
+                        Text("添加餐食照片").font(.headline).foregroundStyle(.primary)
+                    }
+                    .frame(maxWidth: .infinity, minHeight: 140)
+                    .background(Color(uiColor: .tertiarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 16))
+                }
+                ViewThatFits(in: .horizontal) {
+                    HStack(spacing: 12) { photoSourceControls }
+                    VStack(spacing: 12) { photoSourceControls }
+                }
+                if importing { ProgressView("正在处理照片…") }
             }
-            Button("拍照", systemImage: "camera") { Task { await openCamera() } }.disabled(locked)
-            PhotosPicker(selection: $photo, matching: .images, photoLibrary: .shared()) {
-                Label("从相册选择", systemImage: "photo")
-            }.disabled(locked)
-            if importing { ProgressView("正在处理照片…") }
+            .padding(.vertical, 8)
         }
+    }
+
+    /// 构建照片来源操作；参数：无；返回值：等宽相机和相册玻璃按钮；前景使用系统主色以保持图标对比度，锁定时禁止更换照片。
+    @ViewBuilder private var photoSourceControls: some View {
+        // 拍照回调无输入和返回值；显式点击后才请求相机权限。
+        Button { Task { await openCamera() } } label: {
+            Label("拍照", systemImage: "camera.fill")
+                .font(.body.weight(.semibold))
+                .foregroundStyle(.primary)
+                .fixedSize(horizontal: true, vertical: false)
+                .frame(maxWidth: .infinity, minHeight: 36)
+        }
+        .modifier(MealPhotoSourceStyle())
+        .disabled(locked)
+        PhotosPicker(selection: $photo, matching: .images, photoLibrary: .shared()) {
+            Label("从相册选择", systemImage: "photo.on.rectangle.angled")
+                .font(.body.weight(.semibold))
+                .foregroundStyle(.primary)
+                .fixedSize(horizontal: true, vertical: false)
+                .frame(maxWidth: .infinity, minHeight: 36)
+        }
+        .modifier(MealPhotoSourceStyle())
+        .disabled(locked)
     }
 
     /// 构建独立授权分组；参数：无；返回值：显式 header/footer 的合法 Section，开关和按钮只接收已确定类型的 Bool。
@@ -114,7 +162,7 @@ struct MealCaptureView: View {
         } header: {
             Text("照片分析")
         } footer: {
-            Text("照片不保存到饮食记录；识别仅估算可见食物，核对后才保存。")
+            Text("保存记录后，仅在本机保留照片缩略图，不随账号同步。识别结果为估算，请核对。")
         }
     }
 
@@ -145,17 +193,34 @@ struct MealCaptureView: View {
         }
     }
 
-    /// 构建错误、进度和安全重试区域；参数：无；返回值：不隐藏未确认保存状态的分组；重试沿用冻结正文。
+    /// 构建错误、进度和安全重试区域；参数：无；返回值：网络未确认与仅本机照片失败的独立状态；本机重试不再提交餐食接口。
     @ViewBuilder private var statusSections: some View {
         if let error { Section { InlineError(message: error) } }
         if busy { Section { ProgressView(submitted == nil ? "正在分析…" : "正在保存…") } }
         if submitted != nil && !busy {
             Section {
-                Text("保存结果尚未确认，请重试核对。重试不会重复创建记录。")
-                    .font(.caption).foregroundStyle(.secondary)
-                Button("重试保存") { Task { await save() } }
+                if confirmedMealID != nil {
+                    Text("饮食记录已保存，照片尚未保存在本机。")
+                        .font(.caption).foregroundStyle(.secondary)
+                    // 重试回调无输入和返回值；已有服务器确认时只重试本机缩略图写入。
+                    Button("重试保存照片") { Task { await save() } }
+                    // 放弃入口回调无输入和返回值；先要求独立确认，不直接清空照片或重新提交餐食。
+                    Button("不保留照片并完成", role: .destructive) { confirmingPhotoDiscard = true }
+                } else {
+                    Text("保存结果尚未确认，请重试核对。重试不会重复创建记录。")
+                        .font(.caption).foregroundStyle(.secondary)
+                    Button("重试保存") { Task { await save() } }
+                }
             }
         }
+    }
+
+    /// 在用户确认放弃照片后完成；参数：无；返回值：无；仅允许服务器已确认且无保存进行中的状态，释放内存照片并关闭页面，不发网络请求。
+    @MainActor private func finishWithoutPhoto() {
+        guard confirmedMealID != nil, !busy else { return }
+        image = nil
+        photo = nil
+        dismiss()
     }
 
     /// 构建导航操作；参数：无；返回值：取消和保存工具栏，未知保存结果期间保留离开锁定；无自动写入。
@@ -277,23 +342,61 @@ struct MealCaptureView: View {
             }
         }
     }
-    /// 确认保存本餐；参数：无；返回值：无；使用稳定UUID和冻结正文安全重试，网络结果未知时不允许修改后再次创建。
+    /// 保存本餐及本机照片；参数：无；返回值：无；冻结 UUID 和正文，落盘成功后保存附件，文件失败保留草稿供重试。
     @MainActor private func save() async {
         guard !busy, !importing, submitted != nil || NutritionMath.validMeal(items, note: note) else { return }
+        let owner = store.localDataScope
         if submitted == nil {
+            // 账号与请求正文同时冻结；会话或服务器变化后不得把已有餐食或照片归给另一个账号。
+            submittedOwner = owner
+            // 食物映射回调参数为已校验 MealItem；返回值为名称、克数及热量的白名单字典，正文不包含照片字节。
             submitted = ["id": recordID, "date": date, "meal_type": mealType, "items": items.compactMap(\.item).map { ["name": $0.name, "grams": $0.grams, "calories": $0.calories] as [String: Any] }, "note": note]
         }
+        guard submittedOwner == owner else { error = "账号或服务器已切换，请返回原账号完成保存。"; return }
         let session = store.cloudSessionID
         busy = true; error = nil; defer { busy = false }
+        if confirmedMealID == nil {
+            do {
+                let record: MealRecord = try await store.api.request("/health-management/meals", method: "POST", body: submitted)
+                guard session == store.cloudSessionID else { return }
+                // 保存应返回同一幂等 UUID；异常响应继续保留原请求，不能将照片绑定到其他餐食。
+                guard UUID(uuidString: record.id) == UUID(uuidString: recordID) else {
+                    throw APIError(status: 502, message: "服务器返回的餐食标识不一致，请重试核对。")
+                }
+                confirmedMealID = record.id
+            } catch {
+                guard session == store.cloudSessionID else { return }
+                self.error = nutritionFailure(error)
+                // 明确的写入前校验/授权失败可以继续修改；超时、5xx及解码失败保持快照，以相同幂等键核对。
+                if let api = error as? APIError, [400, 401, 403, 404, 413, 422].contains(api.status) {
+                    submitted = nil; submittedOwner = nil
+                }
+                return
+            }
+        }
+        guard let confirmedMealID else { return }
         do {
-            let _: MealRecord = try await store.api.request("/health-management/meals", method: "POST", body: submitted)
-            guard session == store.cloudSessionID else { return }
+            // 只有已确认 API 成功才写缩略图；失败不清空照片、不关闭页面，重试直接进入本段。
+            if let image { try MealThumbnailStore.save(image, owner: owner, mealID: confirmedMealID) }
             image = nil; dismiss()
         } catch {
-            guard session == store.cloudSessionID else { return }
-            self.error = nutritionFailure(error)
-            // 明确的写入前校验/授权失败可以继续修改；超时、5xx及解码失败保持快照，以相同幂等键核对。
-            if let api = error as? APIError, [400, 401, 403, 404, 413, 422].contains(api.status) { submitted = nil }
+            self.error = "照片保存失败：\(error.localizedDescription)"
+        }
+    }
+}
+
+/// 来源按钮默认使用系统玻璃；降低透明度时改用不透明系统背景，保持图标与文字对比度。
+private struct MealPhotoSourceStyle: ViewModifier {
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+
+    /// 按辅助功能偏好选择按钮外观；参数：content 为拍照或相册来源控件；返回值：使用玻璃或不透明底色的按钮，不改变选择和权限行为。
+    @ViewBuilder func body(content: Content) -> some View {
+        if reduceTransparency {
+            content
+                .buttonStyle(.bordered)
+                .background(Color(uiColor: .secondarySystemGroupedBackground), in: Capsule())
+        } else {
+            content.buttonStyle(.glass)
         }
     }
 }

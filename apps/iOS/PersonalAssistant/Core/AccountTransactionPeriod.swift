@@ -124,15 +124,21 @@ nonisolated struct FinanceMonthSummary: Decodable {
     var reimbursementReceived: String? = nil
 }
 
-/// 报销状态在记账、分期和详情中共享，不触发资金入账。
+/// 报销开关在记账、分期和详情中共享；兼容旧协议状态，不触发资金入账。
 nonisolated enum ReimbursementStatus {
-    static let options = ["", "pending", "reimbursed"]
-    /// 返回状态名称；参数：value 为状态键或旧记录空值；返回值：对应的简短中文名称，无副作用。
-    static func title(_ value: String?) -> String {
-        switch value ?? "" {
-        case "pending": return "待报销"
-        case "reimbursed": return "已报销"
-        default: return "无需报销"
-        }
+    /// 判断协议状态是否合法；参数：value 为待校验值；返回值：空值、待报销或已报销为 true，其他值拒绝；无副作用。
+    static func isValid(_ value: String) -> Bool {
+        value.isEmpty || value == "pending" || value == "reimbursed"
+    }
+
+    /// 读取报销标记；参数：value 为旧协议状态或缺失值；返回值：历史待报销、已报销均为开启，空值及未知值为关闭；无副作用。
+    static func isEnabled(_ value: String?) -> Bool {
+        value == "pending" || value == "reimbursed"
+    }
+
+    /// 转换开关为兼容协议值；参数：enabled 为目标开关值，original 为当前已保存或草稿状态；返回值：关闭为空字符串，开启默认 pending，已开启的历史状态原样保留；无副作用，不生成报销到账。
+    static func value(for enabled: Bool, preserving original: String?) -> String {
+        guard enabled else { return "" }
+        return isEnabled(original) ? original! : "pending"
     }
 }

@@ -1,30 +1,88 @@
 import XCTest
 
 extension LoanSwipeTests {
-    /// 验证日常待办的叶节点筛选、勾选、重新打开与树模式切换；参数：无；返回值：无；仅写入 Debug 内存样本，结束恢复树工作区。
+    /// 验证待办归属项目及勾选撤销；参数：无；返回值：无；仅写 Debug 内存样本，完成项保留在原项目，不产生独立待办首页。
     func testTodoExecutionAndCompletion() {
         let app = launch()
-        let workspace = app.segmentedControls["taskWorkspacePicker"]
-        workspace.buttons["待办事项"].tap()
-        defer { workspace.buttons["任务树"].tap() }
-        XCTAssertTrue(app.buttons["todoOpen.2"].waitForExistence(timeout: 10))
-        XCTAssertFalse(app.buttons["todoOpen.1"].exists, "主任务不冒充可勾选待办")
-        app.buttons["todoComplete.2"].tap()
-        XCTAssertTrue(app.buttons["todoOpen.2"].waitForNonExistence(timeout: 10))
-        let completed = app.buttons["todoFilter.completed"]
-        let filters = app.scrollViews["todoFilters"]
-        // 横向滚动只为显露真实筛选控件，不使用固定延时或操作屏幕坐标。
-        for _ in 0..<4 where !completed.isHittable { filters.swipeLeft() }
-        XCTAssertTrue(completed.isHittable)
-        completed.tap()
-        XCTAssertTrue(app.buttons["todoOpen.2"].waitForExistence(timeout: 10))
-        app.buttons["todoComplete.2"].tap()
-        XCTAssertTrue(app.buttons["todoOpen.2"].waitForNonExistence(timeout: 10))
-        let pending = app.buttons["todoFilter.pending"]
-        for _ in 0..<4 where !pending.isHittable { filters.swipeRight() }
-        XCTAssertTrue(pending.isHittable)
-        pending.tap()
-        XCTAssertTrue(app.buttons["todoOpen.2"].waitForExistence(timeout: 10))
+        selectTaskDisplay(app, "树状展示")
+        XCTAssertFalse(app.segmentedControls["taskWorkspacePicker"].exists)
+        XCTAssertFalse(app.staticTexts["今日安排"].exists)
+        XCTAssertFalse(app.buttons["todoOpen.2"].exists, "待办操作放在所属项目内")
+        app.buttons["taskProjectOpen.1"].tap()
+        let todo = app.buttons["todoOpen.2"]
+        let toggle = app.buttons["todoComplete.2"]
+        XCTAssertTrue(todo.waitForExistence(timeout: 10))
+        XCTAssertFalse(app.buttons["todoComplete.1"].exists, "主任务不冒充可勾选待办")
+        toggle.tap()
+        let reopen = app.buttons.matching(NSPredicate(format: "identifier == %@ AND label BEGINSWITH %@", "todoComplete.2", "重新打开")).firstMatch
+        XCTAssertTrue(reopen.waitForExistence(timeout: 10))
+        XCTAssertTrue(todo.exists, "已完成待办仍归属原项目并可撤销")
+        toggle.tap()
+        let pending = app.buttons.matching(NSPredicate(format: "identifier == %@ AND label BEGINSWITH %@", "todoComplete.2", "标记完成")).firstMatch
+        XCTAssertTrue(pending.waitForExistence(timeout: 10))
+        XCTAssertTrue(todo.exists)
+        back(app)
+        XCTAssertTrue(app.buttons["taskProjectOpen.1"].waitForExistence(timeout: 5))
+    }
+
+    /// 验证空项目默认创建待办、完成撤销及继承归属；参数：无；返回值：无；仅创建 v4 内存任务，通过进入、返回及重进检查项目隔离。
+    func testProjectTodoCreationStaysInProject() {
+        let app = launch("v4")
+        selectTaskDisplay(app, "树状展示")
+        app.buttons["taskProjectOpen.5"].tap()
+        XCTAssertTrue(app.staticTexts["暂无待办"].waitForExistence(timeout: 5))
+        app.buttons["taskProjectTodoAdd"].tap()
+        XCTAssertTrue(app.navigationBars["新建待办"].waitForExistence(timeout: 5))
+        XCTAssertEqual(app.buttons["taskEditorKind"].value as? String, "待办")
+        XCTAssertFalse(app.staticTexts["量化进度"].exists)
+        enter(app, "名称", "项目内新增待办")
+        app.buttons["保存"].tap()
+        XCTAssertTrue(app.staticTexts["项目内新增待办"].waitForExistence(timeout: 5))
+        let complete = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@ AND label == %@", "todoComplete.", "标记完成：项目内新增待办")).firstMatch
+        XCTAssertTrue(complete.waitForExistence(timeout: 5))
+        complete.tap()
+        let reopen = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@ AND label == %@", "todoComplete.", "重新打开，进度归零：项目内新增待办")).firstMatch
+        XCTAssertTrue(reopen.waitForExistence(timeout: 5))
+        reopen.tap()
+        XCTAssertTrue(complete.waitForExistence(timeout: 5))
+        back(app)
+        app.buttons["taskProjectOpen.1"].tap()
+        XCTAssertFalse(app.staticTexts["项目内新增待办"].exists)
+        XCTAssertFalse(app.buttons["todoComplete.3"].exists, "嵌套项目待办不混入上层")
+        app.buttons["taskProjectOpen.2"].tap()
+        XCTAssertTrue(app.buttons["todoComplete.3"].waitForExistence(timeout: 5))
+        back(app); back(app)
+        app.buttons["taskProjectOpen.5"].tap()
+        XCTAssertTrue(app.staticTexts["项目内新增待办"].waitForExistence(timeout: 5))
+    }
+
+    /// 验证新建菜单包含三种类型且切换保留输入；参数：无；返回值：无；仅操作 v4 内存项目的草稿，取消后不创建实体。
+    func testCreationKindSelectionPreservesDraft() {
+        let app = launch("v4")
+        selectTaskDisplay(app, "树状展示")
+        app.buttons["taskProjectOpen.5"].tap()
+        app.navigationBars.buttons["新建任务"].tap()
+        XCTAssertTrue(app.navigationBars["新建任务"].waitForExistence(timeout: 5))
+        enter(app, "名称", "保留类型切换草稿")
+        app.navigationBars["新建任务"].staticTexts["新建任务"].tap()
+        let picker = app.buttons["taskEditorKind"]
+        picker.tap()
+        XCTAssertTrue(app.buttons["待办"].exists)
+        XCTAssertTrue(app.buttons["任务"].exists)
+        XCTAssertTrue(app.buttons["主任务"].exists)
+        app.buttons["主任务"].tap()
+        XCTAssertTrue(app.navigationBars["新建主任务"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["图标"].exists)
+        XCTAssertFalse(app.staticTexts["量化进度"].exists)
+        picker.tap(); app.buttons["任务"].tap()
+        XCTAssertTrue(app.navigationBars["新建任务"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["量化进度"].exists)
+        picker.tap(); app.buttons["待办"].tap()
+        XCTAssertTrue(app.navigationBars["新建待办"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.staticTexts["量化进度"].exists)
+        XCTAssertEqual(app.textFields["名称"].firstMatch.value as? String, "保留类型切换草稿")
+        app.buttons["取消"].tap()
+        XCTAssertTrue(app.staticTexts["暂无待办"].waitForExistence(timeout: 5))
     }
 
     /// 切换本机任务展示；参数：app 为任务场景应用，title 为树状展示或逐级展示；返回值：无；必要时先退出原生搜索，通过真实菜单持久化偏好，不修改业务数据。
@@ -54,7 +112,7 @@ extension LoanSwipeTests {
         app.buttons["taskBrowseRow.2"].tap()
         XCTAssertTrue(app.buttons["taskBrowseRow.3"].waitForExistence(timeout: 5))
         app.buttons["taskBrowseDetails"].tap()
-        XCTAssertTrue(app.staticTexts["下级任务"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["待办事项"].waitForExistence(timeout: 5))
         back(app)
         app.buttons["taskBrowseBack"].tap()
         app.buttons["taskBrowseBack"].tap()
@@ -95,7 +153,7 @@ extension LoanSwipeTests {
         search.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: "阅读设计规范".count) + "产品发布")
         XCTAssertTrue(app.buttons["taskBrowseRow.1"].waitForExistence(timeout: 5))
         app.buttons["taskBrowseRow.1"].tap()
-        XCTAssertTrue(app.staticTexts["下级任务"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["待办事项"].waitForExistence(timeout: 5))
         back(app)
         search.tap(); search.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: "产品发布".count))
     }
@@ -358,17 +416,15 @@ extension LoanSwipeTests {
 
 /// 独立验收任务模块，只使用 Debug 内存样本；不登录真实账号或访问服务器。
 @MainActor final class LoanSwipeTests: XCTestCase {
-    /// 启动场景；参数 scenario 为固定场景名；返回独立启动的应用，进程重启清空样本。
+    /// 启动场景；参数：scenario 为固定场景名，默认 normal；返回值：独立启动的应用；仅使用 Debug 内存数据，重启清空样本，保持本机任务展示偏好。
     func launch(_ scenario: String = "normal") -> XCUIApplication {
         continueAfterFailure = false
         let app = XCUIApplication(bundleIdentifier: "personalassistant.lylab.vip.PersonalAssistant")
         app.launchArguments = ["--task-ui-scenario", scenario, "--tab", "tasks"]
         app.launch()
         XCTAssertTrue(app.navigationBars["任务"].waitForExistence(timeout: 15))
-        // 既有层级回归显式选择任务树；偏好跨重启保留，默认待办入口由独立测试覆盖。
-        let workspace = app.segmentedControls["taskWorkspacePicker"]
-        XCTAssertTrue(workspace.waitForExistence(timeout: 5))
-        workspace.buttons["任务树"].tap()
+        // 首页统一为任务列表，旧独立工作区偏好不再决定页面入口。
+        XCTAssertFalse(app.segmentedControls["taskWorkspacePicker"].exists)
         return app
     }
     /// 保存截图与可访问树；参数 app 为被验收应用、name 为唯一名字；返回无，仅写测试附件和临时目录。

@@ -47,5 +47,16 @@ enum AccountTransactionPeriodTests {
             row(6, "2026-09-21", amount: "999.00", status: "voided")
         ], accountID: 1)
         CoreTests.check(flow.outflow == 152 && flow.inflow == 50, "流入流出包含退款转账手续费，排除未入账与作废")
+        // 报销界面只保留开关；历史两态都必须显示为开启，关闭写入空值，开启保留历史协议值。
+        CoreTests.check(!ReimbursementStatus.isEnabled(nil) && !ReimbursementStatus.isEnabled("")
+                        && ReimbursementStatus.isEnabled("pending") && ReimbursementStatus.isEnabled("reimbursed"),
+                        "报销开关兼容历史状态")
+        CoreTests.check(ReimbursementStatus.value(for: false, preserving: "reimbursed") == ""
+                        && ReimbursementStatus.value(for: true, preserving: "reimbursed") == "reimbursed"
+                        && ReimbursementStatus.value(for: true, preserving: nil) == "pending",
+                        "报销开关保留已开启的历史值")
+        CoreTests.check(ReimbursementStatus.isValid("") && ReimbursementStatus.isValid("pending") && ReimbursementStatus.isValid("reimbursed")
+                        && !ReimbursementStatus.isValid("unknown"),
+                        "报销协议值校验")
     }
 }

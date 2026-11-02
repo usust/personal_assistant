@@ -1,6 +1,15 @@
 import SwiftUI
 
+/// 健康管理入口；健康画像与云端同步各自保持明确的数据边界。
 struct HealthView: View {
+    @Environment(AppStore.self) private var store
+    /// 构建账号隔离的健康首页；参数：无；返回值：健康画像视图；身份变化时销毁旧状态。
+    var body: some View { HealthDashboardView().id(store.cloudSessionID) }
+}
+
+/// 已有云端汇总、显式同步与报告入口。
+struct HealthCloudView: View {
+    var observed: HealthProfile? = nil
     @Environment(AppStore.self) private var store
     @State private var overview = HealthOverview(days: [], reports: [])
     @State private var busy = false
@@ -22,9 +31,9 @@ struct HealthView: View {
         List {
             Section {
                 NavigationLink {
-                    NutritionView().id(store.cloudSessionID)
+                    NutritionView(observed: observed).id(store.cloudSessionID)
                 } label: {
-                    AppDestinationLabel(title: "饮食热量", symbol: "fork.knife", color: .teal)
+                    AppDestinationLabel(title: "饮食记录", symbol: "fork.knife", color: .teal)
                 }
             } header: { AppSectionHeading(title: "饮食管理").textCase(nil) }
             if let readError {
@@ -101,7 +110,7 @@ struct HealthView: View {
         .listSectionSpacing(AppVisualStyle.sectionSpacing)
         .contentMargins(.horizontal, AppVisualStyle.pageInset, for: .scrollContent)
         .scrollContentBackground(.hidden).background(AppVisualStyle.canvas)
-        .navigationTitle("健康管理").navigationBarTitleDisplayMode(.inline)
+        .navigationTitle("同步与报告").navigationBarTitleDisplayMode(.inline)
         // 会话读取回调；参数：无；返回值：无；导航或云会话变化时清除旧账号状态，再执行只读加载。
         .task(id: [store.sessionID, store.cloudSessionID]) {
             let session = [store.sessionID, store.cloudSessionID]
@@ -264,11 +273,12 @@ struct HealthView: View {
         progress = "正在刷新服务器记录…"
         await readOverview(generation, cloudGeneration, failurePrefix: "报告已生成，刷新失败：")
     }
-    /// 清除本人云端健康信息；参数：无；返回值：无；调用前需 UI 确认，成功同步清空快照、已生成报告及读取错误，不改变 HealthKit 数据。
+    /// 清除本人云端健康信息及对应本机餐食缩略图；参数：无；返回值：无；调用前需 UI 确认，云端成功即清空快照，本机照片清理失败单独报告，不改变 HealthKit 数据或手动身体资料。
     private func clear() async {
         guard !busy, !Task.isCancelled else { return }
         let generation = store.sessionID
         let cloudGeneration = store.cloudSessionID
+        let owner = store.profile.map { MealThumbnailStore.scope(server: store.api.baseURL, userID: $0.id) }
         busy = true
         defer {
             if generation == store.sessionID && cloudGeneration == store.cloudSessionID { busy = false; progress = "" }
@@ -280,6 +290,10 @@ struct HealthView: View {
             applyOverview(HealthOverview(days: [], reports: []))
             uploadConsent = false
             message = "服务器健康数据已删除。"
+            if let owner {
+                do { try MealThumbnailStore.removeAll(owner: owner) }
+                catch { message = "服务器数据已删除，本机照片清理失败。请在健康首页重试清理本机数据。" }
+            }
         } catch {
             if isCurrent(generation, cloudGeneration), !(error is CancellationError) { message = error.localizedDescription }
         }

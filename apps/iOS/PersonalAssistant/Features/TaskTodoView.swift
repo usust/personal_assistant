@@ -1,289 +1,121 @@
 import SwiftUI
 import UIKit
 
-/// 日常执行工作区；复用任务树中的具体叶节点，所有写入遵循 AppStore 的身份与结果不明保护。
-struct TaskTodoView: View {
+/// 项目详情中的待办区；直接复用项目子任务，不建立独立待办首页或存储。
+struct TaskProjectTodos: View {
     @Environment(AppStore.self) private var store
-    @Binding var selectedListID: Int
-    @State private var filter = TaskTodoFilter.pending
-    @AppStorage("taskTodoSort") private var sortRaw = TaskTodoSort.deadline.rawValue
-    @State private var query = ""
+    let parentID: Int
+    /// 外层详情操作锁；为 true 时禁止与详情编辑、归档等写操作并发。
+    let disabled: Bool
+    /// 添加回调；参数：无；返回值：无；由项目详情打开继承父任务及清单的统一表单。
+    let onAdd: () -> Void
     @State private var now = Date.now
-    @State private var loading = true
-    @State private var loaded = false
-    @State private var error: String?
-    @State private var readSequence = 0
-    @State private var creating = false
-    @State private var creatingList = false
     @State private var editedTask: AssistantTask?
     @State private var openedTaskID: Int?
     @State private var pendingID: Int?
+    @State private var error: String?
 
-    /// 读取当前清单叶任务；参数：无；返回值：活动且可执行的节点，含完成节点以支持重新打开；无副作用。
-    private var actionable: [AssistantTask] { TaskTodoRules.actionable(in: store.tasks, listID: selectedListID) }
-    /// 读取当前列表；参数：无；返回值：按范围、搜索和本机排序筛选的叶节点；无副作用。
-    private var visible: [AssistantTask] {
-        TaskTodoRules.tasks(in: store.tasks, listID: selectedListID, filter: filter, query: query, sort: TaskTodoSort(rawValue: sortRaw) ?? .deadline, now: now)
-    }
-    /// 读取今日实际安排；参数：无；返回值：开始或截止是今天的叶节点，不把历史完成量冒充今日完成量；无副作用。
-    private var todayTasks: [AssistantTask] { actionable.filter { TaskTodoRules.isScheduledToday($0, now: now) } }
-    /// 读取逾期待办数量；参数：无；返回值：按完整快照和本地时间计算的数量；无副作用。
-    private var overdueCount: Int { actionable.filter { Values.taskIsOverdue($0, all: store.tasks, now: now) }.count }
-    /// 读取共享写保护；参数：无；返回值：任务写入、未知结果锁或本页操作期间为 true；无副作用。
-    private var writeDisabled: Bool { store.taskWriteBusy || store.taskWriteBlocked || pendingID != nil }
+    /// 获取当前项目；参数：无；返回值：最新快照中的项目，删除后为空；无副作用。
+    private var parent: AssistantTask? { store.tasks.first { $0.id == parentID } }
+    /// 获取项目直接下级；参数：无；返回值：保持原顺序的待办及嵌套项目，归档节点保留查看入口；无副作用。
+    private var children: [AssistantTask] { TaskTodoRules.projectChildren(of: parentID, in: store.tasks) }
+    /// 获取可执行叶标识；参数：无；返回值：仅当前项目下可勾选的活动直接子任务 ID；无副作用。
+    private var actionableIDs: Set<Int> { Set(TaskTodoRules.projectTodos(of: parentID, in: store.tasks).map(\.id)) }
+    /// 读取共享写保护；参数：无；返回值：外层操作、共享写锁或本区写入期间为 true；无副作用。
+    private var writeDisabled: Bool { disabled || store.taskWriteBusy || store.taskWriteBlocked || pendingID != nil }
+    /// 判断添加权限；参数：无；返回值：当前父级为活动主任务且共享写保护通过时为 true；无副作用。
+    private var canAdd: Bool { !writeDisabled && parent.map { TaskBrowsing.canCreateChild(of: $0, all: store.tasks) } == true }
 
-    /// 构建待办工作区；参数：无；返回值：原生分组列表、筛选、搜索及详情导航，刷新不重置筛选，分钟时钟处理跨日与具体时分截止。
+    /// 构建项目待办区；参数：无；返回值：项目内添加、直接子任务完成操作及嵌套项目导航；旧身份和失效归属会关闭选中内容，所有写入均由统一保护执行。
     var body: some View {
-        VStack(spacing: 0) {
-            filterBar
-            todoList
+        let actionable = actionableIDs
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Text("待办事项").font(.subheadline.weight(.medium)).foregroundStyle(.secondary)
+                Spacer()
+                if parent.map({ TaskBrowsing.canCreateChild(of: $0, all: store.tasks) }) == true {
+                    // 添加回调无参数、返回值无；再次校验父级与共享锁后，由详情页呈现统一表单。
+                    Button("添加待办", systemImage: "plus") { if canAdd { onAdd() } }
+                        .font(.subheadline).frame(minHeight: 44).disabled(!canAdd)
+                        .accessibilityIdentifier("taskProjectTodoAdd")
+                }
+            }
+            if children.isEmpty {
+                Text("暂无待办").font(.subheadline).foregroundStyle(.secondary).padding(.vertical, 8)
+            }
+            // 行构造回调输入项目直接子任务、返回待办行或项目导航；不跨层汇总后代，避免同一待办在多个项目重复出现。
+            ForEach(children) { child in
+                if TaskBrowsing.isContainer(child, all: store.tasks) {
+                    NavigationLink { TaskDetailView(taskID: child.id) } label: {
+                        HStack(spacing: 8) {
+                            TaskRow(task: child, showsContext: false, compact: true)
+                            Image(systemName: "chevron.right").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+                        }.contentShape(Rectangle())
+                    }.buttonStyle(.plain).accessibilityIdentifier("taskProjectOpen.\(child.id)")
+                } else {
+                    TaskTodoRow(task: child, context: "", now: now, busy: pendingID == child.id,
+                                disabled: writeDisabled || !actionable.contains(child.id),
+                                // 勾选回调无参数、返回值无；使用当前快照再验证归属并提交一次完成量更新。
+                                onToggle: { Task { await toggleCompletion(child) } },
+                                // 详情回调无参数、返回值无；只更新导航 ID，不更改任务或完成状态。
+                                onOpen: { openedTaskID = child.id })
+                        .contextMenu {
+                            Button("编辑", systemImage: "pencil") { editedTask = child }
+                                .disabled(writeDisabled || !actionable.contains(child.id))
+                        }
+                }
+            }
+            if let error { InlineError(message: error) }
         }
-        .background(AppVisualStyle.canvas)
-        .navigationTitle("任务").navigationBarTitleDisplayMode(.inline)
-        .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .automatic), prompt: "搜索待办与备注")
-        .toolbar { toolbar }
-        .sheet(isPresented: $creating) {
-            TaskEditor(task: nil, parent: nil, preferredListID: selectedListID,
-                       initialDeadline: filter == .today ? .now : nil,
-                       initialPriority: filter == .important ? "high" : "medium")
-        }
-        .sheet(isPresented: $creatingList) { ListEditor(list: nil) }
+        .accessibilityIdentifier("taskProjectTodos.\(parentID)")
+        // 编辑回调输入所选任务、返回统一编辑表单；提交沿用原任务 ID、父级与清单。
         .sheet(item: $editedTask) { TaskEditor(task: $0, parent: nil) }
         .navigationDestination(isPresented: Binding(
             get: { openedTaskID != nil },
-            // 导航关闭回调输入呈现状态、返回无；关闭详情后保留待办筛选与搜索。
+            // 导航关闭回调输入呈现状态、返回值无；返回后保持项目内待办顺序。
             set: { if !$0 { openedTaskID = nil } }
         )) {
             if let openedTaskID { TaskDetailView(taskID: openedTaskID) }
         }
         .task(id: store.cloudSessionID) {
-            // 页面任务回调无输入、返回无；身份改变后取消旧时钟与读取，任务只读刷新不触发写入。
-            await reload()
+            // 时钟回调无参数、返回值无；只更新相对日期和逾期文案，离页或身份变化时自动取消。
             while !Task.isCancelled {
-                do { try await Task.sleep(for: .seconds(60)) } catch { return }
                 now = .now
+                do { try await Task.sleep(for: .seconds(60)) } catch { return }
             }
         }
         .onChange(of: store.cloudSessionID) { _, _ in
-            // 身份回调输入旧新标识、返回无；不让原身份草稿、详情及请求反馈进入新身份。
-            readSequence += 1; error = nil; loaded = false; creating = false; creatingList = false
-            editedTask = nil; openedTaskID = nil; pendingID = nil; selectedListID = 0; query = ""
+            // 身份回调输入前后标识、返回值无；清除旧身份编辑、导航和请求反馈。
+            editedTask = nil; openedTaskID = nil; pendingID = nil; error = nil
         }
-        .onChange(of: store.lists) { _, lists in
-            // 清单回调输入新旧快照、返回无；清单删除后回到全部，不遗留不可见的新建归属。
-            if selectedListID != 0 && !lists.contains(where: { $0.id == selectedListID }) { selectedListID = 0 }
-        }
-        .onChange(of: store.tasks) { _, tasks in
-            // 快照回调输入新旧数组、返回无；只关闭已删除详情，不因勾选后离开筛选而闪退详情。
-            if let openedTaskID, !tasks.contains(where: { $0.id == openedTaskID }) { self.openedTaskID = nil }
-            if let editedTask, !tasks.contains(where: { $0.id == editedTask.id }) { self.editedTask = nil }
+        .onChange(of: store.tasks) { _, _ in
+            // 快照回调输入前后数组、返回值无；任务移走或父级归档后关闭旧草稿，不因完成离开待办状态而关闭详情。
+            if let editedTask, !TaskTodoRules.projectTodos(of: parentID, in: store.tasks).contains(where: { $0.id == editedTask.id }) {
+                self.editedTask = nil
+            }
+            if let openedTaskID, !children.contains(where: { $0.id == openedTaskID }) { self.openedTaskID = nil }
         }
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)) { _ in now = .now }
     }
 
-    /// 构建横向智能范围；参数：无；返回值：至少 44 点高的可滚动选择，不压缩小屏文字；只改变本页筛选。
-    private var filterBar: some View {
-        ScrollView(.horizontal) {
-            HStack(spacing: 8) {
-                ForEach(TaskTodoFilter.allCases, id: \.rawValue) { option in
-                    Button { filter = option } label: {
-                        Text(option.title).font(.subheadline.weight(filter == option ? .semibold : .regular))
-                            .padding(.horizontal, 14).frame(minHeight: 44)
-                            .foregroundStyle(filter == option ? Color.accentColor : Color.secondary)
-                            .background(filter == option ? Color.accentColor.opacity(0.1) : Color.clear, in: Capsule())
-                    }.buttonStyle(.plain)
-                        .accessibilityAddTraits(filter == option ? [.isSelected] : [])
-                        .accessibilityIdentifier("todoFilter.\(option.rawValue)")
-                }
-            }.padding(.horizontal, AppVisualStyle.pageInset)
-        }.scrollIndicators(.hidden).padding(.bottom, 4).accessibilityIdentifier("todoFilters")
-    }
-
-    /// 构建原生待办列表；参数：无；返回值：今日进度、错误和按时间组织的待办；未知结果时保留快照并提供只读刷新。
-    private var todoList: some View {
-        // 分组只计算一次，避免每个 Section 重复筛选、排序和解析全部截止日期。
-        let groups = Dictionary(grouping: visible) { TaskTodoRules.group(for: $0, now: now) }
-        return List {
-            Section { dailySummary }.listRowBackground(Color.clear)
-                .listRowInsets(EdgeInsets(top: 12, leading: 0, bottom: 4, trailing: 0))
-            if let notice = store.taskNotice {
-                Section { InlineError(message: notice); Button("刷新任务") { Task { await reload() } }.disabled(loading || store.taskWriteBusy) }
-            } else if let error {
-                Section { InlineError(message: error); Button("重新加载") { Task { await reload() } }.disabled(loading || store.taskWriteBusy) }
-            }
-            if loading && store.tasks.isEmpty { ProgressView("加载待办…").frame(maxWidth: .infinity).listRowBackground(Color.clear) }
-            else if visible.isEmpty && !loading && error == nil && store.taskNotice == nil {
-                if loaded { emptyState }
-                else {
-                    // 取消或被其他读取淘汰并不证明服务器无数据；仅提供刷新，不误导创建重复清单。
-                    Button("刷新待办", systemImage: "arrow.clockwise") { Task { await reload() } }
-                        .frame(maxWidth: .infinity, minHeight: 44).listRowBackground(Color.clear)
-                }
-            }
-            ForEach(TaskTodoGroup.allCases, id: \.rawValue) { group in
-                let tasks = groups[group] ?? []
-                if !tasks.isEmpty {
-                    Section {
-                        ForEach(tasks) { task in todoRow(task) }
-                    } header: {
-                        HStack {
-                            Text(group.title).foregroundStyle(group == .overdue ? Color.red : Color.secondary)
-                            Spacer()
-                            Text(tasks.count.formatted()).monospacedDigit()
-                        }.font(.subheadline.weight(.medium)).textCase(nil)
-                    }
-                }
-            }
-        }
-        .listStyle(.insetGrouped).listSectionSpacing(20)
-        .scrollContentBackground(.hidden)
-        .accessibilityIdentifier("taskTodoList")
-        .refreshable { await reload() }
-    }
-
-    /// 构建今日安排摘要；参数：无；返回值：真实今日计划完成比例及逾期入口，不使用缺失的完成日期推导“今日完成”；无业务写入。
-    private var dailySummary: some View {
-        let completed = todayTasks.filter { TaskTodoRules.isCompleted($0) }.count
-        return VStack(alignment: .leading, spacing: 12) {
-            ViewThatFits(in: .horizontal) {
-                HStack(alignment: .firstTextBaseline) {
-                    Text("今日安排").font(.title2.weight(.semibold))
-                    Spacer()
-                    summaryReading(completed: completed)
-                }
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("今日安排").font(.title2.weight(.semibold))
-                    summaryReading(completed: completed)
-                }
-            }
-            if !todayTasks.isEmpty {
-                ProgressView(value: Double(completed), total: Double(todayTasks.count)).tint(.accentColor)
-                    .accessibilityLabel("今日安排进度").accessibilityValue("\(completed) / \(todayTasks.count)")
-            }
-            if overdueCount > 0 {
-                Button { filter = .overdue } label: {
-                    Label("\(overdueCount) 项已逾期", systemImage: "clock.badge.exclamationmark")
-                        .font(.subheadline).foregroundStyle(.red).frame(minHeight: 44)
-                }.buttonStyle(.plain)
-            }
-        }.padding(.bottom, 4)
-    }
-
-    /// 构建安排读值；参数：completed 为今日安排中已完成数量；返回值：读值视图，初次加载不显示假零；无副作用。
-    private func summaryReading(completed: Int) -> some View {
-        Text(!loaded && store.tasks.isEmpty ? (loading ? "加载中" : "等待刷新") : todayTasks.isEmpty ? "暂无安排" : "已完成 \(completed) / \(todayTasks.count)")
-            .font(.subheadline).foregroundStyle(.secondary).monospacedDigit()
-    }
-
-    /// 构建空状态；参数：无；返回值：按搜索、清单与范围提供可执行入口，不把主任务树误称为数据丢失。
-    private var emptyState: some View {
-        VStack(spacing: 12) {
-            if !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                ContentUnavailableView.search(text: query)
-            } else {
-                ContentUnavailableView(store.lists.isEmpty ? "创建第一个清单" : filter == .completed ? "暂无已完成待办" : "当前没有待办", systemImage: filter == .completed ? "checkmark.circle" : "checklist")
-                if store.lists.isEmpty {
-                    Button("新建清单", systemImage: "folder.badge.plus") { creatingList = true }.buttonStyle(.glassProminent).disabled(writeDisabled)
-                } else if filter != .completed {
-                    Button("添加待办", systemImage: "plus") { creating = true }.buttonStyle(.glassProminent).disabled(writeDisabled)
-                }
-            }
-        }.frame(maxWidth: .infinity).padding(.vertical, 12).listRowBackground(Color.clear)
-    }
-
-    /// 构建顶部原生操作；参数：无；返回值：清单目录、新建及当前清单/排序菜单；偏好仅保存本机，不重排服务端任务。
-    @ToolbarContentBuilder
-    private var toolbar: some ToolbarContent {
-        ToolbarItem(placement: .topBarLeading) {
-            NavigationLink {
-                TaskDirectoryView { id, _, _ in selectedListID = id }
-            } label: { Label("我的清单", systemImage: "folder") }
-        }
-        ToolbarItemGroup(placement: .topBarTrailing) {
-            Menu {
-                Picker("清单", selection: $selectedListID) {
-                    Text("全部清单").tag(0)
-                    ForEach(store.lists) { Text($0.name).tag($0.id) }
-                }
-                Picker("排序", selection: $sortRaw) {
-                    ForEach(TaskTodoSort.allCases, id: \.rawValue) { Text($0.title).tag($0.rawValue) }
-                }
-            } label: {
-                Label(selectedListID == 0 ? "筛选与排序" : store.lists.first(where: { $0.id == selectedListID })?.name ?? "筛选与排序", systemImage: selectedListID == 0 ? "line.3.horizontal.decrease" : "line.3.horizontal.decrease.circle.fill")
-            }.accessibilityIdentifier("todoOptions")
-            Button("添加待办", systemImage: "plus") { creating = true }
-                .disabled(writeDisabled || store.lists.isEmpty || loading)
-                .accessibilityIdentifier("todoAdd")
-        }
-    }
-
-    /// 构建一行及原生滑动/上下文操作；参数：task 为当前快照具体叶节点；返回值：无嵌套按钮的行，操作仅启动受保护的单次写入。
-    private func todoRow(_ task: AssistantTask) -> some View {
-        TaskTodoRow(task: task, context: store.lists.first(where: { $0.id == task.listId })?.name ?? "", now: now,
-                    busy: pendingID == task.id, disabled: writeDisabled,
-                    onToggle: { Task { await toggleCompletion(task) } },
-                    onOpen: { openedTaskID = task.id })
-            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                Button("编辑", systemImage: "pencil") { editedTask = task }.tint(.blue).disabled(writeDisabled)
-                if !TaskTodoRules.isCompleted(task) {
-                    Button("明天", systemImage: "calendar.badge.clock") { Task { await moveToTomorrow(task) } }.tint(.orange).disabled(writeDisabled)
-                }
-            }
-            .contextMenu {
-                Button("编辑", systemImage: "pencil") { editedTask = task }.disabled(writeDisabled)
-                Button(task.priority == "high" ? "取消重要" : "标为重要", systemImage: "flag") {
-                    Task { await update(task, fields: ["priority": task.priority == "high" ? "medium" : "high"]) }
-                }.disabled(writeDisabled)
-            }
-    }
-
-    /// 更新当前叶任务；参数：task 为操作快照，fields 为调用点构造的白名单 PATCH；返回值：无；先验证身份内最新实体可执行，成功合并再刷新，未知结果不重发。
-    private func update(_ task: AssistantTask, fields: [String: Any]) async {
-        guard !writeDisabled, let current = TaskTodoRules.actionable(in: store.tasks).first(where: { $0.id == task.id }), current == task else { return }
+    /// 勾选或撤销项目待办；参数：task 为行显示时的具体叶任务快照；返回值：无；拒绝失效或跨项目快照，旧小数先编辑校正，仅 PATCH progressCompleted，错误保留数据且未知结果不重发。
+    private func toggleCompletion(_ task: AssistantTask) async {
+        guard !writeDisabled,
+              let current = TaskTodoRules.projectTodos(of: parentID, in: store.tasks).first(where: { $0.id == task.id }),
+              current == task else { return }
+        guard TaskTodoRules.canToggleCompletion(current) else { editedTask = current; return }
         let generation = store.cloudSessionID
-        pendingID = task.id
+        pendingID = current.id
         defer { if generation == store.cloudSessionID { pendingID = nil } }
         do {
-            // 写回调无参数，返回服务器确认实体；本地只在确认后修改，保留 AppStore 结果不明锁及会话校验。
+            // 写回调无参数、返回服务器确认实体；只提交完成量，撤销显式提交 0，不覆盖其他字段，汇总由原任务树负责。
             let saved: AssistantTask = try await store.writeTask {
-                try await store.api.request("/tasks/\(task.id)", method: "PATCH", body: fields)
+                try await store.api.request("/tasks/\(current.id)", method: "PATCH", body: TaskTodoRules.completionPatch(for: current))
             }
             store.upsertTask(saved); error = nil
             await store.refreshTaskWrite()
         } catch {
             guard generation == store.cloudSessionID, !(error is CancellationError) else { return }
-            self.error = error.localizedDescription
-        }
-    }
-
-    /// 勾选或打开历史进度校正；参数：task 为当前叶快照；返回值：无；不向只接受自然数的接口提交旧小数，校正必须由用户保存确认。
-    private func toggleCompletion(_ task: AssistantTask) async {
-        guard !writeDisabled else { return }
-        guard TaskTodoRules.canToggleCompletion(task) else { editedTask = task; return }
-        await update(task, fields: TaskTodoRules.completionPatch(for: task))
-    }
-
-    /// 将截止移至明天；参数：task 为选中任务；返回值：无；用操作时刻而非显示时钟计算，日期冲突不清空已有安排。
-    private func moveToTomorrow(_ task: AssistantTask) async {
-        guard let fields = TaskTodoRules.tomorrowPatch(for: task, now: .now) else {
-            error = "明天的截止早于开始时间，请在编辑中调整。"; return
-        }
-        await update(task, fields: fields)
-    }
-
-    /// 只读刷新；参数：无；返回值：无；同身份最新请求才更新本页反馈，失败保留旧快照，不将失败误作空列表。
-    private func reload() async {
-        let generation = store.cloudSessionID
-        readSequence += 1
-        let sequence = readSequence
-        loading = true; now = .now
-        defer { if generation == store.cloudSessionID && sequence == readSequence { loading = false } }
-        do {
-            try await store.loadTasks()
-            guard generation == store.cloudSessionID, sequence == readSequence, !Task.isCancelled else { return }
-            loaded = true; error = nil
-        } catch {
-            guard generation == store.cloudSessionID, sequence == readSequence, !(error is CancellationError), !Task.isCancelled else { return }
             self.error = error.localizedDescription
         }
     }
@@ -296,7 +128,9 @@ struct TaskTodoRow: View {
     let now: Date
     let busy: Bool
     let disabled: Bool
+    /// 完成回调；参数：无；返回值：无；调用方负责最新归属校验、写入保护及服务器确认。
     let onToggle: () -> Void
+    /// 详情回调；参数：无；返回值：无；调用方打开当前任务详情，不修改完成状态。
     let onOpen: () -> Void
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
@@ -319,10 +153,12 @@ struct TaskTodoRow: View {
                 VStack(alignment: .leading, spacing: 8) {
                     HStack(alignment: .firstTextBaseline, spacing: 8) {
                         Text(task.title).font(.body.weight(.medium))
-                            .foregroundStyle(completed ? .secondary : .primary)
-                            .strikethrough(completed).lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 2)
+                            .foregroundStyle(completed || task.archived ? .secondary : .primary)
+                            .strikethrough(completed || task.archived).lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 2)
                             .frame(maxWidth: .infinity, alignment: .leading)
-                        if task.priority == "high" {
+                        if task.archived {
+                            Image(systemName: "archivebox").font(.caption).foregroundStyle(.secondary).accessibilityLabel("已归档")
+                        } else if task.priority == "high" {
                             Image(systemName: "flag.fill").font(.caption).foregroundStyle(.orange).accessibilityLabel("重要")
                         }
                     }
@@ -348,7 +184,7 @@ struct TaskTodoRow: View {
     @ViewBuilder
     private var dueLabel: some View {
         if !task.endDate.isEmpty {
-            let overdue = !completed && Values.taskIsOverdue(task, all: [task], now: now)
+            let overdue = !completed && !task.archived && Values.taskIsOverdue(task, all: [task], now: now)
             Label(dateLabel(task.endDate) + (task.endTime.isEmpty ? "" : " " + task.endTime) + (overdue ? " · 逾期" : ""), systemImage: overdue ? "clock.badge.exclamationmark" : "calendar")
                 .foregroundStyle(overdue ? Color.red : Color.secondary)
         } else if !task.startDate.isEmpty {

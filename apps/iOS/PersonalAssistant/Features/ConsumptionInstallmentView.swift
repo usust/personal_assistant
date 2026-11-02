@@ -68,6 +68,11 @@ struct ConsumptionInstallmentView: View {
     @State private var initialized = false
     /// 判断是否可试算；参数：无；返回值：名称非空、期数为 2–480 且利息金额合法时为 true。
     private var valid: Bool { !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && (2...480).contains(periods) && startPeriod >= 1 && startPeriod <= periods && Values.validMoney(interest, positive: false) }
+    /// 报销开关与协议状态之间的绑定；参数：无；返回值：读取是否已开启，写入转换为兼容状态并保留已开启的历史值；无资金副作用。
+    private var reimbursementEnabled: Binding<Bool> {
+        Binding(get: { ReimbursementStatus.isEnabled(reimbursementStatus) },
+                set: { reimbursementStatus = ReimbursementStatus.value(for: $0, preserving: reimbursementStatus) })
+    }
     /// 构建消费分期表单；参数：无；返回值：名称入口、账单资料、预留开关、分期规则和试算结果。
     var body: some View {
         Form {
@@ -100,9 +105,7 @@ struct ConsumptionInstallmentView: View {
                     }.buttonStyle(.plain)
                 }
                 Section {
-                    Picker("报销状态", selection: $reimbursementStatus) {
-                        ForEach(ReimbursementStatus.options, id: \.self) { value in Text(ReimbursementStatus.title(value)).tag(value) }
-                    }
+                    Toggle("报销", isOn: reimbursementEnabled)
                     Toggle("不计收支", isOn: $excludeFromCashFlow)
                     Toggle("不计预算", isOn: $excludeFromBudget)
                 }
@@ -232,7 +235,7 @@ struct ConsumptionInstallmentView: View {
     }
     /// 生成试算失效标识；参数：无；返回值：资料或规则变化时不同的草稿键。
     private var draftKey: String { "\(reimbursementStatus)|\(interestCreditMode)|\(debtMode)|\(startPeriod)|\(restoredCredit)|\(categoryID)|\(notes)|\(name)|\(periods)|\(Values.day(firstDate))|\(interest)|\(interestMode)|\(rounding)|\(remainder)" }
-    /// 生成分期请求；参数：无；返回值：包含分类、备注及报销状态的规则，分类 0、空备注和空报销键表示显式清空。
+    /// 生成分期请求；参数：无；返回值：包含分类、备注及报销协议的规则，分类 0、空备注和空报销值表示显式清空。
     private var payload: [String: Any] { ["reimbursementStatus": reimbursementStatus, "interestCreditMode": interestCreditMode, "debtMode": debtMode, "startPeriod": startPeriod, "restoredCredit": restoredCredit.isEmpty ? "0.00" : restoredCredit, "categoryId": categoryID, "description": notes, "name": name, "periods": periods, "firstDate": Values.day(firstDate), "interest": interest, "interestMode": interestMode, "rounding": rounding, "remainder": remainder] }
     /// 初始化账单分期；参数：无；返回值：无，已保存时读取服务端计划，失败保留错误。
     private func initialize() async {

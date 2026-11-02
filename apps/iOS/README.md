@@ -38,6 +38,9 @@ apps/iOS/Tests/run.sh
 | AI 配置 | 列表、提供商、新建私有/共享配置 | `/setting/ai/providers`、`/setting/ai/provider_config`、`/setting/ai/provider_config/create` |
 | 管理员 | 用户列表、创建、字段更新、删除 | `/users`、`/users/register`、`/users/:id` |
 | 本机偏好 | 系统/浅色/深色 | UserDefaults，不调用已停用接口 |
+| 数据导出 | 带格式版本的 JSON 备份；全部账号数据及当前本机账本，或仅本机账本 | `/backup/export`（全部数据） |
+
+入口为「我的 → 设置 → 数据导出」，生成后通过系统“文件”保存到本机或 iCloud Drive。游客可离线导出本机账本，保留待同步命令与完整卡号；全部数据需同步部署新增后端接口。备份未加密，不含登录凭证、模型密钥和截图图片。本次只提供导出；未来导入需按文件版本转换并处理关联及同步重叠，详见 [备份格式与迁移约定](../../docs/data-backup.md)。
 
 API 的所有业务字段均以当前后端路由和模型为准。Web 虽保留信用卡、贷款、房贷等旧函数，但当前后端没有对应路由；日历和服务端个人偏好也停用，因此不展示无效入口。
 

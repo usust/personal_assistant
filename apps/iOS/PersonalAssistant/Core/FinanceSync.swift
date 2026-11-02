@@ -4,10 +4,6 @@ extension FinanceLocalStore {
     /// 财务请求统一入口；参数：path/method/body/query 沿用现有 API，api 用于绕过本地层的认证传输；返回值：API 信封；本地保存先完成，复杂操作联网失败保留表单输入。
     func handle(_ path: String, method: String, body: [String: Any]?, query: [URLQueryItem], api: APIClient) async throws -> Data {
         let normalizedPath = mappedPath(path), payload = mappedBody(body ?? [:])
-        if normalizedPath == "/finance/recurring/materialize" {
-            // 周期计划始终由服务器生成正式期次，读取本机时仅请求后台同步，不在设备重复生成。
-            onMutation?(); return try Self.envelope(NSNull())
-        }
         let items = query.map { item -> URLQueryItem in
             guard let value = item.value.flatMap(Int.init), ["accountId", "categoryId"].contains(item.name) else { return item }
             return URLQueryItem(name: item.name, value: String(mappedID(value, table: item.name == "accountId" ? "accounts" : "categories")))
@@ -87,25 +83,30 @@ extension FinanceLocalStore {
         guard enabled, api.token != nil else { return }
         guard !syncing else { return }
         let key = activeKey, server = api.baseURL, token = api.token
+        let authorization = syncAuthorization
         guard space["server"] as? String == server else { throw Self.failure("账号与服务器不匹配") }
         syncing = true; syncError = nil
         defer { syncing = false }
         do {
+            // 先校验整批关联记录映射，避免上传部分命令后才发现完整本机计划无法安全同步。
+            for command in queue { try Self.validatePlanSync(command) }
             // 上传过程允许界面继续写本机；按原有队列顺序处理，最多一批 200 项避免长期占用前台任务。
             for _ in 0..<200 {
                 guard let pending = queue.first else { break }
+                guard enabled, syncAuthorization == authorization else { throw CancellationError() }
+                for command in queue { try Self.validatePlanSync(command) }
                 guard let path = pending["path"] as? String, let method = pending["method"] as? String, let operationID = pending["operationId"] as? String else { throw Self.failure("本机同步队列损坏") }
                 let (operation, id) = try Self.command(mappedPath(path), method: method)
                 let payload: [String: Any] = ["operationId": operationID, "operation": operation, "id": id, "body": Self.cardSyncBody(mappedBody(pending["body"] as? [String: Any] ?? [:]))]
                 let data = try await api.networkData("/finance/sync/commands", method: "POST", body: payload)
-                guard activeKey == key, api.baseURL == server, api.token == token else { throw CancellationError() }
+                guard enabled, syncAuthorization == authorization, activeKey == key, api.baseURL == server, api.token == token else { throw CancellationError() }
                 guard let response = try JSONSerialization.jsonObject(with: data) as? [String: Any], let value = response["data"] else { throw Self.failure("同步响应无效") }
                 try acknowledge(pending, result: value)
             }
             // 队列未清空时不下载覆盖乐观投影；下一轮继续上传，避免同时重放已确认但快照尚未覆盖的命令。
             guard queue.isEmpty else { return }
             let data = try await api.networkData("/finance/sync/snapshot", method: "GET", body: nil)
-            guard activeKey == key, api.baseURL == server, api.token == token else { throw CancellationError() }
+            guard enabled, syncAuthorization == authorization, activeKey == key, api.baseURL == server, api.token == token else { throw CancellationError() }
             guard let envelope = try JSONSerialization.jsonObject(with: data) as? [String: Any], let snapshot = envelope["data"] as? [String: Any], snapshot["schemaVersion"] as? Int == 1 else { throw Self.failure("服务器尚不支持本机同步") }
             var next = space
             for table in ["accounts", "categories", "transactions", "presets"] {

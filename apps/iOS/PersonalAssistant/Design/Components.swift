@@ -159,3 +159,58 @@ struct OptionalDateTimeInput: View {
         }
     }
 }
+
+/// 紧凑液态玻璃开关样式；用于列表内的轻量布尔字段，体量小于系统开关，切换与状态语义仍由 Toggle 绑定承担。
+struct CompactGlassToggleStyle: ToggleStyle {
+    /// 开启状态的强调色；默认与应用根视图的 teal tint 一致，调用方可按语义覆盖。
+    var tint: Color = .teal
+
+    /// 构建开关行；参数：configuration 为系统提供的标签视图与开关绑定；返回值：左侧标签、右侧紧凑玻璃胶囊的整行视图；点击胶囊只切换绑定，业务写入仍由调用方在 set 回调中完成。
+    func makeBody(configuration: Configuration) -> some View {
+        HStack(spacing: 12) {
+            configuration.label
+            Spacer(minLength: 12)
+            CompactGlassSwitch(isOn: configuration.$isOn, tint: tint)
+        }
+    }
+}
+
+/// 紧凑玻璃胶囊开关本体；单独成 View 以便读取减少透明度、减少动态效果与可用状态等环境值。
+private struct CompactGlassSwitch: View {
+    /// 开关当前值；写入只切换绑定，不直接调用接口。
+    @Binding var isOn: Bool
+    /// 开启状态的强调色；关闭状态使用中性玻璃。
+    let tint: Color
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.isEnabled) private var isEnabled
+
+    /// 构建开关；参数：无；返回值：至少 44 点点击区域的紧凑玻璃胶囊，开启时玻璃带 tint 着色、关闭时保持中性，未启用时整体变淡；无业务副作用。
+    var body: some View {
+        Button { isOn.toggle() } label: {
+            // 轨道保持 44×26 的紧凑尺寸，白色圆点按状态左右切换，与系统开关方向一致。
+            ZStack(alignment: isOn ? .trailing : .leading) {
+                track.frame(width: 44, height: 26)
+                Circle().fill(.white).frame(width: 20, height: 20).padding(3)
+                    .shadow(color: .black.opacity(0.18), radius: 2, y: 1)
+            }
+            .frame(minWidth: 44, minHeight: 44)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .opacity(isEnabled ? 1 : 0.4)
+        .animation(reduceMotion ? nil : .snappy(duration: 0.22), value: isOn)
+        .accessibilityAddTraits(.isToggle)
+        .accessibilityValue(isOn ? "已开启" : "已关闭")
+    }
+
+    /// 绘制开关轨道；参数：无；返回值：常规透明度下为着色玻璃胶囊，减少透明度时改用系统实底以保证对比度；无副作用。
+    @ViewBuilder private var track: some View {
+        if reduceTransparency {
+            Capsule().fill(isOn ? tint : Color(uiColor: .tertiarySystemFill))
+        } else {
+            // 玻璃只承担开关这一操作层；tint 为空时保持中性玻璃，仍随背景呈现液态玻璃的透光边缘。
+            Color.clear.glassEffect(.regular.tint(isOn ? tint : nil).interactive(), in: Capsule())
+        }
+    }
+}

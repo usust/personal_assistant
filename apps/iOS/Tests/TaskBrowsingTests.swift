@@ -88,6 +88,77 @@ enum TaskBrowsingTests {
         defaults.set(TaskDisplayMode.tree.rawValue, forKey: TaskDisplayMode.storageKey)
         try check(defaults.string(forKey: TaskDisplayMode.storageKey) == "tree", "可切回树状偏好")
         try todoRules()
+        try projectTodos()
+        try editorKinds()
+    }
+
+    /// 验证待办类型和保存映射；参数：无；返回值：无；覆盖完成状态、量化草稿往返及历史节点识别，失败抛出断言，不读写外部数据。
+    private static func editorKinds() throws {
+        try check(TaskEditorKind.allCases.map(\.title) == ["待办", "任务", "主任务"], "新建类型包含三个明确选项")
+        try check(TaskEditorKind.todo.taskType == "subtask" && TaskEditorKind.task.taskType == "subtask" && TaskEditorKind.main.taskType == "main", "表单类型兼容现有服务端枚举")
+        let draft = TaskEditorKind.task.progressFields(total: "12", completed: "3", step: "2", unit: "章")
+        let todo = TaskEditorKind.todo.progressFields(total: "12", completed: "3", step: "2", unit: "章")
+        try check(todo["progressTotal"] as? String == "1" && todo["progressStep"] as? String == "1" && todo["progressUnit"] as? String == "次", "待办提交一次完成配置")
+        try check(todo["progressCompleted"] as? String == "0", "部分量化进度转待办仍未完成")
+        let completed = TaskEditorKind.todo.progressFields(total: "12", completed: "12", step: "2", unit: "章")
+        try check(completed["progressCompleted"] as? String == "1", "已完成任务切为待办保留完成状态")
+        let restored = TaskEditorKind.task.progressFields(total: "12", completed: "3", step: "2", unit: "章")
+        try check(NSDictionary(dictionary: draft).isEqual(to: restored), "切回量化任务保留总量、完成量、步长与单位草稿")
+        try check(TaskEditorKind.main.progressFields(total: "12", completed: "3", step: "2", unit: "章").isEmpty, "主任务不提交隐藏进度")
+        var simple = task(301, type: "subtask")
+        try check(TaskEditorKind.kind(for: simple, in: [simple]) == .todo, "标准一次完成叶任务可重新识别为待办")
+        simple.progressCompleted = 1
+        try check(TaskEditorKind.kind(for: simple, in: [simple]) == .todo, "已完成待办重开编辑保持类型")
+        simple.progressUnit = "本"
+        try check(TaskEditorKind.kind(for: simple, in: [simple]) == .task, "自定义单位不误识别为待办")
+        simple.progressUnit = "次"; simple.progressCompleted = 0.5
+        try check(TaskEditorKind.kind(for: simple, in: [simple]) == .task, "历史小数进度要求显式校正，不静默转为待办")
+        simple.progressCompleted = 0
+        let child = task(302, parent: simple.id, type: "subtask")
+        try check(TaskEditorKind.kind(for: simple, in: [simple, child]) == .task, "历史具体容器不转为待办")
+        let main = task(303)
+        try check(TaskEditorKind.kind(for: main, in: [main]) == .main, "空主任务仍保留主任务类型")
+    }
+
+    /// 验证项目内待办的归属和完成汇总；参数：无；返回值：无；使用纯内存快照覆盖跨项目、嵌套、移动、删除、归档及显式零值撤销，失败抛出断言。
+    private static func projectTodos() throws {
+        let project = task(201)
+        let todo = task(202, parent: 201, type: "subtask")
+        let nested = task(203, parent: 201)
+        let nestedTodo = task(204, parent: 203, type: "subtask")
+        let anotherProject = task(205)
+        let anotherTodo = task(206, parent: 205, type: "subtask")
+        let crossList = task(207, parent: 201, type: "subtask", list: 2)
+        let archived = task(208, parent: 201, type: "subtask", archived: true)
+        let all = [project, todo, nested, nestedTodo, anotherProject, anotherTodo, crossList, archived]
+        try check(TaskTodoRules.projectChildren(of: project.id, in: all).map(\.id) == [202, 203, 208], "项目仅展示同清单直接下级，嵌套项目有入口，归档待办可查看")
+        try check(TaskTodoRules.projectTodos(of: project.id, in: all).map(\.id) == [202], "勾选范围排除嵌套项目后代、其他项目、跨清单及归档待办")
+        try check(TaskTodoRules.projectTodos(of: nested.id, in: all).map(\.id) == [204], "进入嵌套项目后才能执行其待办")
+        try check(TaskTodoRules.projectChildren(of: 999, in: all).isEmpty, "不存在的项目不显示无归属待办")
+        try check(TaskTodoRules.projectTodos(of: todo.id, in: all).isEmpty, "叶任务不能作为待办项目")
+        try check(TaskTodoRules.projectChildren(of: task(209).id, in: [task(209)]).isEmpty, "空主任务没有伪造默认待办")
+
+        var moved = todo; moved.parentId = anotherProject.id
+        let movedAll = [project, moved, anotherProject]
+        try check(TaskTodoRules.projectTodos(of: project.id, in: movedAll).isEmpty, "移走待办后旧项目不能继续勾选")
+        try check(TaskTodoRules.projectTodos(of: anotherProject.id, in: movedAll).map(\.id) == [todo.id], "待办随现有父级移动到目标项目")
+        try check(TaskTodoRules.projectTodos(of: project.id, in: [todo]).isEmpty, "父项目删除后残留待办不能继续执行")
+        var archivedProject = project; archivedProject.archived = true
+        let archivedAll = [archivedProject, todo, nested, nestedTodo]
+        try check(TaskTodoRules.projectTodos(of: project.id, in: archivedAll).isEmpty, "归档项目内待办只读")
+        try check(TaskTodoRules.projectTodos(of: nested.id, in: archivedAll).isEmpty, "祖先归档后嵌套项目也不能勾选")
+        try check(TaskTodoRules.projectChildren(of: project.id, in: archivedAll).map(\.id) == [202, 203], "归档项目保留待办查看入口")
+
+        // 勾选直接更新原子任务数量，父项目汇总必须同步变化，撤销仍保留同一项目归属。
+        var completed = todo
+        completed.progressCompleted = TaskTodoRules.completionPatch(for: todo)["progressCompleted"] as! Double
+        try check(Values.progress(project, all: [project, completed]).fraction == 1, "待办完成直接计入原项目进度")
+        try check(TaskTodoRules.projectTodos(of: project.id, in: [project, completed]).map(\.id) == [todo.id], "完成项留在所属项目供撤销")
+        completed.progressCompleted = TaskTodoRules.completionPatch(for: completed)["progressCompleted"] as! Double
+        try check(completed.parentId == project.id && Values.progress(project, all: [project, completed]).fraction == 0, "撤销显式写入零且不改变项目归属")
+        let legacy = task(210, type: "subtask")
+        let legacyTodo = task(211, parent: 210, type: "subtask")
+        try check(TaskTodoRules.projectTodos(of: legacy.id, in: [legacy, legacyTodo]).map(\.id) == [211], "历史容器已有待办仍可操作，不要求重建数据")
     }
 
     /// 验证待办范围、时间边界与写入白名单；参数：无；返回值：无；纯内存样本，失败抛出断言，不联网也不读取真实偏好。
