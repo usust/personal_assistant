@@ -81,8 +81,13 @@ final class StubProtocol: URLProtocol, @unchecked Sendable {
         check(Values.tasks(in: "active", all: []).isEmpty && Values.tasks(in: "archived", all: []).isEmpty, "空快照归档范围均为空")
     }
 
-    /// 执行业务和传输回归；参数：无；返回值：无；验证机构兼容、精度、PATCH、进度、查询、错误与 401 行为，不连接实际 API。
+    /// 执行业务和传输回归；参数：无，环境变量 FINANCE_SYNC_TEST_ONLY=1 时只运行返现同步组；返回值：无；使用虚构数据，不连接实际 API，失败抛错或断言。
     @MainActor static func main() async throws {
+        try await FinanceOfflineTests.rebateSyncRegression()
+        if ProcessInfo.processInfo.environment["FINANCE_SYNC_TEST_ONLY"] == "1" {
+            print("\(count) finance sync tests passed")
+            return
+        }
         checkTaskArchiveVisibility()
         // 新入口回归仅使用虚构文本和内存任务；识别、层级规则及展示偏好不依赖网络或真实账本。
         try TextBookkeepingTests.run()

@@ -105,6 +105,14 @@ func (s *Service) SyncExecute(ctx context.Context, owner uint64, command SyncCom
 		if err != nil {
 			return err
 		}
+		// 只扩展新回执：沿用业务事务查询真实返现关系，旧回执仍在前面原样返回。
+		switch command.Operation {
+		case "finance.transaction.create", "finance.transaction.update", "finance.transaction.confirm":
+			out, err = syncTransactionResult(tx, owner, out)
+			if err != nil {
+				return err
+			}
+		}
 		// 序列化业务数据，供存储或响应使用。
 		result, err = json.Marshal(out)
 		if err != nil {
@@ -114,6 +122,33 @@ func (s *Service) SyncExecute(ctx context.Context, owner uint64, command SyncCom
 		return repository.CreateReceipt(tx, &domain.SyncReceipt{OwnerID: owner, OperationID: command.OperationID, Fingerprint: fingerprint, Result: string(result)})
 	})
 	return result, err
+}
+
+// syncTransactionResponse 保留父流水原有 JSON 字段，仅为新同步回执附加可选的真实返现 ID。
+type syncTransactionResponse struct {
+	domain.Transaction
+	SyncRebateTransactionID *uint64 `json:"syncRebateTransactionId,omitempty"`
+}
+
+// syncTransactionResult 构造同步流水响应；参数：tx 为当前业务事务，owner 为认证归属，out 必须为共享业务服务返回的父 Transaction；返回值：保留原字段的同步响应或类型、归属、数据库及关系不唯一错误；只读，错误由外层事务回滚业务写入和新回执，不改写旧回执。
+func syncTransactionResult(tx *gorm.DB, owner uint64, out any) (syncTransactionResponse, error) {
+	row, ok := out.(domain.Transaction)
+	if !ok || row.OwnerID != owner || row.ID == 0 {
+		return syncTransactionResponse{}, errors.New("同步流水响应无效")
+	}
+	response := syncTransactionResponse{Transaction: row}
+	var rebates []domain.Transaction
+	// 不依据当前返现金额或状态推断关系：历史墓碑仍需映射，重复关系必须拒绝而非任取一项。
+	if err := repository.ReadSyncRebates(tx, owner, row.ID, &rebates); err != nil {
+		return syncTransactionResponse{}, err
+	}
+	if len(rebates) > 1 {
+		return syncTransactionResponse{}, ErrConflict
+	}
+	if len(rebates) == 1 {
+		response.SyncRebateTransactionID = &rebates[0].ID
+	}
+	return response, nil
 }
 
 // SyncSnapshot 返回同一用户锁事务中的完整账本；参数：ctx 为请求上下文，owner 为认证用户；返回值：包含隐藏账户和删除状态的快照或错误，无跨用户数据。首版全量替换避免时间戳分页遗漏，派生分期先补记。

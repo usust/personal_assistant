@@ -87,14 +87,25 @@ extension FinanceLocalStore {
         guard space["server"] as? String == server else { throw Self.failure("账号与服务器不匹配") }
         syncing = true; syncError = nil
         defer { syncing = false }
+        var failedCommand: [String: Any]?
+        var phase = "上传"
         do {
             // 先校验整批关联记录映射，避免上传部分命令后才发现完整本机计划无法安全同步。
             for command in queue { try Self.validatePlanSync(command) }
             // 上传过程允许界面继续写本机；按原有队列顺序处理，最多一批 200 项避免长期占用前台任务。
             for _ in 0..<200 {
                 guard let pending = queue.first else { break }
+                failedCommand = pending; phase = "上传"
                 guard enabled, syncAuthorization == authorization else { throw CancellationError() }
                 for command in queue { try Self.validatePlanSync(command) }
+                // 旧回执没有返现编号时，先补身份再发送子项；不能等待队列清空，也不能安装快照覆盖未上传内容。
+                if try !unresolvedRebateReferences(pending).isEmpty {
+                    phase = "恢复返现关联"
+                    let data = try await api.networkData("/finance/sync/snapshot", method: "GET", body: nil)
+                    guard enabled, syncAuthorization == authorization, activeKey == key, api.baseURL == server, api.token == token else { throw CancellationError() }
+                    try recoverRebateReferences(pending, data: data)
+                    phase = "上传"
+                }
                 guard let path = pending["path"] as? String, let method = pending["method"] as? String, let operationID = pending["operationId"] as? String else { throw Self.failure("本机同步队列损坏") }
                 let (operation, id) = try Self.command(mappedPath(path), method: method)
                 let payload: [String: Any] = ["operationId": operationID, "operation": operation, "id": id, "body": Self.cardSyncBody(mappedBody(pending["body"] as? [String: Any] ?? [:]))]
@@ -105,6 +116,7 @@ extension FinanceLocalStore {
             }
             // 队列未清空时不下载覆盖乐观投影；下一轮继续上传，避免同时重放已确认但快照尚未覆盖的命令。
             guard queue.isEmpty else { return }
+            failedCommand = nil; phase = "下载"
             let data = try await api.networkData("/finance/sync/snapshot", method: "GET", body: nil)
             guard enabled, syncAuthorization == authorization, activeKey == key, api.baseURL == server, api.token == token else { throw CancellationError() }
             guard let envelope = try JSONSerialization.jsonObject(with: data) as? [String: Any], let snapshot = envelope["data"] as? [String: Any], snapshot["schemaVersion"] as? Int == 1 else { throw Self.failure("服务器尚不支持本机同步") }
@@ -142,9 +154,100 @@ extension FinanceLocalStore {
             next["lastSync"] = Date.now.timeIntervalSince1970
             try saveSpace(next)
         } catch {
-            if activeKey == key { syncError = error.localizedDescription }
-            throw error
+            guard !(error is CancellationError), enabled, syncAuthorization == authorization,
+                  activeKey == key, api.baseURL == server, api.token == token else { throw CancellationError() }
+            let reported = syncFailure(error, pending: failedCommand, phase: phase)
+            syncError = reported.localizedDescription
+            throw reported
         }
+    }
+
+    /// 查找命令引用的未映射返现；参数：pending 为原始队列命令；返回值：本机子 ID 到云端父 ID 的关系，无关命令返回空；关系歧义或父编号未确认时抛错，不修改账本。
+    func unresolvedRebateReferences(_ pending: [String: Any]) throws -> [Int: Int] {
+        var references = Self.transactionReferences(pending["body"] as? [String: Any] ?? [:])
+        let parts = (pending["path"] as? String ?? "").split(separator: "/")
+        if parts.count > 2, ["transactions", "installments"].contains(String(parts[1])), let id = Int(parts[2]) { references.insert(id) }
+        var unresolved: [Int: Int] = [:]
+        for localID in references where localID >= 1_000_000_000_000 && mappedID(localID, table: "transactions") == localID {
+            let candidates = rows("transactions").filter { Self.id($0) == localID }
+            guard candidates.count <= 1 else { throw Self.failure("本机返现编号重复") }
+            guard let child = candidates.first, Self.id(child, "rebateParentId") != 0 else { continue }
+            let parentID = mappedID(Self.id(child, "rebateParentId"), table: "transactions")
+            guard parentID > 0, parentID < 1_000_000_000_000 else { throw Self.failure("返现原转账尚未同步") }
+            guard rows("transactions").filter({ mappedID(Self.id($0, "rebateParentId"), table: "transactions") == parentID }).count == 1 else {
+                throw Self.failure("本机返现关联不唯一")
+            }
+            unresolved[localID] = parentID
+        }
+        return unresolved
+    }
+
+    /// 提取正文中的流水引用；参数：body 为原始 JSON 字典；返回值：已知流水外键 ID 集合，不包含金额和其他整数，无副作用。
+    static func transactionReferences(_ body: [String: Any]) -> Set<Int> {
+        var result = Set<Int>()
+        for (key, value) in body {
+            if referenceTable(key) == "transactions", let id = value as? NSNumber { result.insert(id.intValue) }
+            else if let nested = value as? [String: Any] { result.formUnion(transactionReferences(nested)) }
+        }
+        return result
+    }
+
+    /// 从旧协议快照恢复所需返现身份；参数：pending 为仍在队首的命令，data 为已验证当前会话的响应；返回值：无；仅原子保存身份，不安装远端业务数据或移除命令，缺失/歧义/落盘错误保留原状态。
+    func recoverRebateReferences(_ pending: [String: Any], data: Data) throws {
+        guard queue.first?["operationId"] as? String == pending["operationId"] as? String,
+              let envelope = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let snapshot = envelope["data"] as? [String: Any], snapshot["schemaVersion"] as? Int == 1,
+              let transactions = snapshot["transactions"] as? [[String: Any]],
+              ["accounts", "categories", "presets"].allSatisfy({ snapshot[$0] is [[String: Any]] }) else {
+            throw Self.failure("返现关联同步响应无效")
+        }
+        // 网络等待期间可能继续记账，因此基于最新空间重新验证关系，不能提交请求前的账本副本。
+        let references = try unresolvedRebateReferences(pending)
+        var next = space
+        for (localID, parentID) in references {
+            let candidates = transactions.filter { Self.id($0, "rebateParentId") == parentID }
+            guard candidates.count == 1, let child = candidates.first else { throw Self.failure("云端返现关联缺失或不唯一") }
+            let remoteID = Self.id(child)
+            guard remoteID != parentID, transactions.filter({ Self.id($0) == remoteID }).count == 1 else { throw Self.failure("云端返现编号无效") }
+            try Self.mapRebateIdentity(localID: localID, remoteID: remoteID, space: &next)
+        }
+        try saveSpace(next)
+    }
+
+    /// 更新单个返现子项身份；参数：localID 为本机临时编号，remoteID 为明确关联的云端编号，space 为待提交副本；返回值：无；拒绝编号冲突，只改 ID/外键/别名，不覆盖余额或用户输入。
+    static func mapRebateIdentity(localID: Int, remoteID: Int, space: inout [String: Any]) throws {
+        guard localID >= 1_000_000_000_000, remoteID > 0, remoteID < 1_000_000_000_000 else { throw failure("返现同步编号无效") }
+        var aliases = space["aliases"] as? [String: Int] ?? [:]
+        let key = "transactions:" + String(localID)
+        guard aliases[key] == nil || aliases[key] == remoteID else { throw failure("返现同步编号冲突") }
+        let transactions = space["transactions"] as? [[String: Any]] ?? []
+        guard transactions.filter({ id($0) == localID }).count == 1,
+              !transactions.contains(where: { id($0) == remoteID }) else { throw failure("返现同步记录冲突") }
+        aliases[key] = remoteID; space["aliases"] = aliases
+        for table in ["accounts", "categories", "transactions", "presets"] {
+            var records = space[table] as? [[String: Any]] ?? []
+            for index in records.indices {
+                if table == "transactions", id(records[index]) == localID { records[index]["id"] = remoteID }
+                records[index] = replaceReferences(records[index], table: "transactions", old: localID, new: remoteID)
+            }
+            space[table] = records
+        }
+    }
+
+    /// 为失败命令补充定位信息；参数：error 为原错误，pending 为失败命令或 nil，phase 为当前同步阶段；返回值：保留 HTTP 状态的错误，不包含正文、凭证或卡号，无副作用。
+    func syncFailure(_ error: Error, pending: [String: Any]?, phase: String) -> Error {
+        guard let pending else { return error }
+        let path = mappedPath(pending["path"] as? String ?? "")
+        let command = try? Self.command(path, method: pending["method"] as? String ?? "")
+        let operation = command?.0 ?? "未知操作"
+        let target = command?.1 ?? 0
+        let operationID = pending["operationId"] as? String ?? "未知"
+        let parts = operation.split(separator: ".").map(String.init)
+        let resources = ["transaction": "流水", "account": "账户", "category": "分类", "preset": "预设", "installment": "分期", "loan": "贷款"]
+        let actions = ["create": "新增", "update": "修改", "confirm": "确认", "delete": "删除", "void": "冲销", "refund": "退款", "archive": "归档", "finish": "结清"]
+        let label = parts.count == 3 ? (actions[parts[2]] ?? parts[2]) + (resources[parts[1]] ?? parts[1]) : operation
+        let message = "\(phase)·\(label) #\(target)：\(error.localizedDescription)（操作 \(operationID.prefix(8))）"
+        return APIError(status: (error as? APIError)?.status ?? 0, message: message)
     }
 
     /// 生成同步资料；参数：body 为已校验本机请求；返回值：卡片号码替换为尾号的上传副本，不改变本机号码或其他字段。
@@ -197,6 +300,18 @@ extension FinanceLocalStore {
                 // 分类可能与服务器内置目录同名；合并的是服务器明确返回的同一 ID，不是账户名称猜测。
                 var seen = Set<Int>()
                 next[collection] = records.filter { seen.insert(Self.id($0)).inserted }
+            }
+        }
+        if table == "transactions", let response = result as? [String: Any], response["syncRebateTransactionId"] != nil {
+            let childID = Self.id(response, "syncRebateTransactionId")
+            let children = (next["transactions"] as? [[String: Any]] ?? []).filter { Self.id($0, "rebateParentId") == remoteID }
+            guard remoteID > 0, childID > 0, childID < 1_000_000_000_000, childID != remoteID, children.count <= 1 else {
+                throw Self.failure("返现同步关联无效")
+            }
+            if let child = children.first {
+                let oldID = Self.id(child)
+                if oldID >= 1_000_000_000_000 { try Self.mapRebateIdentity(localID: oldID, remoteID: childID, space: &next) }
+                else if oldID != childID { throw Self.failure("返现同步编号冲突") }
             }
         }
         var results = next["results"] as? [String: Any] ?? [:]

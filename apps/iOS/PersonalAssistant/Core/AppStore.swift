@@ -269,11 +269,12 @@ final class AppStore {
             await self?.syncFinance()
         }
     }
-    /// 同步当前账号并刷新本地汇总；参数：无；返回值：无；先验证令牌身份，网络失败保留数据、下次自动重试。
+    /// 同步当前账号并刷新本地汇总；参数：无；返回值：无；先验证令牌身份，失败保留数据与定位信息，取消及失效授权不写回错误。
     func syncFinance() async {
         guard !isPreview, !isAuthenticating, let finance, finance.enabled, api.token != nil, !finance.syncing else { return }
         let generation = sessionID
         let cloudGeneration = cloudSessionID
+        let authorization = finance.syncAuthorization
         do {
             if !identityVerified {
                 let user: Profile = try await api.request("/users/me")
@@ -283,7 +284,13 @@ final class AppStore {
             try await finance.synchronize(api: api)
             guard generation == sessionID, cloudGeneration == cloudSessionID, !isAuthenticating else { return }
             try await loadFinance()
-        } catch { if generation == sessionID, cloudGeneration == cloudSessionID { finance.syncError = error.localizedDescription } }
+        } catch is CancellationError {
+            // 暂停或切换会话只终止本轮，不把旧请求状态写入当前账号。
+        } catch {
+            if generation == sessionID, cloudGeneration == cloudSessionID, finance.syncAuthorization == authorization, finance.enabled {
+                finance.syncError = error.localizedDescription
+            }
+        }
     }
 
     /// 刷新 AI 配置；参数：无；返回值：无；要求云身份可用，跨云会话响应取消；首次使用服务端默认配置，读取失败抛错。

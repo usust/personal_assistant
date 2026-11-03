@@ -43,6 +43,7 @@ xcrun swiftc -module-cache-path "$BUILD_DIR/module-cache" -parse-as-library -swi
   "$PROJECT_ROOT/Tests/TextBookkeepingTests.swift" \
   "$PROJECT_ROOT/Tests/TaskBrowsingTests.swift" \
   "$PROJECT_ROOT/Tests/FinanceOfflineTests.swift" \
+  "$PROJECT_ROOT/Tests/FinanceRebateSyncTests.swift" \
   "$PROJECT_ROOT/Tests/CoreTests.swift" -o "$BUILD_DIR/core-tests"
 cp "$PROJECT_ROOT/PersonalAssistant/Resources/AccountKinds.json" "$BUILD_DIR/AccountKinds.json"
 cp "$PROJECT_ROOT/PersonalAssistant/Resources/AccountProviders.json" "$BUILD_DIR/AccountProviders.json"
