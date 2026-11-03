@@ -9,6 +9,8 @@ import (
 	"strings"
 	"testing"
 
+	"gorm.io/gorm"
+
 	domain "personal_assistant_server/internal/finance/model"
 )
 
@@ -419,5 +421,248 @@ func TestSyncCategoryTombstoneTransactionReferences(t *testing.T) {
 	}
 	if err := s.db.Model(&domain.Event{}).Where("operation = ?", "finance.transaction.confirm").Count(&count).Error; err != nil || count != 1 {
 		t.Fatalf("确认回执重放产生额外审计: %d %v", count, err)
+	}
+}
+
+// syncRebateFixture 创建已迁移同步回执的转账环境；参数：t 为测试上下文；返回值：服务和带返现的转账输入；副作用：仅写入独立临时数据库。
+func syncRebateFixture(t *testing.T) (*Service, map[string]any) {
+	t.Helper()
+	s := fixture(t)
+	if err := s.db.AutoMigrate(&domain.SyncReceipt{}); err != nil {
+		t.Fatal(err)
+	}
+	from := must(t, s, "finance.account.create", 0, map[string]any{"name": "转出", "balance": "100.00"}).(domain.Account)
+	to := must(t, s, "finance.account.create", 0, map[string]any{"name": "转入"}).(domain.Account)
+	body := transactionBody("sync-rebate-payment", from.ID, "transfer", "10.00")
+	body["targetAccountId"], body["rebate"] = to.ID, "1.00"
+	return s, body
+}
+
+// assertSyncTransaction 验证响应保留父流水的全部字段且仅按需增加返现 ID；参数：t 为测试上下文，raw 为同步 JSON，parent 为预期父流水，rebateID 为预期关联 ID，零表示省略；返回值：无，失败终止测试；无数据库副作用。
+func assertSyncTransaction(t *testing.T, raw json.RawMessage, parent domain.Transaction, rebateID uint64) {
+	t.Helper()
+	var got map[string]json.RawMessage
+	if err := json.Unmarshal(raw, &got); err != nil {
+		t.Fatal(err)
+	}
+	field, present := got["syncRebateTransactionId"]
+	if rebateID == 0 {
+		if present {
+			t.Fatalf("无返现时未省略字段: %s", raw)
+		}
+	} else {
+		var id uint64
+		if err := json.Unmarshal(field, &id); err != nil || id != rebateID {
+			t.Fatalf("关联 ID 错误: %s %v，预期 %d", raw, err, rebateID)
+		}
+	}
+	delete(got, "syncRebateTransactionId")
+	encoded, err := json.Marshal(parent)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var want map[string]json.RawMessage
+	if err := json.Unmarshal(encoded, &want); err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != len(want) {
+		t.Fatalf("父流水字段数量变化: %s / %s", raw, encoded)
+	}
+	for key, value := range want {
+		if string(got[key]) != string(value) {
+			t.Fatalf("父流水字段 %s 变化: %s / %s", key, got[key], value)
+		}
+	}
+}
+
+// TestSyncRebateEntrypoints 验证三入口的真实关联、完整父字段、保存新回执和原样重放；参数：t 为测试上下文；返回值：无；仅写入临时数据库。
+func TestSyncRebateEntrypoints(t *testing.T) {
+	for _, operation := range []string{"finance.transaction.create", "finance.transaction.update", "finance.transaction.confirm"} {
+		// 子测试参数 t 为独立测试上下文；返回值：无；分别验证每个入口，不共享数据库。
+		t.Run(operation, func(t *testing.T) {
+			s, body := syncRebateFixture(t)
+			var id uint64
+			var input any = body
+			if operation == "finance.transaction.update" {
+				body["rebate"] = "0"
+				parent := must(t, s, "finance.transaction.create", 0, body).(domain.Transaction)
+				id, input = parent.ID, map[string]any{"rebate": "1.00"}
+			} else if operation == "finance.transaction.confirm" {
+				out, err := execute(s, 1, "finance.transaction.create", 0, body, "ai")
+				if err != nil {
+					t.Fatal(err)
+				}
+				id, input = out.(domain.Transaction).ID, map[string]any{}
+			}
+			command := syncTestCommand("sync-rebate-entry", operation, id, input)
+			first, err := s.SyncExecute(context.Background(), 1, command)
+			if err != nil {
+				t.Fatal(err)
+			}
+			var parent domain.Transaction
+			if err := json.Unmarshal(first, &parent); err != nil {
+				t.Fatal(err)
+			}
+			if err := s.db.First(&parent, parent.ID).Error; err != nil {
+				t.Fatal(err)
+			}
+			child := rebateChild(t, s, parent.ID)
+			assertSyncTransaction(t, first, parent, child.ID)
+			// 创建业务的 requestId 去重与同步 operationId 去重独立，换同步键仍应返回同一真实父子 ID。
+			if operation == "finance.transaction.create" {
+				retry := command
+				retry.OperationID = "sync-rebate-new-key"
+				again, err := s.SyncExecute(context.Background(), 1, retry)
+				if err != nil {
+					t.Fatal(err)
+				}
+				assertSyncTransaction(t, again, parent, child.ID)
+				// 当前返现归零也不能丢掉已有子流水的墓碑映射。
+				removed, err := s.SyncExecute(context.Background(), 1, syncTestCommand("sync-rebate-remove", "finance.transaction.update", parent.ID, map[string]any{"rebate": "0", "rebateAccountId": nil, "rebatePending": false}))
+				if err != nil {
+					t.Fatal(err)
+				}
+				var updated domain.Transaction
+				if err := s.db.First(&updated, parent.ID).Error; err != nil {
+					t.Fatal(err)
+				}
+				assertSyncTransaction(t, removed, updated, child.ID)
+			}
+			var receipt domain.SyncReceipt
+			if err := s.db.Where("operation_id = ?", command.OperationID).First(&receipt).Error; err != nil || receipt.Result != string(first) {
+				t.Fatalf("新字段未保存到回执: %+v %v", receipt, err)
+			}
+			// 后续业务变化不能使同一回执重新计算或重复入账。
+			must(t, s, "finance.transaction.void", parent.ID, map[string]any{})
+			replayed, err := s.SyncExecute(context.Background(), 1, command)
+			if err != nil || string(replayed) != string(first) {
+				t.Fatalf("重放变化: %s %s %v", first, replayed, err)
+			}
+			changed := command
+			changed.Body = json.RawMessage(`{"notes":"不同正文"}`)
+			if _, err := s.SyncExecute(context.Background(), 1, changed); !errors.Is(err, ErrConflict) {
+				t.Fatalf("指纹冲突失效: %v", err)
+			}
+		})
+	}
+}
+
+// TestSyncRebateHistoricalAndIsolation 验证零返现省略、跨用户关联隔离及 deleted/voided 仍映射；参数：t 为测试上下文；返回值：无；仅修改临时数据库的历史状态。
+func TestSyncRebateHistoricalAndIsolation(t *testing.T) {
+	s, body := syncRebateFixture(t)
+	body["rebate"] = "0"
+	parent := must(t, s, "finance.transaction.create", 0, body).(domain.Transaction)
+	// 模拟历史数据缺少唯一索引，证明查询仍按 owner 隔离，不借助全局索引掩盖问题。
+	if err := s.db.Migrator().DropIndex(&domain.Transaction{}, "RebateParentID"); err != nil {
+		t.Fatal(err)
+	}
+	foreign := domain.Transaction{OwnerID: 2, RebateParentID: &parent.ID, Status: "posted"}
+	if err := s.db.Create(&foreign).Error; err != nil {
+		t.Fatal(err)
+	}
+	command := syncTestCommand("sync-no-rebate-id", "finance.transaction.confirm", parent.ID, map[string]any{})
+	raw, err := s.SyncExecute(context.Background(), 1, command)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assertSyncTransaction(t, raw, parent, 0)
+	if _, err := s.SyncExecute(context.Background(), 2, command); !errors.Is(err, ErrNotFound) {
+		t.Fatalf("父流水越权: %v", err)
+	}
+	child := domain.Transaction{OwnerID: 1, RebateParentID: &parent.ID, Status: "deleted"}
+	if err := s.db.Create(&child).Error; err != nil {
+		t.Fatal(err)
+	}
+	for _, status := range []string{"deleted", "voided"} {
+		if err := s.db.Model(&child).Update("status", status).Error; err != nil {
+			t.Fatal(err)
+		}
+		command.OperationID = "sync-history-" + status
+		raw, err = s.SyncExecute(context.Background(), 1, command)
+		if err != nil {
+			t.Fatal(err)
+		}
+		assertSyncTransaction(t, raw, parent, child.ID)
+	}
+}
+
+// TestSyncRebateOldReceipt 验证历史回执原样返回且不访问新关联查询；参数：t 为测试上下文；返回值：无；仅在临时数据库将一条回执模拟成旧格式。
+func TestSyncRebateOldReceipt(t *testing.T) {
+	s, body := syncRebateFixture(t)
+	command := syncTestCommand("sync-old-receipt", "finance.transaction.create", 0, body)
+	raw, err := s.SyncExecute(context.Background(), 1, command)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var parent domain.Transaction
+	if err := json.Unmarshal(raw, &parent); err != nil {
+		t.Fatal(err)
+	}
+	old, err := json.MarshalIndent(parent, "", "  ")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := s.db.Model(&domain.SyncReceipt{}).Where("owner_id = ? AND operation_id = ?", 1, command.OperationID).Update("result", string(old)).Error; err != nil {
+		t.Fatal(err)
+	}
+	// 即使关系查询不可用，历史回执也不得补字段或重新执行业务。
+	if err := s.db.Migrator().DropTable(&domain.Transaction{}); err != nil {
+		t.Fatal(err)
+	}
+	replayed, err := s.SyncExecute(context.Background(), 1, command)
+	if err != nil || string(replayed) != string(old) {
+		t.Fatalf("旧回执不兼容: %s %v", replayed, err)
+	}
+}
+
+// TestSyncRebateLookupFailureRollback 验证多关联拒绝和读错传播，业务更新、审计及回执一起回滚；参数：t 为测试上下文；返回值：无；查询故障仅注入独立临时数据库。
+func TestSyncRebateLookupFailureRollback(t *testing.T) {
+	for _, failure := range []string{"duplicate", "query-error"} {
+		// 子测试参数 t 为测试上下文；返回值：无；分别注入重复历史关系和数据库读取错误。
+		t.Run(failure, func(t *testing.T) {
+			s, body := syncRebateFixture(t)
+			parent := must(t, s, "finance.transaction.create", 0, body).(domain.Transaction)
+			var want error
+			if failure == "duplicate" {
+				// 移除索引以模拟需防御的历史重复关联，不改变生产模型。
+				if err := s.db.Migrator().DropIndex(&domain.Transaction{}, "RebateParentID"); err != nil {
+					t.Fatal(err)
+				}
+				child := domain.Transaction{OwnerID: 1, RebateParentID: &parent.ID, Status: "deleted"}
+				if err := s.db.Create(&child).Error; err != nil {
+					t.Fatal(err)
+				}
+				want = ErrConflict
+			} else {
+				want = errors.New("返现查询失败")
+				// 回调输入 db 为当前查询；返回值：无；仅拒绝带两项上限的同步返现查询，不干扰业务读取。
+				if err := s.db.Callback().Query().After("gorm:query").Register("test:sync-rebate-failure", func(db *gorm.DB) {
+					if db.Statement.Table == "finance_transactions_v2" && strings.Contains(db.Statement.SQL.String(), "rebate_parent_id") && strings.Contains(db.Statement.SQL.String(), "LIMIT 2") {
+						db.AddError(want)
+					}
+				}); err != nil {
+					t.Fatal(err)
+				}
+			}
+			var beforeEvents int64
+			if err := s.db.Model(&domain.Event{}).Count(&beforeEvents).Error; err != nil {
+				t.Fatal(err)
+			}
+			command := syncTestCommand("sync-rebate-failure", "finance.transaction.update", parent.ID, map[string]any{"description": "不得保存"})
+			if _, err := s.SyncExecute(context.Background(), 1, command); !errors.Is(err, want) {
+				t.Fatalf("未返回关系错误: %v，预期 %v", err, want)
+			}
+			var saved domain.Transaction
+			if err := s.db.First(&saved, parent.ID).Error; err != nil || saved.Description != parent.Description {
+				t.Fatalf("业务未回滚: %+v %v", saved, err)
+			}
+			var receipts, events int64
+			if err := s.db.Model(&domain.SyncReceipt{}).Count(&receipts).Error; err != nil || receipts != 0 {
+				t.Fatalf("失败留下回执: %d %v", receipts, err)
+			}
+			if err := s.db.Model(&domain.Event{}).Count(&events).Error; err != nil || events != beforeEvents {
+				t.Fatalf("失败留下审计: %d %v", events, err)
+			}
+		})
 	}
 }

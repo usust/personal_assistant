@@ -110,6 +110,11 @@ func FindRebate(db *gorm.DB, owner uint64, parent uint64, row *domain.Transactio
 	return db.Where("owner_id = ? AND rebate_parent_id = ?", owner, parent).First(row).Error
 }
 
+// ReadSyncRebates 读取同步回执所需的关联返现，包含 deleted、voided 等全部状态；参数：db 为已绑定上下文的业务事务，owner 为可信用户归属，parent 为父流水 ID，rows 为非 nil 输出集合指针；返回值：原始数据库错误或 nil；只读且最多写入两项，供调用方识别不唯一关系，不跨用户查询。
+func ReadSyncRebates(db *gorm.DB, owner, parent uint64, rows *[]domain.Transaction) error {
+	return db.Where("owner_id = ? AND rebate_parent_id = ?", owner, parent).Order("id").Limit(2).Find(rows).Error
+}
+
 // FindPostedTransaction 读取已入账流水；参数：db 为 已绑定上下文的数据库或事务，owner 为 可信用户归属，id 为 目标流水主键，row 为 非 nil 结果指针；返回值：数据库错误或 nil；沿用调用方事务，输出指针成功时写入结果。
 func FindPostedTransaction(db *gorm.DB, owner uint64, id uint64, row *domain.Transaction) error {
 	return db.Where("owner_id = ? AND id = ? AND status = ?", owner, id, "posted").First(row).Error
