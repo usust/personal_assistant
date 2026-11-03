@@ -28,7 +28,7 @@ func ConnectMySQL(cfg MySQLOptions) (*gorm.DB, error) {
 	})
 }
 
-// mysqlDSN 根据配置构造连接字符串；未配置时间选项时沿用原来的默认值。
+// mysqlDSN 根据配置构造连接字符串；未配置时间选项时沿用原来的默认值，兼容现有 MySQL 账户认证。
 // 参数：cfg 为连接配置；返回值：含敏感凭证的 DSN 及参数解析错误；调用方不得记录 DSN。
 func mysqlDSN(cfg MySQLOptions) (string, error) {
 	parseTime := true
@@ -61,8 +61,8 @@ func mysqlDSN(cfg MySQLOptions) (string, error) {
 		Params:    map[string]string{"charset": cfg.Charset},
 		ParseTime: parseTime,
 		Loc:       loc,
-		// 仅允许当前认证协议，拒绝已弃用的 mysql_native_password。
-		AllowNativePasswords: false,
+		// 现有 MySQL 8 账户可能仍使用 mysql_native_password；禁止该协议会在 HTTP 启动前阻断数据库连接。
+		AllowNativePasswords: true,
 	}
 	// 生成驱动使用的数据库连接串。
 	return dsnConfig.FormatDSN(), nil
