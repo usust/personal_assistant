@@ -274,7 +274,8 @@ extension FinanceLocalStore {
         let operationID = "screenshot-" + job.id
         let note = (extraction.note ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         // 备注保存原商品或订单描述及其中的平台来源；付款方式和卡尾号用于账户匹配，不拼入消费备注。
-        let body: [String: Any] = ["requestId": operationID, "type": "expense", "amount": extraction.amount, "accountId": accountID, "categoryId": categoryID,
+        // 未选分类与普通记账保持一致，用 null 表示；0 不是可上传的分类主键。
+        let body: [String: Any] = ["requestId": operationID, "type": "expense", "amount": extraction.amount, "accountId": accountID, "categoryId": categoryID > 0 ? categoryID as Any : NSNull(),
                                    "counterparty": extraction.merchant, "transactionDate": extraction.date, "transactionTime": extraction.time, "description": note, "fee": "0.00"]
         var next = space
         let newID = document["nextLocalID"] as? Int ?? 1_000_000_000_000

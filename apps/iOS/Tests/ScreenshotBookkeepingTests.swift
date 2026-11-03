@@ -27,6 +27,12 @@ import Foundation
             _ = try store.postScreenshot(job, manual: false)
         }
         precondition(store.rows("transactions").count == 5)
+        // 无匹配分类是合法状态；持久队列必须使用 null，不能上传不存在的分类主键 0。
+        let pending = store.queue.filter { $0["path"] as? String == "/finance/transactions" }
+        precondition(pending.count == 5)
+        for command in pending { precondition((command["body"] as? [String: Any])?["categoryId"] is NSNull) }
+        let reopened = try FinanceLocalStore(url: directory.appendingPathComponent("channels.sqlite"))
+        precondition((reopened.queue.last?["body"] as? [String: Any])?["categoryId"] is NSNull)
         // 旧版仅因渠道未知卡住的任务无需再次外发图片；重新校验后入账，重复恢复保持幂等。
         var old = try store.enqueueScreenshot(Data("legacy-channel".utf8))
         var result = extraction(); result.channel = "unknown"

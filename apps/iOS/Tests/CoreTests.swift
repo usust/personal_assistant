@@ -84,6 +84,7 @@ final class StubProtocol: URLProtocol, @unchecked Sendable {
     /// 执行业务和传输回归；参数：无，环境变量 FINANCE_SYNC_TEST_ONLY=1 时只运行返现同步组；返回值：无；使用虚构数据，不连接实际 API，失败抛错或断言。
     @MainActor static func main() async throws {
         try await FinanceOfflineTests.rebateSyncRegression()
+        try ScreenshotBookkeepingTests.channelsDoNotBlock()
         if ProcessInfo.processInfo.environment["FINANCE_SYNC_TEST_ONLY"] == "1" {
             print("\(count) finance sync tests passed")
             return

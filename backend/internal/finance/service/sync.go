@@ -97,8 +97,12 @@ func (s *Service) SyncExecute(ctx context.Context, owner uint64, command SyncCom
 			}
 		}
 		if out == nil {
-			// 将业务操作交给共享服务执行。
-			out, err = nested.Execute(ctx, capability.Actor{UserID: owner}, command.Operation, Input{ID: command.ID, Changes: canonical}, "http")
+			// 旧本机队列用 0 表示未选分类；仅在业务执行时转 null，原请求仍用于回执指纹，避免升级后重试冲突。
+			executionBody, normalizeErr := normalizeSyncCategory(command.Operation, canonical)
+			if normalizeErr != nil {
+				return normalizeErr
+			}
+			out, err = nested.Execute(ctx, capability.Actor{UserID: owner}, command.Operation, Input{ID: command.ID, Changes: executionBody}, "http")
 		} else {
 			err = nil
 		}
@@ -122,6 +126,22 @@ func (s *Service) SyncExecute(ctx context.Context, owner uint64, command SyncCom
 		return repository.CreateReceipt(tx, &domain.SyncReceipt{OwnerID: owner, OperationID: command.OperationID, Fingerprint: fingerprint, Result: string(result)})
 	})
 	return result, err
+}
+
+// normalizeSyncCategory 兼容普通流水的本机未选分类标记；参数：operation 为白名单同步操作，raw 为规范 JSON 正文；返回值：仅将普通流水整数 categoryId=0 转为 null 的正文或解析错误；不修改原始命令、回执指纹、其他字段或分期的零值语义。
+func normalizeSyncCategory(operation string, raw json.RawMessage) (json.RawMessage, error) {
+	if operation != "finance.transaction.create" && operation != "finance.transaction.update" {
+		return raw, nil
+	}
+	var fields map[string]json.RawMessage
+	if err := json.Unmarshal(raw, &fields); err != nil {
+		return nil, err
+	}
+	if string(fields["categoryId"]) != "0" {
+		return raw, nil
+	}
+	fields["categoryId"] = json.RawMessage("null")
+	return json.Marshal(fields)
 }
 
 // syncTransactionResponse 保留父流水原有 JSON 字段，仅为新同步回执附加可选的真实返现 ID。

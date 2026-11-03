@@ -281,6 +281,10 @@ final class AppStore {
                 guard generation == sessionID, cloudGeneration == cloudSessionID, !isAuthenticating, user.id == finance.cachedProfile?.id, finance.space["server"] as? String == api.baseURL else { throw APIError(status: 0, message: "同步账号不匹配") }
                 profile = user; identityVerified = true
             }
+            // 登录或恢复会话可提前完成令牌验证，但不能据此跳过账本归属校验；禁止把旧账号队列发送给新身份。
+            guard generation == sessionID, cloudGeneration == cloudSessionID, !isAuthenticating,
+                  let profile, profile.id == finance.cachedProfile?.id,
+                  finance.space["server"] as? String == api.baseURL else { throw APIError(status: 0, message: "同步账号与本机账本不匹配") }
             try await finance.synchronize(api: api)
             guard generation == sessionID, cloudGeneration == cloudSessionID, !isAuthenticating else { return }
             try await loadFinance()
